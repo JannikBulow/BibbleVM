@@ -3,8 +3,10 @@
 #ifndef BIBBLEVM_INIT_H
 #define BIBBLEVM_INIT_H 1
 
+#include "BibbleVM/api.h"
+
 namespace bibblevm {
-    void InitDependencies();
+    BIBBLEVM_EXPORT void InitDependencies();
 }
 
 #endif // BIBBLEVM_INIT_H
