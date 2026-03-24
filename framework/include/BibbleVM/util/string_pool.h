@@ -3,8 +3,12 @@
 #ifndef BIBBLEVM_STRING_POOL_H
 #define BIBBLEVM_STRING_POOL_H 1
 
+#include "BibbleVM/allocator/arena.h"
+
 #include "BibbleVM/api.h"
 
+#include <format>
+#include <iostream>
 #include <string>
 #include <unordered_set>
 
@@ -17,6 +21,10 @@ namespace bibblevm {
     public:
         std::string_view asUsable() const {
             return {mData, mLength};
+        }
+
+        operator std::string_view() const {
+            return asUsable();
         }
 
         bool operator==(const String& other) const {
@@ -43,17 +51,36 @@ namespace bibblevm {
         };
     };
 
+    inline std::ostream& operator<<(std::ostream& os, const String& str) {
+        return os << str.asUsable();
+    }
+
     class BIBBLEVM_EXPORT StringPool {
     public:
+        StringPool();
+
         // If length == 0 this function calls strlen
         String intern(const char* data, size_t length = 0);
         String intern(std::string_view string);
 
     private:
+        GrowingArenaAllocator mAllocator;
         std::unordered_set<String, String::Hash, String::Eq> mStrings;
 
         char* allocate(const char* data, size_t length);
     };
 }
+
+template<>
+struct BIBBLEVM_EXPORT std::formatter<bibblevm::String> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    template<typename FormatContext>
+    auto format(const bibblevm::String& str, FormatContext& ctx) {
+        return std::format_to(ctx.out(), "{}", str.asUsable());
+    }
+};
 
 #endif // BIBBLEVM_STRING_POOL_H

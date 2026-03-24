@@ -5,6 +5,9 @@
 #include <cstring>
 
 namespace bibblevm {
+    StringPool::StringPool()
+        : mAllocator(GrowingArenaAllocator::Create(16 * 1024 * 1024, 0, false)) {}
+
     String StringPool::intern(const char* data, size_t length) {
         if (length == 0) length = std::strlen(data);
 
@@ -15,7 +18,7 @@ namespace bibblevm {
         }
 
         str.mData = allocate(data, length);
-        mStrings.insert(str).first;
+        mStrings.insert(str);
         return str;
     }
 
@@ -24,6 +27,8 @@ namespace bibblevm {
     }
 
     char* StringPool::allocate(const char* data, size_t length) {
-
+        char* buf = static_cast<char*>(mAllocator.allocate(length));
+        memcpy(buf, data, length);
+        return buf;
     }
 }
