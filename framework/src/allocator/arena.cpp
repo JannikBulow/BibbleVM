@@ -4,10 +4,11 @@
 
 #include <libos/memory.h>
 
-namespace bibblevm {
-    std::optional<StaticArenaAllocator> StaticArenaAllocator::Create(size_t size, bool preCommit) {
-        size = os_mem_aligntopagesize(size);
+#include <new>
 
+namespace bibblevm {
+    // Assume size is aligned to pagesize
+    static void* CreateMemory(size_t size, bool preCommit) {
         void* base;
         os_result res;
 
@@ -15,37 +16,67 @@ namespace bibblevm {
             res = os_mem_allocate(&base, nullptr, size, OS_MEM_RESERVE | OS_MEM_COMMIT, OS_MEM_PROTECT_READWRITE);
         } else {
             res = os_mem_allocate(&base, nullptr, size, OS_MEM_RESERVE, OS_MEM_PROTECT_NOACCESS);
+            if (res != OS_OK) {
+                return nullptr;
+            }
+            res = os_mem_allocate(&base, base, os_mem_getpagesize(), OS_MEM_COMMIT, OS_MEM_PROTECT_READWRITE);
         }
 
         if (res != OS_OK) {
-            return std::nullopt;
+            return nullptr;
         }
 
-        return StaticArenaAllocator(base, size, preCommit ? size : 0);
+        return base;
+    }
+
+    StaticArenaAllocator* StaticArenaAllocator::Create(size_t size, bool preCommit) {
+        size = os_mem_aligntopagesize(size);
+
+        void* base = CreateMemory(size, preCommit);
+
+        if (base == nullptr) {
+            return nullptr;
+        }
+
+        auto* allocator = new(base) StaticArenaAllocator(size, preCommit);
+        allocator->allocate(sizeof(StaticArenaAllocator));
+
+        return allocator;
+    }
+
+    void StaticArenaAllocator::release() {
+        os_mem_free(base(), mSize, OS_MEM_RELEASE);
     }
 
     void* StaticArenaAllocator::allocate(size_t size) {
         if (mUsed + size > mSize) return nullptr;
 
-        void* pointer = static_cast<char*>(mBase) + mUsed;
+        void* pointer = static_cast<char*>(base()) + mUsed;
 
         if (mUsed + size > mCommitted) {
             void* committed;
-            size_t committedSize = os_mem_aligntopagesize(size);
+            size_t committedSize = os_mem_aligntopagesize(size * 8);
+            if (committedSize > mSize - mCommitted) committedSize = mSize - mCommitted;
             os_result res = os_mem_allocate(&committed, pointer, committedSize, OS_MEM_COMMIT, OS_MEM_PROTECT_READWRITE);
             if (res != OS_OK) {
                 return nullptr;
             }
         }
 
+        mUsed += size;
+
         return pointer;
     }
 
     void StaticArenaAllocator::clear(bool decommitMemory) {
-        mUsed = 0;
+        mUsed = sizeof(StaticArenaAllocator);
 
         if (decommitMemory) {
-            os_result res = os_mem_free(mBase, mCommitted, OS_MEM_DECOMMIT);
+            os_result res = os_mem_free(
+                static_cast<char*>(base()) + sizeof(StaticArenaAllocator),
+                mCommitted - sizeof(StaticArenaAllocator),
+                OS_MEM_DECOMMIT
+            );
             if (res != OS_OK) {
                 //TODO: do something here. for now, just set a breakpoint at this variable declaration
                 int a = 69;
@@ -55,8 +86,91 @@ namespace bibblevm {
         }
     }
 
-    StaticArenaAllocator::StaticArenaAllocator(void* base, size_t size, size_t committed)
-        : mBase(base)
-        , mSize(size)
+    StaticArenaAllocator::StaticArenaAllocator(size_t size, size_t committed)
+        : mSize(size)
         , mCommitted(committed) {}
+
+    void* StaticArenaAllocator::base() {
+        return this;
+    }
+
+    GrowingArenaAllocator::~GrowingArenaAllocator() {
+        while (mHead != nullptr) {
+            Region* prev = mHead->prev;
+            mHead->release();
+            mHead = prev;
+        }
+    }
+
+    GrowingArenaAllocator GrowingArenaAllocator::Create(size_t minRegionSize, size_t initialSize, bool preCommit) {
+        if (initialSize == 0) initialSize = minRegionSize;
+
+        minRegionSize = os_mem_aligntopagesize(minRegionSize);
+        initialSize = os_mem_aligntopagesize(initialSize);
+
+        Region* region = Region::Create(initialSize, nullptr, preCommit);
+        return {minRegionSize, region, preCommit};
+    }
+
+    void* GrowingArenaAllocator::allocate(size_t size) {
+        void* pointer = nullptr;
+        if (mHead != nullptr) {
+            pointer = mHead->allocate(size);
+        }
+
+        if (pointer == nullptr) {
+            mHead = Region::Create(os_mem_aligntopagesize(size + mMinRegionSize), mHead, mPreCommit);
+            if (mHead != nullptr) {
+                pointer = mHead->allocate(size);
+            }
+        }
+
+        return pointer;
+    }
+
+    void GrowingArenaAllocator::clear(bool decommitMemory) {
+        while (mHead->prev != nullptr) {
+            Region* prev = mHead->prev;
+            mHead->release();
+            mHead = prev;
+        }
+    }
+
+    GrowingArenaAllocator::Region* GrowingArenaAllocator::Region::Create(size_t size, Region* prev, bool preCommit) {
+        size = os_mem_aligntopagesize(size);
+
+        void* base = CreateMemory(size, preCommit);
+
+        if (base == nullptr) {
+            return nullptr;
+        }
+
+        auto* allocator = new(base) Region(size, preCommit, prev);
+        allocator->allocate(sizeof(Region));
+
+        return allocator;
+    }
+
+    void GrowingArenaAllocator::Region::clear(bool decommitMemory) {
+        mUsed = sizeof(Region);
+
+        if (decommitMemory) {
+            os_result res = os_mem_free(
+                static_cast<char*>(base()) + sizeof(Region),
+                mCommitted + sizeof(Region),
+                OS_MEM_DECOMMIT
+            );
+            if (res != OS_OK) {
+                //TODO: do something here. for now, just set a breakpoint at this variable declaration
+                int a = 69;
+            } else {
+                mCommitted = 0;
+            }
+        }
+    }
+
+    GrowingArenaAllocator::GrowingArenaAllocator(size_t minRegionSize, Region* head, bool preCommit)
+        : mMinRegionSize(minRegionSize)
+        , mPreCommit(preCommit)
+        , mHead(head) {}
 }
