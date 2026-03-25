@@ -31,6 +31,10 @@ namespace bibblevm {
             return mData == other.mData;
         }
 
+        bool operator==(std::string_view other) const {
+            return other == asUsable();
+        }
+
     private:
         const char* mData;
         size_t mLength;
@@ -40,7 +44,7 @@ namespace bibblevm {
 
         struct Hash {
             size_t operator()(const String& str) const noexcept {
-                return std::hash<std::string_view>()({str.asUsable()});
+                return std::hash<std::string_view>()(str.asUsable());
             }
         };
 
