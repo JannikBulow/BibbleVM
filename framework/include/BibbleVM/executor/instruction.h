@@ -14,7 +14,7 @@ namespace bibblevm {
     // Pre-decoded instruction. Trade memory for 0.0002% faster dispatch
     struct BIBBLEVM_EXPORT Instruction {
         Interpreter interpreter;
-        uint8_t A, B, C;
+        uint8_t a, b, c;
     };
 
     class BIBBLEVM_EXPORT InstructionList {
@@ -29,6 +29,10 @@ namespace bibblevm {
 
         size_t getCount() const {
             return mCount;
+        }
+
+        Instruction& operator[](size_t index) const {
+            return mInstructions[index];
         }
 
     private:
