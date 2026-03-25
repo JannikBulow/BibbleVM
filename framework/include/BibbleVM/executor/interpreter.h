@@ -5,10 +5,12 @@
 
 #include "BibbleVM/api.h"
 
+#include <cstdint>
+
 namespace bibblevm {
     class VM;
 
-    using Interpreter = bool(*)(VM& vm);
+    using Interpreter = bool(*)(VM& vm, uint8_t a, uint8_t b, uint8_t c);
 }
 
 #endif // BIBBLEVM_INTERPRETER_H
