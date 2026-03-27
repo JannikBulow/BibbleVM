@@ -1,14 +1,22 @@
 // Copyright 2026 Jannik Laugmand Bülow
 
-#ifndef BIBBLEVM_MODULE_H
-#define BIBBLEVM_MODULE_H 1
+#ifndef BIBBLEVM_MODULE_MODULE_H
+#define BIBBLEVM_MODULE_MODULE_H 1
 
-#include "BibbleVM/api.h"
+#include "BibbleVM/module/function.h"
 
-namespace bibblevm {
-    class BIBBLEVM_EXPORT Module {
-    public:
+namespace bibblevm::module {
+    struct Module {
+        uint32_t magic;
+        uint16_t formatVersion;
+
+        ConstantIndex name;
+
+        ConstPool constPool;
+
+        uint16_t functionCount;
+        Function* functions;
     };
 }
 
-#endif // BIBBLEVM_MODULE_H
+#endif // BIBBLEVM_MODULE_MODULE_H

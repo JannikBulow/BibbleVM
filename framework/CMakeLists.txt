@@ -12,6 +12,14 @@ FetchContent_MakeAvailable(libos)
 set(SOURCES
     src/allocator/arena.cpp
 
+    src/core/opcodes.cpp
+
+    src/executor/function.cpp
+
+    src/module/const_pool.cpp
+    src/module/function.cpp
+    src/module/module.cpp
+
     src/util/string_pool.cpp
 
     src/init.cpp
@@ -21,16 +29,24 @@ set(SOURCES
 set(HEADERS
     include/BibbleVM/allocator/arena.h
 
+    include/BibbleVM/core/opcodes.h
+
     include/BibbleVM/executor/instruction.h
     include/BibbleVM/executor/interpreter.h
 
     include/BibbleVM/module/function.h
     include/BibbleVM/module/module.h
 
+    include/BibbleVM/util/list.h
     include/BibbleVM/util/string_pool.h
 
     include/BibbleVM/init.h
     include/BibbleVM/vm.h
+    include/BibbleVM/executor/function.h
+    include/BibbleVM/core/value.h
+    include/BibbleVM/module/const_pool.h
+    include/BibbleVM/module/instruction.h
+    include/BibbleVM/executor/module.h
 )
 
 source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS})
