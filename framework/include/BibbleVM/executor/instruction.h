@@ -5,20 +5,22 @@
 
 #include "BibbleVM/executor/interpreter.h"
 
-#include "BibbleVM/util/list.h"
-
 #include "BibbleVM/api.h"
 
 #include <cstdint>
 
 namespace bibblevm::executor {
-    // Pre-decoded instruction. Trade memory for 0.0002% faster dispatch
-    struct BIBBLEVM_EXPORT Instruction {
-        Interpreter interpreter;
-        uint8_t a, b, c;
+    union InstructionArguments {
+        struct { uint8_t a, b, c; } generic;
+        struct { uint8_t a; uint16_t bc; } extBC;
+        struct { uint16_t ab; uint8_t c; } extAB;
     };
 
-    using InstructionList = List<Instruction>;
+    // Pre-decoded instruction. Trade memory for 0.0002% faster dispatch
+    struct Instruction {
+        Interpreter interpreter;
+        InstructionArguments args;
+    };
 }
 
 #endif // BIBBLEVM_INSTRUCTION_H

@@ -1,4 +1,4 @@
-// Copyright 2026 JesusTouchMe
+// Copyright 2026 Jannik Laugmand Bülow
 
 #ifndef BIBBLEVM_MODULE_INSTRUCTION_H
 #define BIBBLEVM_MODULE_INSTRUCTION_H 1
@@ -11,10 +11,10 @@ namespace bibblevm::module {
     struct Instruction {
         uint8_t bytes[4];
 
-        constexpr RawInstruction(uint8_t opcode, uint8_t a, uint8_t b, uint8_t c)
+        constexpr Instruction(uint8_t opcode, uint8_t a, uint8_t b, uint8_t c)
             : bytes{opcode, a, b, c} {}
 
-        constexpr RawInstruction(const uint8_t* bytes)
+        constexpr Instruction(const uint8_t* bytes)
             : bytes{bytes[0], bytes[1], bytes[2], bytes[3]} {}
 
         constexpr uint8_t getOpcode() const { return bytes[0]; }
@@ -27,6 +27,7 @@ namespace bibblevm::module {
     public:
         InstructionStream(const uint8_t* bytes, size_t size);
 
+        size_t decodeInstructionCount() const;
         Instruction fetchOne();
 
         void reset();

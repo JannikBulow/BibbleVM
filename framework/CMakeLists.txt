@@ -12,13 +12,18 @@ FetchContent_MakeAvailable(libos)
 set(SOURCES
     src/allocator/arena.cpp
 
-    src/core/opcodes.cpp
-
+    src/executor/const_pool.cpp
     src/executor/function.cpp
+    src/executor/interpreter.cpp
+    src/executor/module.cpp
+    src/executor/scheduler.cpp
+    src/executor/stack.cpp
+    src/executor/task.cpp
 
-    src/module/const_pool.cpp
-    src/module/function.cpp
-    src/module/module.cpp
+    src/linker/intrinsics.cpp
+    src/linker/linker.cpp
+
+    src/module/instruction.cpp
 
     src/util/string_pool.cpp
 
@@ -30,28 +35,36 @@ set(HEADERS
     include/BibbleVM/allocator/arena.h
 
     include/BibbleVM/core/opcodes.h
+    include/BibbleVM/core/value.h
 
+    include/BibbleVM/executor/const_pool.h
+    include/BibbleVM/executor/function.h
     include/BibbleVM/executor/instruction.h
     include/BibbleVM/executor/interpreter.h
+    include/BibbleVM/executor/module.h
+    include/BibbleVM/executor/scheduler.h
+    include/BibbleVM/executor/stack.h
+    include/BibbleVM/executor/task.h
 
+    include/BibbleVM/linker/intrinsics.h
+    include/BibbleVM/linker/linker.h
+    include/BibbleVM/linker/module.h
+
+    include/BibbleVM/module/const_pool.h
     include/BibbleVM/module/function.h
+    include/BibbleVM/module/instruction.h
     include/BibbleVM/module/module.h
 
-    include/BibbleVM/util/list.h
     include/BibbleVM/util/string_pool.h
 
     include/BibbleVM/init.h
     include/BibbleVM/vm.h
-    include/BibbleVM/executor/function.h
-    include/BibbleVM/core/value.h
-    include/BibbleVM/module/const_pool.h
-    include/BibbleVM/module/instruction.h
-    include/BibbleVM/executor/module.h
 )
 
 source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS})
 
-add_library(BibbleVM-framework-shared SHARED ${SOURCES} ${HEADERS})
+add_library(BibbleVM-framework-shared SHARED ${SOURCES} ${HEADERS}
+    include/BibbleVM/linker/intrinsics.h)
 add_library(BibbleVM-framework-static STATIC ${SOURCES} ${HEADERS})
 
 generate_export_header(BibbleVM-framework-shared

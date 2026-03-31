@@ -19,6 +19,8 @@ namespace bibblevm {
     class BIBBLEVM_EXPORT String {
     friend class StringPool;
     public:
+        String() = default;
+
         std::string_view asUsable() const {
             return {mData, mLength};
         }

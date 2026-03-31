@@ -4,6 +4,7 @@
 
 #include <libos/memory.h>
 
+#include <algorithm>
 #include <new>
 
 namespace bibblevm {
@@ -46,6 +47,14 @@ namespace bibblevm {
 
     void StaticArenaAllocator::release() {
         os_mem_free(base(), mSize, OS_MEM_RELEASE);
+    }
+
+    StaticArenaAllocator::RestorePoint StaticArenaAllocator::getRestorePoint() const {
+        return {mUsed};
+    }
+
+    void StaticArenaAllocator::restore(RestorePoint point) {
+        mUsed = point.used;
     }
 
     void* StaticArenaAllocator::allocate(size_t size) {
@@ -112,20 +121,21 @@ namespace bibblevm {
         return {minRegionSize, region, preCommit};
     }
 
-    void* GrowingArenaAllocator::allocate(size_t size) {
-        void* pointer = nullptr;
+    GrowingArenaAllocator::RestorePoint GrowingArenaAllocator::getRestorePoint() const {
+        if (mHead == nullptr) return {nullptr, 0};
+        return {mHead, mHead->used()};
+    }
+
+    void GrowingArenaAllocator::restore(RestorePoint point) {
+        while (mHead != nullptr && mHead != point.head) {
+            Region* prev = mHead->prev;
+            mHead->release();
+            mHead = prev;
+        }
+
         if (mHead != nullptr) {
-            pointer = mHead->allocate(size);
+            mHead->used() = point.used;
         }
-
-        if (pointer == nullptr) {
-            mHead = Region::Create(os_mem_aligntopagesize(size + mMinRegionSize), mHead, mPreCommit);
-            if (mHead != nullptr) {
-                pointer = mHead->allocate(size);
-            }
-        }
-
-        return pointer;
     }
 
     void GrowingArenaAllocator::clear(bool decommitMemory) {
@@ -173,4 +183,20 @@ namespace bibblevm {
         : mMinRegionSize(minRegionSize)
         , mPreCommit(preCommit)
         , mHead(head) {}
+
+    void* GrowingArenaAllocator::allocate0(size_t size) {
+        void* pointer = nullptr;
+        if (mHead != nullptr) {
+            pointer = mHead->allocate(size);
+        }
+
+        if (pointer == nullptr) {
+            mHead = Region::Create(os_mem_aligntopagesize(std::max(size, mMinRegionSize)), mHead, mPreCommit);
+            if (mHead != nullptr) {
+                pointer = mHead->allocate(size);
+            }
+        }
+
+        return pointer;
+    }
 }

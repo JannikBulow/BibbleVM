@@ -27,7 +27,7 @@ namespace bibblevm {
     }
 
     char* StringPool::allocate(const char* data, size_t length) {
-        char* buf = static_cast<char*>(mAllocator.allocate(length));
+        char* buf = mAllocator.allocate<char>(length);
         memcpy(buf, data, length);
         return buf;
     }

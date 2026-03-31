@@ -6,6 +6,8 @@
 #include "BibbleVM/module/function.h"
 
 namespace bibblevm::module {
+    constexpr uint32_t MAGIC = 0xFAAC6767;
+
     struct Module {
         uint32_t magic;
         uint16_t formatVersion;

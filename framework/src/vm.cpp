@@ -3,30 +3,21 @@
 #include "BibbleVM/vm.h"
 
 namespace bibblevm {
-    void VM::addModule(ModulePtr module) {
+    linker::Module* VM::getModule(String name) const {
+        for (const auto& module : mModules) {
+            if (module->linkedModule().getName() == name) return module.get();
+        }
+        return nullptr;
+    }
+
+    linker::Module* VM::getModule(std::string_view name) const {
+        for (const auto& module : mModules) {
+            if (module->linkedModule().getName() == name) return module.get();
+        }
+        return nullptr;
+    }
+
+    void VM::addModule(std::unique_ptr<linker::Module> module) {
         mModules.push_back(std::move(module));
-    }
-
-    Module* VM::getModule(std::string_view name) const {
-        for (const auto& module : mModules) {
-            if (module->getName() == name) return module.get();
-        }
-        return nullptr;
-    }
-
-    Module* VM::getModule(String name) const {
-        for (const auto& module : mModules) {
-            if (module->getName() == name) return module.get();
-        }
-        return nullptr;
-    }
-
-    Module* VM::getEntryPointModule() const {
-        return getModule("Main");
-    }
-
-    Function* VM::getEntryPointFunction(Module* module) const {
-        if (module == nullptr) return nullptr;
-        return module->getFunction("main");
     }
 }

@@ -1,20 +1,36 @@
-// Copyright 2026 JesusTouchMe
+// Copyright 2026 Jannik Laugmand Bülow
 
 #include "BibbleVM/executor/function.h"
 
+#include <iostream>
+
 namespace bibblevm::executor {
-    static void InterpreterEntryPoint(VM& vm, Function& function) {
-        for (const auto& insn : function.getInstructions()) {
-            insn.interpreter(vm, insn.a, insn.b, insn.c);
-        }
+    static InvokeMessage SafetyNet(VM& vm, Frame& frame) {
+        std::cout << "Interpreter SafetyNet triggered by: " << frame.getFunction().getName() << std::endl;
+        return InvokeMessage::Returned(Value());
     }
 
-    Function::Function(const String& name, InstructionList instructions)
+    Function::Function(const String& name)
         : mName(name)
-        , mInstructions(std::move(instructions))
-        , mEntryPoint(InterpreterEntryPoint) {}
+        , mKind(FunctionKind::Normal)
+        , mRegisterCount(0)
+        , mParameterCount(0)
+        , mConstPool()
+        , mMergedConstPool()
+        , mInstructions(nullptr)
+        , mEntryPoint(SafetyNet) {}
 
-    void Function::entryPoint(VM& vm) {
-        mEntryPoint(vm, *this);
+    Function::Function(const String& name, FunctionKind kind, uint16_t registerCount, uint16_t parameterCount, ConstPool constPool, ConstPool mergedConstPool, Instruction* instructions)
+        : mName(name)
+        , mKind(kind)
+        , mRegisterCount(registerCount)
+        , mParameterCount(parameterCount)
+        , mConstPool(std::move(constPool))
+        , mMergedConstPool(std::move(mergedConstPool))
+        , mInstructions(instructions)
+        , mEntryPoint(SafetyNet) {}
+
+    InvokeMessage Function::invoke(VM& vm, Frame& frame) const {
+        return mEntryPoint(vm, frame);
     }
 }

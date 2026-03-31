@@ -11,8 +11,7 @@
 
 namespace bibblevm::module {
     enum FunctionFlags : uint16_t {
-        FUNC_ASYNC = 0x0001,
-        FUNC_NATIVE = 0x0002,
+        FUNC_NATIVE = 0x0001,
     };
 
     struct Function {

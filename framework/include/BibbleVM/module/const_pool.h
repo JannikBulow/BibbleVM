@@ -1,11 +1,9 @@
-// Copyright 2026 JesusTouchMe
+// Copyright 2026 Jannik Laugmand Bülow
 
 #ifndef BIBBLEVM_MODULE_CONST_POOL_H
 #define BIBBLEVM_MODULE_CONST_POOL_H 1
 
 #include "BibbleVM/core/value.h"
-
-#include "BibbleVM/util/list.h"
 
 #include "BibbleVM/api.h"
 
@@ -15,16 +13,16 @@
 namespace bibblevm::module {
     using ConstantIndex = uint16_t;
 
-    class BIBBLEVM_EXPORT ConstPool {
+    class ConstPool {
     public:
         enum Tag : uint8_t {
-            BYTE,
-            SHORT,
-            INT,
-            LONG,
-            STRING,
-            MODULE_INFO,
-            FUNCTION_INFO,
+            BYTE = 0x01,
+            SHORT = 0x02,
+            INT = 0x03,
+            LONG = 0x04,
+            STRING = 0x05,
+            MODULE_INFO = 0x06,
+            FUNCTION_INFO = 0x07,
         };
 
         struct ModuleInfo {
@@ -36,7 +34,7 @@ namespace bibblevm::module {
             ConstantIndex name;
         };
 
-        struct Value {
+        struct Entry {
             Tag tag;
             union {
                 Byte b;
@@ -49,18 +47,18 @@ namespace bibblevm::module {
             } u;
         };
 
-        explicit ConstPool(List<Value> entries);
+        ConstPool() = default;
 
-        Byte getByte(ConstantIndex index) const;
-        Short getShort(ConstantIndex index) const;
-        Int getInt(ConstantIndex index) const;
-        Long getLong(ConstantIndex index) const;
-        std::string_view getString(ConstantIndex index) const;
-        ModuleInfo getModuleInfo(ConstantIndex index) const;
-        FunctionInfo getFunctionInfo(ConstantIndex index) const;
+        ConstPool(uint16_t entryCount, Entry* entries)
+            : mEntryCount(entryCount)
+            , mEntries(entries) {}
+
+        uint16_t getEntryCount() const { return mEntryCount; }
+        Entry* getEntries() const { return mEntries; }
 
     private:
-        List<Value> mEntries;
+        uint16_t mEntryCount;
+        Entry* mEntries;
     };
 }
 
