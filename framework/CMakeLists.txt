@@ -43,6 +43,7 @@ set(HEADERS
     include/BibbleVM/executor/interpreter.h
     include/BibbleVM/executor/module.h
     include/BibbleVM/executor/scheduler.h
+    include/BibbleVM/executor/scheduler_message.h
     include/BibbleVM/executor/stack.h
     include/BibbleVM/executor/task.h
 

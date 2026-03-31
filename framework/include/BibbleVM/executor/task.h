@@ -5,6 +5,8 @@
 
 #include "BibbleVM/executor/stack.h"
 
+#include <vector>
+
 namespace bibblevm::executor {
     class Scheduler;
     struct Task;

@@ -23,14 +23,14 @@ namespace bibblevm::executor {
         return task;
     }
 
-    static InvokeMessage RunTask(VM& vm, Task& task) {
+    static SchedulerMessage RunTask(VM& vm, Task& task) {
         while (task.stack.getTop() != nullptr) {
             Frame& frame = *task.stack.getTop();
 
-            InvokeMessage message = frame.getFunction().invoke(vm, frame);
+            SchedulerMessage message = frame.getFunction().invoke(vm, frame);
             switch (message.type) {
-                case InvokeMessageType::Errored: return message;
-                case InvokeMessageType::Called: {
+                case SchedulerMessageType::Errored: return message;
+                case SchedulerMessageType::Called: {
                     Frame& newFrame = task.stack.pushFrame(*message.call.function);
 
                     for (uint16_t i = 0; i < message.call.function->getParameterCount(); i++) {
@@ -39,17 +39,17 @@ namespace bibblevm::executor {
 
                     break;
                 }
-                case InvokeMessageType::Returned: {
+                case SchedulerMessageType::Returned: {
                     task.result = message.returnValue;
                     task.stack.popFrame();
                     if (task.stack.getTop() != nullptr) (*task.stack.getTop())[0] = message.returnValue;
                     break;
                 }
-                case InvokeMessageType::Yielded: return message;
-                case InvokeMessageType::Awaiting: return message;
+                case SchedulerMessageType::Yielded: return message;
+                case SchedulerMessageType::Awaiting: return message;
             }
         }
-        return InvokeMessage::Returned(task.result);
+        return SchedulerMessage::Returned(task.result);
     }
 
     void Scheduler::run(VM& vm) {
@@ -57,20 +57,20 @@ namespace bibblevm::executor {
             Task* task = mReadyQueue.front();
             mReadyQueue.pop_front();
 
-            InvokeMessage message = RunTask(vm, *task);
+            SchedulerMessage message = RunTask(vm, *task);
             switch (message.type) {
-                case InvokeMessageType::Errored:
+                case SchedulerMessageType::Errored:
                     break; // TODO: handle it
-                case InvokeMessageType::Called:
+                case SchedulerMessageType::Called:
                     break; // should never be reached i hope. maybe error if it does
-                case InvokeMessageType::Returned:
+                case SchedulerMessageType::Returned:
                     task->completionFuture->complete(task->result);
                     delete task;
                     break;
-                case InvokeMessageType::Yielded:
+                case SchedulerMessageType::Yielded:
                     mReadyQueue.push_back(task);
                     break;
-                case InvokeMessageType::Awaiting:
+                case SchedulerMessageType::Awaiting:
                     message.future->waiters.push_back(task);
                     break;
             }

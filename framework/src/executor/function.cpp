@@ -5,9 +5,9 @@
 #include <iostream>
 
 namespace bibblevm::executor {
-    static InvokeMessage SafetyNet(VM& vm, Frame& frame) {
+    static SchedulerMessage SafetyNet(VM& vm, Frame& frame) {
         std::cout << "Interpreter SafetyNet triggered by: " << frame.getFunction().getName() << std::endl;
-        return InvokeMessage::Returned(Value());
+        return SchedulerMessage::Returned(Value());
     }
 
     Function::Function(const String& name)
@@ -30,7 +30,7 @@ namespace bibblevm::executor {
         , mInstructions(instructions)
         , mEntryPoint(SafetyNet) {}
 
-    InvokeMessage Function::invoke(VM& vm, Frame& frame) const {
+    SchedulerMessage Function::invoke(VM& vm, Frame& frame) const {
         return mEntryPoint(vm, frame);
     }
 }

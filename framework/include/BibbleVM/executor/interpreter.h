@@ -15,7 +15,7 @@ namespace bibblevm {
 
 namespace bibblevm::executor {
     class Function;
-    struct InvokeMessage;
+    struct SchedulerMessage;
     union InstructionArguments;
 
     enum class InterpreterMessageType {
@@ -62,7 +62,7 @@ namespace bibblevm::executor {
 
     BIBBLEVM_EXPORT Interpreter GetInterpreter(VM& vm, uint8_t opcode);
 
-    BIBBLEVM_EXPORT InvokeMessage BytecodeInterpreter(VM& vm, Frame& frame);
+    BIBBLEVM_EXPORT SchedulerMessage BytecodeInterpreter(VM& vm, Frame& frame);
 }
 
 #endif // BIBBLEVM_INTERPRETER_H

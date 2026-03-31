@@ -9,8 +9,6 @@
 
 #include "BibbleVM/api.h"
 
-#include <vector>
-
 namespace bibblevm::executor {
     class Function;
     struct Instruction;

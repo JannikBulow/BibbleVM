@@ -5,6 +5,7 @@
 
 #include "BibbleVM/executor/const_pool.h"
 #include "BibbleVM/executor/instruction.h"
+#include "BibbleVM/executor/scheduler_message.h"
 #include "BibbleVM/executor/task.h"
 
 #include "BibbleVM/util/string_pool.h"
@@ -16,45 +17,7 @@ namespace bibblevm {
 namespace bibblevm::executor {
     class Function;
 
-    enum class InvokeMessageType {
-        Errored,
-        Called,
-        Returned,
-        Yielded,
-        Awaiting
-    };
-
-    struct InvokeMessage {
-        InvokeMessageType type;
-        union {
-            struct { Function* function; uint16_t argsBegin; } call;
-            Value returnValue;
-            Future* future;
-        };
-
-        constexpr InvokeMessage(InvokeMessageType type) : type(type) {}
-
-        static constexpr InvokeMessage Errored() { return InvokeMessageType::Errored; }
-        static constexpr InvokeMessage Called(Function* function, uint16_t argsBegin) {
-            InvokeMessage m = InvokeMessageType::Called;
-            m.call.function = function;
-            m.call.argsBegin = argsBegin;
-            return m;
-        }
-        static constexpr InvokeMessage Returned(Value returnValue) {
-            InvokeMessage m = InvokeMessageType::Returned;
-            m.returnValue = returnValue;
-            return m;
-        }
-        static constexpr InvokeMessage Yielded() { return InvokeMessageType::Yielded; }
-        static constexpr InvokeMessage Awaiting(Future* future) {
-            InvokeMessage m = InvokeMessageType::Awaiting;
-            m.future = future;
-            return m;
-        }
-    };
-
-    using EntryPoint = InvokeMessage(*)(VM& vm, Frame& frame);
+    using EntryPoint = SchedulerMessage(*)(VM& vm, Frame& frame);
 
     enum class FunctionKind : uint8_t {
         Normal,
@@ -75,7 +38,7 @@ namespace bibblevm::executor {
         Instruction* getInstructions() const { return mInstructions; }
         EntryPoint& entryPoint() { return mEntryPoint; }
 
-        InvokeMessage invoke(VM& vm, Frame& frame) const;
+        SchedulerMessage invoke(VM& vm, Frame& frame) const;
 
     private:
         String mName;

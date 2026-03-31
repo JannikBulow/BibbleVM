@@ -171,7 +171,7 @@ namespace bibblevm::executor {
         return table[opcode];
     }
 
-    InvokeMessage BytecodeInterpreter(VM& vm, Frame& frame) {
+    SchedulerMessage BytecodeInterpreter(VM& vm, Frame& frame) {
         Instruction*& instruction = frame.ip();
         while (true) {
             InterpreterMessage message = instruction->interpreter(vm, frame, instruction->args);
@@ -180,17 +180,17 @@ namespace bibblevm::executor {
                     instruction++;
                     break;
                 case InterpreterMessageType::Errored:
-                    return InvokeMessage::Errored();
+                    return SchedulerMessage::Errored();
                 case InterpreterMessageType::CallFunction:
                     instruction++;
-                    return InvokeMessage::Called(message.call.function, message.call.argsBegin);
+                    return SchedulerMessage::Called(message.call.function, message.call.argsBegin);
                 case InterpreterMessageType::ReturnFromFunction:
-                    return InvokeMessage::Returned(frame[message.returnRegister]);
+                    return SchedulerMessage::Returned(frame[message.returnRegister]);
                 case InterpreterMessageType::YieldExecution:
                     instruction++;
-                    return InvokeMessage::Yielded();
+                    return SchedulerMessage::Yielded();
                 case InterpreterMessageType::AwaitFuture:
-                    return InvokeMessage::Awaiting(message.future);
+                    return SchedulerMessage::Awaiting(message.future);
             }
         }
     }
