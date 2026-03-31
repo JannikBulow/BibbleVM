@@ -52,16 +52,6 @@ namespace bibblevm {
         // c = cidx_high
         LOAD_CONST = 0x07,
 
-        // Loads the universal value for `0`, `false`, and `null`.
-        // a = dst_low
-        // b = dst_high
-        LOAD_ZERO = 0x08,
-
-        // Loads the universal value for `1`, and `true`.
-        // a = dst_low
-        // b = dst_high
-        LOAD_ONE = 0x09,
-
         // Loads a single-byte immediate integer into an EXTENDED register.
         // a = dst_low
         // b = dst_high

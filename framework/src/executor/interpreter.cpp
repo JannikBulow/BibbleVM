@@ -55,16 +55,6 @@ namespace bibblevm::executor {
         return InterpreterMessage::NoRequest();
     }
 
-    DEFINE_INTERPRETER(LOAD_ZERO) {
-        frame[args.extAB.ab].ul = 0;
-        return InterpreterMessage::NoRequest();
-    }
-
-    DEFINE_INTERPRETER(LOAD_ONE) {
-        frame[args.extAB.ab].ul = 1;
-        return InterpreterMessage::NoRequest();
-    }
-
     DEFINE_INTERPRETER(LOADB) {
         frame[args.extAB.ab].ul = args.extAB.c;
         return InterpreterMessage::NoRequest();
@@ -150,8 +140,6 @@ namespace bibblevm::executor {
             REGISTER_INTERPRETER(SWAP);
             REGISTER_INTERPRETER(SWAP_HOT_EXT);
             REGISTER_INTERPRETER(LOAD_CONST);
-            REGISTER_INTERPRETER(LOAD_ZERO);
-            REGISTER_INTERPRETER(LOAD_ONE);
             REGISTER_INTERPRETER(LOADB);
             REGISTER_INTERPRETER(LOADS);
             REGISTER_INTERPRETER(ADD);
