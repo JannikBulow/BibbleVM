@@ -9,6 +9,13 @@ FetchContent_Declare(libos
 )
 FetchContent_MakeAvailable(libos)
 
+FetchContent_Declare(utf8cpp
+    GIT_REPOSITORY https://github.com/nemtrif/utfcpp
+    GIT_TAG v4.0.9
+)
+
+FetchContent_MakeAvailable(utf8cpp)
+
 set(SOURCES
     src/allocator/arena.cpp
 
@@ -56,6 +63,7 @@ set(HEADERS
     include/BibbleVM/module/instruction.h
     include/BibbleVM/module/module.h
 
+    include/BibbleVM/util/safe_math.h
     include/BibbleVM/util/string_pool.h
 
     include/BibbleVM/init.h
@@ -90,5 +98,5 @@ target_include_directories(BibbleVM-framework-static PUBLIC
 target_compile_features(BibbleVM-framework-shared PUBLIC cxx_std_20)
 target_compile_features(BibbleVM-framework-static PUBLIC cxx_std_20)
 
-target_link_libraries(BibbleVM-framework-shared libos-static)
-target_link_libraries(BibbleVM-framework-static libos-static)
+target_link_libraries(BibbleVM-framework-shared libos-static utf8cpp)
+target_link_libraries(BibbleVM-framework-static libos-static utf8cpp)

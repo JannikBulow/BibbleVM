@@ -7,6 +7,9 @@
 
 #include "BibbleVM/api.h"
 
+#include <utf8.h>
+
+#include <cstdint>
 #include <format>
 #include <iostream>
 #include <string>
@@ -25,6 +28,24 @@ namespace bibblevm {
             return {mData, mLength};
         }
 
+        int compare(const String& other) const {
+            auto itA = mData;
+            auto itB = other.mData;
+            auto endA = mData + mLength;
+            auto endB = other.mData + other.mLength;
+
+            while (itA < endA && itB < endB) {
+                utf8::utfchar32_t cp_a = utf8::next(itA, endA);
+                utf8::utfchar32_t cp_b = utf8::next(itB, endB);
+
+                if (cp_a != cp_b)
+                    return (cp_a < cp_b) ? -1 : 1;
+            }
+
+            if (itA == endA && itB == endB) return 0;
+            return (itA < endA) ? 1 : -1;
+        }
+
         operator std::string_view() const {
             return asUsable();
         }
@@ -39,7 +60,7 @@ namespace bibblevm {
 
     private:
         const char* mData;
-        size_t mLength;
+        size_t mLength; // bytes
 
         String(const char* data, size_t length)
             : mData(data), mLength(length) {}

@@ -96,6 +96,22 @@ namespace bibblevm::linker {
                 case LOADS:
                     assignExtBC();
                     break;
+                case INC:
+                case DEC:
+                    assignExtBC();
+                    break;
+                case JMP:
+                    args.extJump.branch = (static_cast<uint32_t>(a) | (static_cast<uint32_t>(b) << 8) | (static_cast<uint32_t>(c) << 16)) / 4; //NOTE: divide by 4 because the interpreter will treat branch as amount of instructions while the bytecode format uses bytes
+                    break;
+                case JEQ:
+                case JNE:
+                case JLT:
+                case JLE:
+                case JGT:
+                case JGE:
+                    args.extJump.cond = a;
+                    args.extJump.branch = ext8to16(b, c) / 4; //NOTE: see JMP on why we divide by 4
+                    break;
                 case CALL:
                 case TAIL_CALL:
                 case ASYNC_CALL:

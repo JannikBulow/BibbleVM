@@ -23,6 +23,7 @@ namespace bibblevm {
         struct Future;
     }
 
+    //TODO: find a way to optimize the size of this monolith down to 8 bytes (from 16)
     union Value {
         Byte b;
         UByte ub;
@@ -32,6 +33,8 @@ namespace bibblevm {
         UInt ui;
         Long l;
         ULong ul;
+        float f;
+        double d;
         String str;
         executor::Module* mi;
         executor::Function* fi;
