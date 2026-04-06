@@ -1,9 +1,9 @@
 // Copyright 2026 Jannik Laugmand Bülow
 
-#ifndef BIBBLEVM_VALUE_H
-#define BIBBLEVM_VALUE_H 1
+#ifndef BIBBLEVM_CORE_VALUE_H
+#define BIBBLEVM_CORE_VALUE_H 1
 
-#include "BibbleVM/util/string_pool.h"
+#include "BibbleVM/core/oop/type.h"
 
 #include <cstdint>
 
@@ -20,26 +20,30 @@ namespace bibblevm {
     namespace executor {
         class Function;
         class Module;
-        struct Future;
     }
 
-    //TODO: find a way to optimize the size of this monolith down to 8 bytes (from 16)
-    union Value {
-        Byte b;
-        UByte ub;
-        Short s;
-        UShort us;
-        Int i;
-        UInt ui;
-        Long l;
-        ULong ul;
-        float f;
-        double d;
-        String str;
-        executor::Module* mi;
-        executor::Function* fi;
-        executor::Future* future;
+    namespace oop {
+        struct Object;
+    }
+
+    struct Value {
+        oop::TypeID type; // TODO: replace the union with a set of get/set functions that handle type assignment
+        union {
+            Byte b;
+            UByte ub;
+            Short s;
+            UShort us;
+            Int i;
+            UInt ui;
+            Long l;
+            ULong ul;
+            float f;
+            double d;
+            oop::Object* obj;
+            executor::Module* mi;
+            executor::Function* fi;
+        };
     };
 }
 
-#endif //BIBBLEVM_VALUE_H
+#endif //BIBBLEVM_CORE_VALUE_H

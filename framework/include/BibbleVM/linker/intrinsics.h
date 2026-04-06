@@ -3,7 +3,7 @@
 #ifndef BIBBLEVM_LINKER_INTRINSICS_H
 #define BIBBLEVM_LINKER_INTRINSICS_H 1
 
-#include "BibbleVM/executor/function.h"
+#include "BibbleVM/core/executor/function.h"
 
 namespace bibblevm::linker {
     struct IntrinsicFunction {

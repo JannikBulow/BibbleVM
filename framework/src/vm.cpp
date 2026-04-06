@@ -3,6 +3,10 @@
 #include "BibbleVM/vm.h"
 
 namespace bibblevm {
+    VM::VM() {
+        mMemoryManager.init(*this); // TODO: check result and throw a tantrum
+    }
+
     linker::Module* VM::getModule(String name) const {
         for (const auto& module : mModules) {
             if (module->linkedModule().getName() == name) return module.get();

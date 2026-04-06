@@ -3,3 +3,4 @@ project(BibbleVM)
 
 add_subdirectory(framework)
 add_subdirectory(main)
+add_subdirectory(tests)

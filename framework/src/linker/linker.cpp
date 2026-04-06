@@ -1,11 +1,11 @@
 // Copyright 2026 Jannik Laugmand Bülow
 
+#include "BibbleVM/core/module/instruction.h"
+
 #include "BibbleVM/core/opcodes.h"
 
 #include "BibbleVM/linker/intrinsics.h"
 #include "BibbleVM/linker/linker.h"
-
-#include "BibbleVM/module/instruction.h"
 
 #include "BibbleVM/vm.h"
 
@@ -33,7 +33,7 @@ namespace bibblevm::linker {
                     linkedEntry.l = entry.u.l;
                     break;
                 case module::ConstPool::STRING:
-                    linkedEntry.str = vm.stringPool().intern(entry.u.str);
+                    linkedEntry.obj = vm.stringPool().intern(vm, entry.u.str).get()->asObject();
                     break;
                 case module::ConstPool::MODULE_INFO: {
                     Module* m = vm.getModule(entries[entry.u.mi.name].u.str); // PreVerifier has ensured this exists, but not that it's fully loaded
@@ -134,7 +134,7 @@ namespace bibblevm::linker {
     }
 
     bool LinkFunctions(executor::Function* functions, VM& vm, GrowingArenaAllocator& arena, const executor::ConstPool& moduleConstPool, const module::Module& module) {
-        const IntrinsicModule* intrinsicModule = GetIntrinsicsModule(moduleConstPool.get(module.name).str);
+        const IntrinsicModule* intrinsicModule = GetIntrinsicsModule(String(moduleConstPool.get(module.name).obj->asString()));
 
         for (uint16_t i = 0; i < module.functionCount; i++) {
             const module::Function& function = module.functions[i];
@@ -190,9 +190,9 @@ namespace bibblevm::linker {
             module::Function& function = rawModule.functions[i];
             String name{};
             if (function.name >= rawModule.constPool.getEntryCount()) {
-                name = vm.stringPool().intern(function.constPool.getEntries()[function.name - rawModule.constPool.getEntryCount()].u.str);
+                name = vm.stringPool().intern(vm, function.constPool.getEntries()[function.name - rawModule.constPool.getEntryCount()].u.str);
             } else {
-                name = vm.stringPool().intern(rawModule.constPool.getEntries()[function.name].u.str);
+                name = vm.stringPool().intern(vm, rawModule.constPool.getEntries()[function.name].u.str);
             }
             linkedFunctions[i] = executor::Function(name); // holy fuck this is ugly
         }
@@ -201,7 +201,7 @@ namespace bibblevm::linker {
 
         if (!LinkFunctions(linkedFunctions, vm, module.arena(), linkedConstPool, rawModule)) return false;
 
-        linkedModule = executor::Module(linkedConstPool.get(rawModule.name).str, std::move(linkedConstPool), rawModule.functionCount, linkedFunctions);
+        linkedModule = executor::Module(linkedConstPool.get(rawModule.name).obj->asString(), std::move(linkedConstPool), rawModule.functionCount, linkedFunctions);
 
         module.setStage(Stage::Linked);
 

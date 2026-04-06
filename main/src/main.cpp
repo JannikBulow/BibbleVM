@@ -100,8 +100,8 @@ int main(int argc, char** argv) {
     bibblevm::executor::Function* mainFunction = mainModule->linkedModule().getFunction("main");
     if (mainFunction == nullptr) return 3;
 
-    bibblevm::executor::Task* task = vm.scheduler().schedule(*mainFunction);
-    bibblevm::executor::Future* future = task->completionFuture;
+    bibblevm::executor::Task* task = vm.scheduler().schedule(vm, *mainFunction, nullptr);
+    bibblevm::oop::Future* future = task->completionFuture;
     vm.scheduler().run(vm);
 
     if (!future->ready) return 4;

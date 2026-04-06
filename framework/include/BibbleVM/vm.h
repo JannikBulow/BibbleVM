@@ -3,9 +3,13 @@
 #ifndef BIBBLEVM_VM_H
 #define BIBBLEVM_VM_H 1
 
-#include "BibbleVM/executor/scheduler.h"
+#include "BibbleVM/core/executor/scheduler.h"
+
+#include "BibbleVM/core/gc/memory_manager.h"
 
 #include "BibbleVM/linker/module.h"
+
+#include "BibbleVM/util/time_manager.h"
 
 #include "BibbleVM/api.h"
 
@@ -16,7 +20,7 @@ namespace bibblevm {
     // BibbleVM shared state. BibbleVM intentionally doesn't use a global state so you can have more than one VM running in the same process.
     class BIBBLEVM_EXPORT VM {
     public:
-        VM() = default;
+        VM();
 
         VM(const VM&) = delete;
         VM& operator=(const VM&) = delete;
@@ -25,6 +29,8 @@ namespace bibblevm {
         VM& operator=(VM&&) noexcept = default;
 
         StringPool& stringPool() { return mStringPool; }
+        TimeManager<> timeManager() const { return mTimeManager; }
+        gc::MemoryManager& memoryManager() { return mMemoryManager; }
         executor::Scheduler& scheduler() { return mScheduler; }
 
         linker::Module* getModule(String name) const;
@@ -34,6 +40,8 @@ namespace bibblevm {
 
     private:
         StringPool mStringPool;
+        TimeManager<> mTimeManager;
+        gc::MemoryManager mMemoryManager;
         executor::Scheduler mScheduler;
 
         std::vector<std::unique_ptr<linker::Module>> mModules; // TODO: make a better solution for the memory shit here

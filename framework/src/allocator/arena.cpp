@@ -58,6 +58,7 @@ namespace bibblevm {
     }
 
     void* StaticArenaAllocator::allocate(size_t size) {
+        size = (size + 15) & ~15;
         if (mUsed + size > mSize) return nullptr;
 
         void* pointer = static_cast<char*>(base()) + mUsed;

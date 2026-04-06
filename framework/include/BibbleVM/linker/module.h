@@ -5,9 +5,9 @@
 
 #include "BibbleVM/allocator/arena.h"
 
-#include "BibbleVM/executor/module.h"
+#include "BibbleVM/core/executor/module.h"
 
-#include "BibbleVM/module/module.h"
+#include "BibbleVM/core/module/module.h"
 
 #include <condition_variable>
 #include <mutex>

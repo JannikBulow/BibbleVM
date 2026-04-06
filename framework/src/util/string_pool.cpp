@@ -2,33 +2,25 @@
 
 #include "BibbleVM/util/string_pool.h"
 
+#include "BibbleVM/vm.h"
+
 #include <cstring>
 
 namespace bibblevm {
-    StringPool::StringPool()
-        : mAllocator(GrowingArenaAllocator::Create(16 * 1024 * 1024, 0, false)) {}
+    String StringPool::intern(VM& vm, const char* data, size_t length) {
+        if (length == 0) length = strlen(data);
+        return intern(vm, {data, length});
+    }
 
-    String StringPool::intern(const char* data, size_t length) {
-        if (length == 0) length = std::strlen(data);
+    String StringPool::intern(VM& vm, std::string_view string) {
+        auto it = mStrings.find(string);
+        if (it != mStrings.end()) return *it;
 
-        String str(data, length);
+        oop::Object* stringObject = vm.memoryManager().allocateImmortalString(string);
+        String str = stringObject->asString();
 
-        if (mStrings.contains(str)) {
-            return str;
-        }
-
-        str.mData = allocate(data, length);
         mStrings.insert(str);
+
         return str;
-    }
-
-    String StringPool::intern(std::string_view string) {
-        return intern(string.data(), string.length());
-    }
-
-    char* StringPool::allocate(const char* data, size_t length) {
-        char* buf = mAllocator.allocate<char>(length);
-        memcpy(buf, data, length);
-        return buf;
     }
 }

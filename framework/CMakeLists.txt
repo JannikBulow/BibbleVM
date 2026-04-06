@@ -13,24 +13,30 @@ FetchContent_Declare(utf8cpp
     GIT_REPOSITORY https://github.com/nemtrif/utfcpp
     GIT_TAG v4.0.9
 )
-
 FetchContent_MakeAvailable(utf8cpp)
 
 set(SOURCES
     src/allocator/arena.cpp
 
-    src/executor/const_pool.cpp
-    src/executor/function.cpp
-    src/executor/interpreter.cpp
-    src/executor/module.cpp
-    src/executor/scheduler.cpp
-    src/executor/stack.cpp
-    src/executor/task.cpp
+    src/core/executor/const_pool.cpp
+    src/core/executor/function.cpp
+    src/core/executor/interpreter.cpp
+    src/core/executor/module.cpp
+    src/core/executor/scheduler.cpp
+    src/core/executor/stack.cpp
+
+    src/core/gc/memory_manager.cpp
+    src/core/gc/nursery.cpp
+
+    src/core/oop/class.cpp
+    src/core/oop/future.cpp
+    src/core/oop/string.cpp
+    src/core/oop/type.cpp
 
     src/linker/intrinsics.cpp
     src/linker/linker.cpp
 
-    src/module/instruction.cpp
+    src/core/module/instruction.cpp
 
     src/util/string_pool.cpp
 
@@ -41,30 +47,42 @@ set(SOURCES
 set(HEADERS
     include/BibbleVM/allocator/arena.h
 
+    include/BibbleVM/core/executor/const_pool.h
+    include/BibbleVM/core/executor/function.h
+    include/BibbleVM/core/executor/instruction.h
+    include/BibbleVM/core/executor/interpreter.h
+    include/BibbleVM/core/executor/module.h
+    include/BibbleVM/core/executor/scheduler.h
+    include/BibbleVM/core/executor/scheduler_message.h
+    include/BibbleVM/core/executor/stack.h
+    include/BibbleVM/core/executor/task.h
+
+    include/BibbleVM/core/gc/memory_manager.h
+    include/BibbleVM/core/gc/nursery.h
+
+    include/BibbleVM/core/module/const_pool.h
+    include/BibbleVM/core/module/function.h
+    include/BibbleVM/core/module/instruction.h
+    include/BibbleVM/core/module/module.h
+
+    include/BibbleVM/core/oop/array_view.h
+    include/BibbleVM/core/oop/class.h
+    include/BibbleVM/core/oop/field.h
+    include/BibbleVM/core/oop/method.h
+    include/BibbleVM/core/oop/object.h
+    include/BibbleVM/core/oop/string.h
+    include/BibbleVM/core/oop/type.h
+
     include/BibbleVM/core/opcodes.h
     include/BibbleVM/core/value.h
-
-    include/BibbleVM/executor/const_pool.h
-    include/BibbleVM/executor/function.h
-    include/BibbleVM/executor/instruction.h
-    include/BibbleVM/executor/interpreter.h
-    include/BibbleVM/executor/module.h
-    include/BibbleVM/executor/scheduler.h
-    include/BibbleVM/executor/scheduler_message.h
-    include/BibbleVM/executor/stack.h
-    include/BibbleVM/executor/task.h
 
     include/BibbleVM/linker/intrinsics.h
     include/BibbleVM/linker/linker.h
     include/BibbleVM/linker/module.h
 
-    include/BibbleVM/module/const_pool.h
-    include/BibbleVM/module/function.h
-    include/BibbleVM/module/instruction.h
-    include/BibbleVM/module/module.h
-
     include/BibbleVM/util/safe_math.h
     include/BibbleVM/util/string_pool.h
+    include/BibbleVM/util/time_manager.h
 
     include/BibbleVM/init.h
     include/BibbleVM/vm.h
