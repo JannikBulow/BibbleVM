@@ -91,14 +91,14 @@ TEST(MemoryManager, MultipleRoots) {
 
 TEST(MemoryManager, StressAllocationAndCollection) {
     VM vm;
-    std::vector<oop::Object*> roots;
+    std::vector<std::unique_ptr<oop::Object*>> roots;
 
     const int total = 100000000;
     for (int i = 0; i < total; i++) {
         oop::Object* obj = vm.memoryManager().allocateString("stress");
         if (i % 500 == 0) {
-            roots.push_back(obj);
-            vm.memoryManager().addRoot(&roots.back());
+            roots.push_back(std::make_unique<oop::Object*>(obj));
+            vm.memoryManager().addRoot(roots.back().get());
         }
 
         if (obj == nullptr) vm.memoryManager().safepoint(vm);
@@ -106,7 +106,7 @@ TEST(MemoryManager, StressAllocationAndCollection) {
 
     vm.memoryManager().safepoint(vm);
 
-    for (auto* r : roots) {
+    for (auto& r : roots) {
         EXPECT_NE(r, nullptr);
     }
 }
