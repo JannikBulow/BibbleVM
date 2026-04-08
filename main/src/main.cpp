@@ -80,7 +80,8 @@ void DefineMainModule(bibblevm::linker::Module& linkerModule) {
 int main(int argc, char** argv) {
     bibblevm::InitDependencies();
 
-    bibblevm::VM vm;
+    bibblevm::Config config;
+    bibblevm::VM vm(config);
 
     std::unique_ptr<bibblevm::linker::Module> module = std::make_unique<bibblevm::linker::Module>();
     DefineIntrinsicsModule(*module);
