@@ -35,7 +35,7 @@ namespace bibblevm {
     };
 
     struct GCConfig {
-        Nanoseconds pauseBudget = 200us;
+        Nanoseconds pauseBudget = 200ms;
 
         size_t rememberedSetReserve = 1024;
 
