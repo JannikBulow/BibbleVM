@@ -14,6 +14,7 @@ set(SOURCES
 )
 
 source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SOURCES})
+enable_testing()
 
 add_executable(BibbleVM-tests ${SOURCES})
 
