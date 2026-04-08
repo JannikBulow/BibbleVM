@@ -17,8 +17,8 @@ TEST(MemoryManager, BasicStringAllocation) {
     config.debug.enableDebugLogging = true;
     VM vm(config);
 
-    oop::Object* s1 = vm.memoryManager().allocateString("hello");
-    oop::Object* s2 = vm.memoryManager().allocateString("world");
+    oop::Object* s1 = vm.memoryManager().allocateString(vm , "hello");
+    oop::Object* s2 = vm.memoryManager().allocateString(vm , "world");
 
     ASSERT_NE(s1, nullptr);
     ASSERT_NE(s2, nullptr);
@@ -41,13 +41,13 @@ TEST(MemoryManager, NurseryCollectionWithRoots) {
 
     std::vector<oop::Object*> roots;
     for (int i = 0; i < 100; i++) {
-        oop::Object* obj = vm.memoryManager().allocateString("rooted");
+        oop::Object* obj = vm.memoryManager().allocateString(vm , "rooted");
         roots.push_back(obj);
         vm.memoryManager().addRoot(&roots.back());
     }
 
     for (int i = 0; i < 1000; i++) {
-        vm.memoryManager().allocateString("ephemeral");
+        vm.memoryManager().allocateString(vm , "ephemeral");
     }
 
     vm.memoryManager().safepoint(vm);
@@ -63,11 +63,11 @@ TEST(MemoryManager, ForwardingAfterGC) {
     config.debug.enableDebugLogging = true;
     VM vm(config);
 
-    oop::Object* obj = vm.memoryManager().allocateString("forwarding");
+    oop::Object* obj = vm.memoryManager().allocateString(vm , "forwarding");
     vm.memoryManager().addRoot(&obj);
 
     for (int i = 0; i < 1000; i++) {
-        vm.memoryManager().allocateString("dummy");
+        vm.memoryManager().allocateString(vm , "dummy");
     }
 
     vm.memoryManager().safepoint(vm);
@@ -85,7 +85,7 @@ TEST(MemoryManager, MultipleRoots) {
 
     std::vector<oop::Object*> objs;
     for (int i = 0; i < 50; i++) {
-        objs.push_back(vm.memoryManager().allocateString("multiroot"));
+        objs.push_back(vm.memoryManager().allocateString(vm , "multiroot"));
     }
     vm.memoryManager().addRoot(objs);
 
@@ -99,15 +99,15 @@ TEST(MemoryManager, MultipleRoots) {
 
 TEST(MemoryManager, StressAllocationAndCollection) {
     Config config;
+    config.gc.pauseBudget = 10ms;
     config.memory.nurseryGrowthThreshold = 0.01;
-    config.gc.pauseBudget = Nanoseconds::zero();
     config.debug.enableDebugLogging = true;
     VM vm(config);
     std::vector<std::unique_ptr<oop::Object*>> roots;
 
     const int total = 100000000;
     for (int i = 0; i < total; i++) {
-        oop::Object* obj = vm.memoryManager().allocateString("stress");
+        oop::Object* obj = vm.memoryManager().allocateString(vm , "stress");
         if (i % 500 == 0) {
             roots.push_back(std::make_unique<oop::Object*>(obj));
             vm.memoryManager().addRoot(roots.back().get());

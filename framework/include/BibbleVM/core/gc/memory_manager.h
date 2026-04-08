@@ -57,17 +57,19 @@ namespace bibblevm::gc {
 
         const oop::Type* getType(oop::TypeID id) const;
 
-        oop::Object* allocateInstance(oop::Class* clas);
+        oop::Object* allocateInstance(VM& vm, oop::Class* clas);
 
-        oop::Object* allocateArray(oop::TypeID baseType, ULong length);
-        oop::Object* reallocateArray(oop::Object* array, ULong newLength);
+        oop::Object* allocateArray(VM& vm, oop::TypeID baseType, ULong length);
+        oop::Object* reallocateArray(VM& vm, oop::Object* array, ULong newLength);
 
-        oop::Object* allocateString(ULong lengthBytes);
-        oop::Object* allocateString(std::string_view copy);
-        oop::Object* allocateImmortalString(ULong lengthBytes);
-        oop::Object* allocateImmortalString(std::string_view copy);
+        oop::Object* allocateString(VM& vm, ULong lengthBytes);
+        oop::Object* allocateString(VM& vm, std::string_view copy);
+        oop::Object* allocateImmortalString(VM& vm, ULong lengthBytes);
+        oop::Object* allocateImmortalString(VM& vm, std::string_view copy);
 
         oop::Object* allocateFuture();
+
+        void writeBarrier(oop::Object* object, oop::Object* child);
 
         void addRoot(oop::Object** root) { addRoot({root, 1}); }
         void addRoot(Root root);
@@ -112,6 +114,8 @@ namespace bibblevm::gc {
 
         Phase mPhase = Phase::Idle;
         State mState{};
+
+        oop::Object* allocateRawObject(VM& vm, size_t size);
 
         bool shouldPause(VM& vm) const;
 

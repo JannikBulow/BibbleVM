@@ -16,7 +16,7 @@ namespace bibblevm {
         auto it = mStrings.find(string);
         if (it != mStrings.end()) return *it;
 
-        oop::Object* stringObject = vm.memoryManager().allocateImmortalString(string);
+        oop::Object* stringObject = vm.memoryManager().allocateImmortalString(vm, string);
         String str = stringObject->asString();
 
         mStrings.insert(str);

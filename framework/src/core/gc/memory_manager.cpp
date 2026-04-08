@@ -8,6 +8,7 @@
 
 namespace bibblevm::gc {
     bool MemoryManager::init(VM& vm) {
+        mRememberedSet.reserve(vm.config().gc.rememberedSetReserve);
         return mNursery.init(vm.config().memory.nurseryMinSize);
     }
 
@@ -64,8 +65,8 @@ namespace bibblevm::gc {
         return &mTypes[id];
     }
 
-    oop::Object* MemoryManager::allocateInstance(oop::Class* clas) {
-        oop::Object* object = mNursery.allocateInFromSpace(clas->getMemorySize());
+    oop::Object* MemoryManager::allocateInstance(VM& vm, oop::Class* clas) {
+        oop::Object* object = allocateRawObject(vm, clas->getMemorySize());
         if (object != nullptr) {
             object->type = getInstanceType(clas);
             object->asInstance()->finalizerQueued = false;
@@ -73,16 +74,16 @@ namespace bibblevm::gc {
         return object;
     }
 
-    oop::Object* MemoryManager::allocateArray(oop::TypeID baseType, ULong length) {
+    oop::Object* MemoryManager::allocateArray(VM& vm, oop::TypeID baseType, ULong length) {
         return nullptr;
     }
 
-    oop::Object* MemoryManager::reallocateArray(oop::Object* array, ULong newLength) {
+    oop::Object* MemoryManager::reallocateArray(VM& vm, oop::Object* array, ULong newLength) {
         return nullptr;
     }
 
-    oop::Object* MemoryManager::allocateString(ULong lengthBytes) {
-        oop::Object* object = mNursery.allocateInFromSpace(sizeof(oop::StringObject) + lengthBytes);
+    oop::Object* MemoryManager::allocateString(VM& vm, ULong lengthBytes) {
+        oop::Object* object = allocateRawObject(vm, sizeof(oop::StringObject) + lengthBytes);
         if (object != nullptr) {
             object->type = getStringType();
             object->asString()->lengthBytes = lengthBytes;
@@ -90,8 +91,8 @@ namespace bibblevm::gc {
         return object;
     }
 
-    oop::Object* MemoryManager::allocateString(std::string_view copy) {
-        oop::Object* object = mNursery.allocateInFromSpace(sizeof(oop::StringObject) + copy.size());
+    oop::Object* MemoryManager::allocateString(VM& vm, std::string_view copy) {
+        oop::Object* object = allocateRawObject(vm, sizeof(oop::StringObject) + copy.size());
         if (object != nullptr) {
             object->type = getStringType();
             object->asString()->lengthBytes = copy.size();
@@ -100,7 +101,7 @@ namespace bibblevm::gc {
         return object;
     }
 
-    oop::Object* MemoryManager::allocateImmortalString(ULong lengthBytes) {
+    oop::Object* MemoryManager::allocateImmortalString(VM& vm, ULong lengthBytes) {
         //TODO: refine this with custom immortal heap
         oop::StringObject* object = static_cast<oop::StringObject*>(malloc(sizeof(oop::StringObject) + lengthBytes));
         new(object) oop::StringObject();
@@ -109,7 +110,7 @@ namespace bibblevm::gc {
         return object->asObject();
     }
 
-    oop::Object* MemoryManager::allocateImmortalString(std::string_view copy) {
+    oop::Object* MemoryManager::allocateImmortalString(VM& vm, std::string_view copy) {
         oop::StringObject* object = static_cast<oop::StringObject*>(malloc(sizeof(oop::StringObject) + copy.size()));
         new(object) oop::StringObject();
         object->asObject()->type = getStringType();
@@ -129,6 +130,10 @@ namespace bibblevm::gc {
         return object;
     }
 
+    void MemoryManager::writeBarrier(oop::Object* object, oop::Object* child) {
+
+    }
+
     void MemoryManager::addRoot(Root root) {
         mRoots.push_back(root);
     }
@@ -138,8 +143,8 @@ namespace bibblevm::gc {
 
         switch (mPhase) {
             case Phase::Idle:
-                mPhase = Phase::NurseryCollecting; // TODO: do some real shit to determine if we need to collect yet
                 vm.scheduler().setGCRunning(true);
+                mPhase = Phase::NurseryCollecting;
             case Phase::NurseryCollecting:
                 nurseryCollect(vm);
                 if (shouldPause(vm)) break;
@@ -163,12 +168,25 @@ namespace bibblevm::gc {
         }
     }
 
+    oop::Object* MemoryManager::allocateRawObject(VM& vm, size_t size) {
+        return mNursery.allocateInFromSpace(size);
+    }
+
     bool MemoryManager::shouldPause(VM& vm) const {
         if (vm.config().gc.pauseBudget == Nanoseconds::zero()) return false;
-        return vm.timeManager().hasPassed(mSafePointStart, vm.config().gc.pauseBudget);
+        if (vm.timeManager().hasPassed(mSafePointStart, vm.config().gc.pauseBudget)) {
+            vm.debugLog(
+                "GC",
+                "Pause budget exceeded. Yielding"
+            );
+            return true;
+        }
+        return false;
     }
 
     void MemoryManager::nurseryCollect(VM& vm) {
+        if (mNursery.getFromLoadFactor() < vm.config().gc.nurseryCollectionThreshold) return;
+
         auto& state = mState.nursery;
 
         if (state.scan == nullptr) {
