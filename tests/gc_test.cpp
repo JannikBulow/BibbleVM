@@ -8,7 +8,7 @@
 
 using namespace bibblevm;
 
-constexpr bool isAligned(void* ptr, size_t alignment) {
+static bool isAligned(void* ptr, size_t alignment) {
     return reinterpret_cast<uintptr_t>(ptr) % alignment == 0;
 }
 
