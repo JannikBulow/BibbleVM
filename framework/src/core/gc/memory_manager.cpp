@@ -242,7 +242,7 @@ namespace bibblevm::gc {
                         if (!hasYoungChild) {
                             vm.debugLog(
                                 "GC",
-                                "RememberedSet remove object={}",
+                                "RememberedSet remove object={:016X}",
                                 reinterpret_cast<uintptr_t>(object)
                             );
 
@@ -316,7 +316,7 @@ namespace bibblevm::gc {
 
         vm.debugLog(
             "GC",
-            "Resizing nursery {} -> {} | fromStart={} | newFromStart={}",
+            "Resizing nursery {} -> {} | fromStart={:016X} | newFromStart={:016X}",
             mNursery.getSpaceSize(),
             newSize,
             reinterpret_cast<uintptr_t>(mNursery.fromStart),
@@ -331,12 +331,14 @@ namespace bibblevm::gc {
         auto& allTasks = vm.scheduler().allTasks();
 
         auto logResize = [&vm, offset](oop::Object* object) {
+            /*
             vm.debugLog(
                 "GC",
-                "Resize fix | object={} | newObject={}",
+                "Resize fix | object={:016X} | newObject={:016X}",
                 reinterpret_cast<uintptr_t>(object),
                 reinterpret_cast<uintptr_t>(object) + offset
             );
+            */
         };
 
         for (auto& task : allTasks) {
@@ -404,7 +406,7 @@ namespace bibblevm::gc {
             /*
             vm.debugLog(
                 "GC",
-                "Forward reuse {} -> {}",
+                "Forward reuse {:016X} -> {:016X}",
                 reinterpret_cast<uintptr_t>(object),
                 reinterpret_cast<uintptr_t>(object->forward)
             );
@@ -419,7 +421,7 @@ namespace bibblevm::gc {
         /*
         vm.debugLog(
             "GC",
-            "Forward copy {} -> {} | size={}",
+            "Forward copy {:016X} -> {:016X} | size={}",
             reinterpret_cast<uintptr_t>(object),
             reinterpret_cast<uintptr_t>(newObject),
             object->allocatedSize
@@ -444,7 +446,7 @@ namespace bibblevm::gc {
 
                     vm.debugLog(
                         "GC",
-                        "Finalizer queued | object={} typeId={}",
+                        "Finalizer queued | object={:016X} | typeId={}",
                         reinterpret_cast<uintptr_t>(object),
                         object->type
                     );
