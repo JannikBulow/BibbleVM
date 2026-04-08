@@ -12,8 +12,8 @@ namespace bibblevm {
     using namespace std::chrono_literals;
 
     using Nanoseconds = std::chrono::nanoseconds;
-    using MicroSeconds = std::chrono::microseconds;
-    using MilliSeconds = std::chrono::milliseconds;
+    using Microseconds = std::chrono::microseconds;
+    using Milliseconds = std::chrono::milliseconds;
     using Seconds = std::chrono::seconds;
     using Minutes = std::chrono::minutes;
     using Hours = std::chrono::hours;
