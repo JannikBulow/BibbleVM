@@ -14,23 +14,40 @@ namespace bibblevm::gc {
     struct BIBBLEVM_EXPORT Nursery {
         uint8_t* fromStart;
         uint8_t* fromEnd;
+        uint8_t* fromAllocPointer;
 
         uint8_t* toStart;
         uint8_t* toEnd;
-
-        uint8_t* allocPointer;
+        uint8_t* toAllocPointer;
 
         Nursery() = default;
         ~Nursery();
 
+        Nursery& operator=(Nursery&& other) noexcept;
+
         bool init(size_t size);
+
+        uint8_t* getMemoryStart() const;
+        uint8_t* getMemoryEnd() const;
+
+        size_t getSpaceSize() const;
 
         void swap();
 
-        oop::Object* allocate(size_t byteSize);
+        oop::Object* allocateInFromSpace(size_t byteSize);
+        oop::Object* allocateInToSpace(size_t byteSize);
+
+        double getFromLoadFactor() const;
+        double getToLoadFactor() const;
+
+        void resetFromSpace();
+        void resetToSpace();
 
         bool isInFromSpace(const void* pointer) const;
         bool isInToSpace(const void* pointer) const;
+
+    private:
+        void destroy();
     };
 }
 

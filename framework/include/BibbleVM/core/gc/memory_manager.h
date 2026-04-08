@@ -86,7 +86,6 @@ namespace bibblevm::gc {
         union State {
             struct {
                 uint8_t* scan = nullptr;
-                uint8_t* allocPointer = nullptr;
 
                 NurseryCollectPhase phase = NurseryCollectPhase::Roots;
 
@@ -102,7 +101,6 @@ namespace bibblevm::gc {
         std::unordered_map<oop::Class*, oop::TypeID> mInstanceTypes;
         std::unordered_map<oop::TypeID, oop::TypeID> mArrayTypes;
 
-        Nanoseconds mPauseBudget{};
         TimeManager<>::TimePoint mSafePointStart;
 
         Nursery mNursery{};
@@ -118,7 +116,8 @@ namespace bibblevm::gc {
         bool shouldPause(VM& vm) const;
 
         void nurseryCollect(VM& vm);
-        oop::Object* forward(oop::Object* object);
+        void resizeNursery(VM& vm);
+        oop::Object* forward(VM& vm, oop::Object* object);
         void finalizeDeadObjectsInNursery(VM& vm);
 
         void oldHeapCollect(VM& vm);

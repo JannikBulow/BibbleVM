@@ -8,8 +8,7 @@
 
 namespace bibblevm::gc {
     bool MemoryManager::init(VM& vm) {
-        mPauseBudget = 0ns;
-        return mNursery.init(512 * 1024 * 1024);
+        return mNursery.init(vm.config().memory.nurseryMinSize);
     }
 
     oop::TypeID MemoryManager::getPrimitiveType(oop::Type::Kind kind) {
@@ -66,7 +65,7 @@ namespace bibblevm::gc {
     }
 
     oop::Object* MemoryManager::allocateInstance(oop::Class* clas) {
-        oop::Object* object = mNursery.allocate(clas->getMemorySize());
+        oop::Object* object = mNursery.allocateInFromSpace(clas->getMemorySize());
         if (object != nullptr) {
             object->type = getInstanceType(clas);
             object->asInstance()->finalizerQueued = false;
@@ -83,7 +82,7 @@ namespace bibblevm::gc {
     }
 
     oop::Object* MemoryManager::allocateString(ULong lengthBytes) {
-        oop::Object* object = mNursery.allocate(sizeof(oop::StringObject) + lengthBytes);
+        oop::Object* object = mNursery.allocateInFromSpace(sizeof(oop::StringObject) + lengthBytes);
         if (object != nullptr) {
             object->type = getStringType();
             object->asString()->lengthBytes = lengthBytes;
@@ -92,7 +91,7 @@ namespace bibblevm::gc {
     }
 
     oop::Object* MemoryManager::allocateString(std::string_view copy) {
-        oop::Object* object = mNursery.allocate(sizeof(oop::StringObject) + copy.size());
+        oop::Object* object = mNursery.allocateInFromSpace(sizeof(oop::StringObject) + copy.size());
         if (object != nullptr) {
             object->type = getStringType();
             object->asString()->lengthBytes = copy.size();
@@ -120,7 +119,7 @@ namespace bibblevm::gc {
     }
 
     oop::Object* MemoryManager::allocateFuture() {
-        oop::Object* object = mNursery.allocate(sizeof(oop::Future));
+        oop::Object* object = mNursery.allocateInFromSpace(sizeof(oop::Future));
         if (object != nullptr) {
             object->type = getFutureType();
             object->asFuture()->ready = false;
@@ -135,6 +134,8 @@ namespace bibblevm::gc {
     }
 
     void MemoryManager::safepoint(VM& vm) {
+        mSafePointStart = vm.timeManager().now();
+
         switch (mPhase) {
             case Phase::Idle:
                 mPhase = Phase::NurseryCollecting; // TODO: do some real shit to determine if we need to collect yet
@@ -163,14 +164,25 @@ namespace bibblevm::gc {
     }
 
     bool MemoryManager::shouldPause(VM& vm) const {
-        if (mPauseBudget == Nanoseconds::zero()) return false;
-        return vm.timeManager().hasPassed(mSafePointStart, mPauseBudget);
+        if (vm.config().gc.pauseBudget == Nanoseconds::zero()) return false;
+        return vm.timeManager().hasPassed(mSafePointStart, vm.config().gc.pauseBudget);
     }
 
     void MemoryManager::nurseryCollect(VM& vm) {
         auto& state = mState.nursery;
 
-        if (state.scan == nullptr) state.allocPointer = mNursery.toStart;
+        if (state.scan == nullptr) {
+            mNursery.resetToSpace();
+            state.scan = mNursery.toStart;
+
+            vm.debugLog(
+                "GC",
+                "Nursery collection start | fromUsed={} bytes ({} load) | rememberedSetCount={}",
+                mNursery.fromAllocPointer - mNursery.fromStart,
+                mNursery.getFromLoadFactor(),
+                mRememberedSet.size()
+            );
+        }
 
         auto& allTasks = vm.scheduler().allTasks();
 
@@ -193,7 +205,7 @@ namespace bibblevm::gc {
                             uint16_t registerCount = frame.getFunction().getRegisterCount();
                             for (uint16_t i = 0; i < registerCount; i++) {
                                 if (mTypes[frame[i].type].isObjectType()) {
-                                    frame[i].obj = forward(frame[i].obj);
+                                    frame[i].obj = forward(vm, frame[i].obj);
                                 }
                             }
                         }
@@ -204,39 +216,70 @@ namespace bibblevm::gc {
                         if (shouldPause(vm)) return;
 
                         for (oop::Object*& object : mRoots[state.rootIndex]) {
-                            object = forward(object);
+                            object = forward(vm, object);
                         }
                     }
 
                     state.phase = NurseryCollectPhase::RememberedSet;
                     state.rememberedIndex = 0;
+
+                    vm.debugLog(
+                        "GC",
+                        "Nursery collection | Roots phase finished"
+                    );
                 }
                 case NurseryCollectPhase::RememberedSet: {
                     for (; state.rememberedIndex < mRememberedSet.size(); state.rememberedIndex++) {
                         if (shouldPause(vm)) return;
 
                         oop::Object* object = mRememberedSet[state.rememberedIndex];
-                        object->visitChildren(&mTypes[object->type], [this](oop::Object*& child) {
-                            child = forward(child);
+                        bool hasYoungChild = false;
+                        object->visitChildren(&mTypes[object->type], [this, &hasYoungChild, &vm](oop::Object*& child) {
+                            child = forward(vm, child);
+                            if (mNursery.isInFromSpace(child)) hasYoungChild = true;
                         });
+
+                        if (!hasYoungChild) {
+                            vm.debugLog(
+                                "GC",
+                                "RememberedSet remove object={}",
+                                reinterpret_cast<uintptr_t>(object)
+                            );
+
+                            // hacky implementation, but should work
+                            mRememberedSet[state.rememberedIndex] = mRememberedSet.back();
+                            mRememberedSet.pop_back();
+                            state.rememberedIndex--;
+                        }
                     }
 
                     state.phase = NurseryCollectPhase::CheneyScan;
-                    if (state.scan == nullptr) state.scan = mNursery.toStart;
+
+                    vm.debugLog(
+                        "GC",
+                        "Nursery collection | RememberedSet phase finished | remainingEntries={}",
+                        mRememberedSet.size()
+                    );
                 }
                 case NurseryCollectPhase::CheneyScan: {
-                    while (state.scan < state.allocPointer) {
+                    while (state.scan < mNursery.toAllocPointer) {
                         if (shouldPause(vm)) return;
 
                         oop::Object* object = reinterpret_cast<oop::Object*>(state.scan);
-                        object->visitChildren(&mTypes[object->type], [this](oop::Object*& child) {
-                            child = forward(child);
+                        object->visitChildren(&mTypes[object->type], [this, &vm](oop::Object*& child) {
+                            child = forward(vm, child);
                         });
 
                         state.scan += object->allocatedSize;
                     }
 
                     state.phase = NurseryCollectPhase::Done;
+
+                    vm.debugLog(
+                        "GC",
+                        "Nursery collection | CheneyScan phase finished | scannedBytes={}",
+                        state.scan - mNursery.toStart
+                    );
                 }
                 case NurseryCollectPhase::Done:
                     break;
@@ -245,20 +288,143 @@ namespace bibblevm::gc {
 
         finalizeDeadObjectsInNursery(vm);
 
+        vm.debugLog(
+            "GC",
+            "Nursery collection finished | toUsed={} ({} load) bytes",
+            mNursery.toAllocPointer - mNursery.toStart,
+            mNursery.getToLoadFactor()
+        );
+
         mNursery.swap();
-        mNursery.allocPointer = state.allocPointer;
         state = {}; // c++ my beloved
+
+        if (mNursery.getFromLoadFactor() >= vm.config().memory.nurseryGrowthThreshold) {
+            resizeNursery(vm);
+        }
 
         mPhase = Phase::OldHeapCollecting;
     }
 
-    oop::Object* MemoryManager::forward(oop::Object* object) {
-        if (!mNursery.isInFromSpace(object)) return object;
-        if (object->forward != nullptr) return object->forward;
+    void MemoryManager::resizeNursery(VM& vm) {
+        auto start = vm.timeManager().now();
 
-        oop::Object* newObject = reinterpret_cast<oop::Object*>(mState.nursery.allocPointer);
+        size_t newSize = std::min(static_cast<size_t>(mNursery.getSpaceSize() * vm.config().memory.nurseryGrowthFactor), vm.config().memory.nurseryMaxSize);
+        if (newSize == mNursery.getSpaceSize()) return;
+
+        Nursery newNursery;
+        if (!newNursery.init(newSize)) return; // TODO: exceptions
+
+        vm.debugLog(
+            "GC",
+            "Resizing nursery {} -> {} | fromStart={} | newFromStart={}",
+            mNursery.getSpaceSize(),
+            newSize,
+            reinterpret_cast<uintptr_t>(mNursery.fromStart),
+            reinterpret_cast<uintptr_t>(newNursery.fromStart)
+        );
+
+        memcpy(newNursery.fromStart, mNursery.fromStart, mNursery.fromAllocPointer - mNursery.fromStart);
+        newNursery.fromAllocPointer = newNursery.fromStart + (mNursery.fromAllocPointer - mNursery.fromStart);
+
+        ptrdiff_t offset = newNursery.fromStart - mNursery.fromStart;
+
+        auto& allTasks = vm.scheduler().allTasks();
+
+        auto logResize = [&vm, offset](oop::Object* object) {
+            vm.debugLog(
+                "GC",
+                "Resize fix | object={} | newObject={}",
+                reinterpret_cast<uintptr_t>(object),
+                reinterpret_cast<uintptr_t>(object) + offset
+            );
+        };
+
+        for (auto& task : allTasks) {
+            executor::Stack& stack = task->stack;
+            for (executor::Frame* framePtr = stack.getTop(); framePtr != nullptr; framePtr = framePtr->getPrev()) {
+                executor::Frame& frame = *framePtr;
+                uint16_t registerCount = frame.getFunction().getRegisterCount();
+                for (uint16_t i = 0; i < registerCount; i++) {
+                    if (mTypes[frame[i].type].isObjectType()) {
+                        if (mNursery.isInFromSpace(frame[i].obj)) {
+                            logResize(frame[i].obj);
+                            frame[i].obj = reinterpret_cast<oop::Object*>(reinterpret_cast<uint8_t*>(frame[i].obj) + offset);
+                        }
+                    }
+                }
+            }
+        }
+
+        for (auto& root : mRoots) {
+            for (oop::Object*& object : root) {
+                if (mNursery.isInFromSpace(object)) {
+                    logResize(object);
+                    object = reinterpret_cast<oop::Object*>(reinterpret_cast<uint8_t*>(object) + offset);
+                }
+            }
+        }
+
+        for (oop::Object* object : mRememberedSet) {
+            object->visitChildren(&mTypes[object->type], [this, &logResize, offset](oop::Object*& child) {
+                if (mNursery.isInFromSpace(child)) {
+                    logResize(child);
+                    child = reinterpret_cast<oop::Object*>(reinterpret_cast<uint8_t*>(child) + offset);
+                }
+            });
+        }
+
+        uint8_t* scan = newNursery.fromStart;
+
+        while (scan < newNursery.fromAllocPointer) {
+            oop::Object* object = reinterpret_cast<oop::Object*>(scan);
+            object->visitChildren(&mTypes[object->type], [this, &logResize, offset](oop::Object*& child) {
+                if (mNursery.isInFromSpace(child)) {
+                    logResize(child);
+                    child = reinterpret_cast<oop::Object*>(reinterpret_cast<uint8_t*>(child) + offset);
+                }
+            });
+
+            scan += object->allocatedSize;
+        }
+
+        vm.debugLog(
+            "GC",
+            "Nursery resized | offset={} | newFromUsed={} | time={}",
+            offset,
+            newNursery.fromAllocPointer - newNursery.fromStart,
+            vm.timeManager().now() - start
+        );
+
+        mNursery = std::move(newNursery);
+    }
+
+    oop::Object* MemoryManager::forward(VM& vm, oop::Object* object) {
+        if (!mNursery.isInFromSpace(object)) return object;
+        if (object->forward != nullptr) {
+            /*
+            vm.debugLog(
+                "GC",
+                "Forward reuse {} -> {}",
+                reinterpret_cast<uintptr_t>(object),
+                reinterpret_cast<uintptr_t>(object->forward)
+            );
+            */
+            return object->forward;
+        }
+
+        oop::Object* newObject = mNursery.allocateInToSpace(object->allocatedSize);
         memcpy(newObject, object, object->allocatedSize);
-        mState.nursery.allocPointer += object->allocatedSize;
+        newObject->age++;
+
+        /*
+        vm.debugLog(
+            "GC",
+            "Forward copy {} -> {} | size={}",
+            reinterpret_cast<uintptr_t>(object),
+            reinterpret_cast<uintptr_t>(newObject),
+            object->allocatedSize
+        );
+        */
 
         object->forward = newObject;
         return newObject;
@@ -267,14 +433,21 @@ namespace bibblevm::gc {
     void MemoryManager::finalizeDeadObjectsInNursery(VM& vm) {
         uint8_t* scan = mNursery.fromStart;
 
-        while (scan < mNursery.allocPointer) {
+        while (scan < mNursery.fromAllocPointer) {
             oop::Object* object = reinterpret_cast<oop::Object*>(scan);
 
             if (object->forward == nullptr && mTypes[object->type].kind == oop::Type::Instance) {
                 if (mTypes[object->type].instanceClass->hasFinalizer()) {
                     object->asInstance()->finalizerQueued = true;
-                    oop::Object* newObject = forward(object);
+                    oop::Object* newObject = forward(vm, object);
                     mFinalizerQueue.push_back(newObject);
+
+                    vm.debugLog(
+                        "GC",
+                        "Finalizer queued | object={} typeId={}",
+                        reinterpret_cast<uintptr_t>(object),
+                        object->type
+                    );
                 }
             }
 

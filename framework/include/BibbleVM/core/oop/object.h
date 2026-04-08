@@ -27,6 +27,7 @@ namespace bibblevm::oop {
         TypeID type;
         uint32_t allocatedSize;
         Object* forward = nullptr;
+        uint8_t age = 0;
 
         Instance* asInstance() { return reinterpret_cast<Instance*>(this); }
         Array* asArray() { return reinterpret_cast<Array*>(this); }

@@ -13,7 +13,9 @@ static bool isAligned(void* ptr, size_t alignment) {
 }
 
 TEST(MemoryManager, BasicStringAllocation) {
-    VM vm;
+    Config config;
+    config.debug.enableDebugLogging = true;
+    VM vm(config);
 
     oop::Object* s1 = vm.memoryManager().allocateString("hello");
     oop::Object* s2 = vm.memoryManager().allocateString("world");
@@ -33,7 +35,9 @@ TEST(MemoryManager, BasicStringAllocation) {
 }
 
 TEST(MemoryManager, NurseryCollectionWithRoots) {
-    VM vm;
+    Config config;
+    config.debug.enableDebugLogging = true;
+    VM vm(config);
 
     std::vector<oop::Object*> roots;
     for (int i = 0; i < 100; i++) {
@@ -55,7 +59,9 @@ TEST(MemoryManager, NurseryCollectionWithRoots) {
 }
 
 TEST(MemoryManager, ForwardingAfterGC) {
-    VM vm;
+    Config config;
+    config.debug.enableDebugLogging = true;
+    VM vm(config);
 
     oop::Object* obj = vm.memoryManager().allocateString("forwarding");
     vm.memoryManager().addRoot(&obj);
@@ -73,7 +79,9 @@ TEST(MemoryManager, ForwardingAfterGC) {
 }
 
 TEST(MemoryManager, MultipleRoots) {
-    VM vm;
+    Config config;
+    config.debug.enableDebugLogging = true;
+    VM vm(config);
 
     std::vector<oop::Object*> objs;
     for (int i = 0; i < 50; i++) {
@@ -90,7 +98,11 @@ TEST(MemoryManager, MultipleRoots) {
 }
 
 TEST(MemoryManager, StressAllocationAndCollection) {
-    VM vm;
+    Config config;
+    config.memory.nurseryGrowthThreshold = 0.01;
+    config.gc.pauseBudget = Nanoseconds::zero();
+    config.debug.enableDebugLogging = true;
+    VM vm(config);
     std::vector<std::unique_ptr<oop::Object*>> roots;
 
     const int total = 100000000;

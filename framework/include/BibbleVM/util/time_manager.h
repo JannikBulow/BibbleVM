@@ -37,7 +37,8 @@ namespace bibblevm {
 
         template<class T = TimePoint>
         T now() const {
-            return std::chrono::duration_cast<T>(Clock::now() - mStart);
+            if constexpr (std::is_same_v<T, TimePoint>) return TimePoint(Clock::now() - mStart);
+            else return std::chrono::duration_cast<T>(Clock::now() - mStart);
         }
 
         template<class T = Nanoseconds>

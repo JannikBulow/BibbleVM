@@ -3,7 +3,8 @@
 #include "BibbleVM/vm.h"
 
 namespace bibblevm {
-    VM::VM() {
+    VM::VM(const Config& config)
+        : mConfig(config) {
         mMemoryManager.init(*this); // TODO: check result and throw a tantrum
     }
 
