@@ -43,7 +43,7 @@ namespace bibblevm {
 
         template<class T = Nanoseconds>
         bool hasPassed(TimePoint prev, T duration) const {
-            return (Clock::now() - prev) >= std::chrono::duration_cast<Duration>(duration);
+            return (now() - prev) >= std::chrono::duration_cast<Duration>(duration);
         }
 
     private:
