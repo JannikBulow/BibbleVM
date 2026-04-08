@@ -40,6 +40,7 @@ set(SOURCES
 
     src/util/string_pool.cpp
 
+    src/config.cpp
     src/init.cpp
     src/vm.cpp
 )
@@ -84,6 +85,7 @@ set(HEADERS
     include/BibbleVM/util/string_pool.h
     include/BibbleVM/util/time_manager.h
 
+    include/BibbleVM/config.h
     include/BibbleVM/init.h
     include/BibbleVM/vm.h
 )
