@@ -6,6 +6,7 @@
 #include "BibbleVM/core/oop/field.h"
 #include "BibbleVM/core/oop/method.h"
 
+#include <array>
 #include <cstdint>
 #include <span>
 #include <vector>
