@@ -60,6 +60,7 @@ set(HEADERS
 
     include/BibbleVM/core/gc/memory_manager.h
     include/BibbleVM/core/gc/nursery.h
+    include/BibbleVM/core/gc/old_gen_heap.h
 
     include/BibbleVM/core/module/const_pool.h
     include/BibbleVM/core/module/function.h
