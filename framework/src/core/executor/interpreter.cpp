@@ -99,6 +99,7 @@ namespace bibblevm::executor {
 
     DEFINE_INTERPRETER(UMOD) {
         frame[args.generic.a].ul = frame[args.generic.b].ul % frame[args.generic.c].ul;
+        return InterpreterMessage::NoRequest();
     }
 
     DEFINE_INTERPRETER(NEG) {
@@ -228,6 +229,7 @@ namespace bibblevm::executor {
 
     DEFINE_INTERPRETER(TR32) {
         frame[args.generic.a].ui = static_cast<UInt>(frame[args.generic.b].ul);
+        return InterpreterMessage::NoRequest();
     }
 
     DEFINE_INTERPRETER(TR32S) {
