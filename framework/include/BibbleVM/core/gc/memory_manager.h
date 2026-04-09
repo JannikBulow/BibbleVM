@@ -85,17 +85,15 @@ namespace bibblevm::gc {
             Done,
         };
 
-        union State {
-            struct {
-                uint8_t* scan = nullptr;
+        struct NurseryCollectState {
+            uint8_t* scan = nullptr;
 
-                NurseryCollectPhase phase = NurseryCollectPhase::Roots;
+            NurseryCollectPhase phase = NurseryCollectPhase::Roots;
 
-                size_t stackIndex = 0;
-                executor::Frame* currentFrame = nullptr;
-                size_t rootIndex = 0;
-                size_t rememberedIndex = 0;
-            } nursery;
+            size_t stackIndex = 0;
+            executor::Frame* currentFrame = nullptr;
+            size_t rootIndex = 0;
+            size_t rememberedIndex = 0;
         };
 
         std::vector<oop::Type> mTypes;
@@ -113,7 +111,7 @@ namespace bibblevm::gc {
         std::vector<oop::Object*> mRememberedSet;
 
         Phase mPhase = Phase::Idle;
-        State mState{};
+        NurseryCollectState mNurseryCollectState{};
 
         oop::Object* allocateRawObject(VM& vm, size_t size);
 

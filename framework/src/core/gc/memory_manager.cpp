@@ -187,7 +187,7 @@ namespace bibblevm::gc {
     void MemoryManager::nurseryCollect(VM& vm) {
         if (mNursery.getFromLoadFactor() < vm.config().gc.nurseryCollectionThreshold) return;
 
-        auto& state = mState.nursery;
+        auto& state = mNurseryCollectState;
 
         if (state.scan == nullptr) {
             mNursery.resetToSpace();
