@@ -10,7 +10,7 @@
 namespace bibblevm::oop {
     void Future::addWaiter(VM& vm, executor::Task* waiter) {
         GrowingArrayView<executor::Task*> waitersView(vm.memoryManager(), waiters, waiterCount);
-        waitersView.add(waiter);
+        waitersView.add(vm, waiter);
     }
 
     void Future::complete(VM& vm, Value value) {
