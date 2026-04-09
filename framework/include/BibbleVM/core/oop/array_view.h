@@ -39,10 +39,10 @@ namespace bibblevm::oop {
         T& operator[](ULong index) { return data()[index]; }
         const T& operator[](ULong index) const { return data()[index]; }
 
-        T* add(const T& value) {
+        T* add(VM& vm, const T& value) {
             if (mArray == nullptr || size() >= capacity()) {
                 ULong newCapacity = capacity() * 2;
-                mArray = mMemoryManager.reallocateArray(mArray, newCapacity);
+                mArray = mMemoryManager.reallocateArray(vm, mArray, newCapacity);
                 if (mArray == nullptr) {
                     return nullptr;
                 }
@@ -52,10 +52,10 @@ namespace bibblevm::oop {
             return &data()[mSize - 1];
         }
 
-        T* add(T&& value) {
+        T* add(VM& vm, T&& value) {
             if (mArray == nullptr || size() >= capacity()) {
                 ULong newCapacity = capacity() * 2;
-                mArray = mMemoryManager.reallocateArray(mArray, newCapacity);
+                mArray = mMemoryManager.reallocateArray(vm, mArray, newCapacity);
                 if (mArray == nullptr) {
                     return nullptr;
                 }
