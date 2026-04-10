@@ -32,8 +32,8 @@ namespace bibblevm::gc {
 
         oop::Object* allocate(size_t byteSize);
 
-        void grow(size_t newRegionSize);
-        void shrink();
+        void grow(VM& vm);
+        void shrink(VM& vm);
 
         void startCollection(VM& vm);
         bool stepCollection(VM& vm, TimeManager<>::TimePoint startTime);
@@ -41,7 +41,22 @@ namespace bibblevm::gc {
         void markObject(oop::Object* object);
 
     private:
+        struct Region {
+            uint8_t* start;
+            uint8_t* allocPointer;
+            Region* next;
 
+            static Region* Create(size_t size, Region* next);
+            void destroy();
+        };
+
+        Region* mHead = nullptr;
+
+        size_t mTotalCapacity = 0;
+        size_t mTotalUsed = 0;
+
+        Phase mPhase = Phase::Idle;
+        uint8_t mCurrentEpoch : 1 = 0;
     };
 }
 

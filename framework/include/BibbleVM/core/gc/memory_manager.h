@@ -6,6 +6,7 @@
 #include "BibbleVM/core/executor/stack.h"
 
 #include "BibbleVM/core/gc/nursery.h"
+#include "BibbleVM/core/gc/old_gen_heap.h"
 
 #include "BibbleVM/core/oop/object.h"
 
@@ -42,6 +43,7 @@ namespace bibblevm::gc {
     };
 
     class BIBBLEVM_EXPORT MemoryManager {
+    friend class OldGenHeap;
     public:
         MemoryManager() = default;
 
