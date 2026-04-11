@@ -4,11 +4,13 @@
 
 #include "BibbleVM/core/oop/class.h"
 
+#include "BibbleVM/_debug.h"
 #include "BibbleVM/vm.h"
 
 namespace bibblevm::gc {
     bool MemoryManager::init(VM& vm) {
         mRememberedSet.reserve(vm.config().gc.rememberedSetReserve);
+        if (!mOldGenHeap.init(vm)) return false;
         return mNursery.init(vm.config().memory.nurseryMinSize);
     }
 
@@ -131,7 +133,13 @@ namespace bibblevm::gc {
     }
 
     void MemoryManager::writeBarrier(oop::Object* object, oop::Object* child) {
+        if (mOldGenHeap.containsObject(object) && mNursery.isInFromSpace(child)) {
+            mRememberedSet.push_back(object);
+        }
 
+        if (mOldGenHeap.isCollecting()) {
+            mOldGenHeap.markObject(child);
+        }
     }
 
     void MemoryManager::addRoot(Root root) {
@@ -141,31 +149,36 @@ namespace bibblevm::gc {
     void MemoryManager::safepoint(VM& vm) {
         mSafePointStart = vm.timeManager().now();
 
-        switch (mPhase) {
-            case Phase::Idle:
-                vm.scheduler().setGCRunning(true);
-                mPhase = Phase::NurseryCollecting;
-            case Phase::NurseryCollecting:
-                nurseryCollect(vm);
-                if (shouldPause(vm)) break;
-            case Phase::OldHeapCollecting:
-                oldHeapCollect(vm);
-                if (shouldPause(vm)) break;
-            case Phase::Done:
-                vm.scheduler().safeDeleteExpiredTasks();
-                vm.scheduler().setGCRunning(false);
-                mPhase = Phase::Idle;
-                break;
+        bool didGCWork = false;
+
+        if (mNursery.getFromLoadFactor() >= vm.config().gc.nurseryCollectionThreshold || mNurseryCollectState.phase != NurseryCollectPhase::Idle) {
+            vm.scheduler().setGCRunning(true);
+            nurseryCollect(vm);
+            didGCWork = true;
         }
 
-        for (oop::Object* object : mFinalizerQueue) {
-            Value asValue{};
-            asValue.type = object->type;
-            asValue.obj = object;
-
-            oop::Class* clas = mTypes[object->type].instanceClass;
-            vm.scheduler().schedule(vm, *clas->dispatchMethod(clas->getFinalizer()), &asValue);
+        if (mOldGenHeap.getLoadFactor() >= vm.config().gc.oldGenHeapCollectionThreshold || mOldGenHeap.isCollecting()) {
+            vm.scheduler().setGCRunning(true);
+            oldHeapCollect(vm);
+            didGCWork = true;
         }
+
+        if (!didGCWork) {
+            vm.scheduler().setGCRunning(false);
+        }
+
+        if (didGCWork && mNurseryCollectState.phase == NurseryCollectPhase::Idle && !mOldGenHeap.isCollecting()) {
+            vm.scheduler().setGCRunning(false);
+        }
+
+        if (!vm.scheduler().isGCRunning()) {
+            vm.scheduler().safeDeleteExpiredTasks();
+        }
+    }
+
+    void MemoryManager::queueFinalizer(VM& vm, oop::Object* object) {
+        if (vm.config().gc.disableFinalizers) return;
+        mFinalizerQueue.push_back(object);
     }
 
     oop::Object* MemoryManager::allocateRawObject(VM& vm, size_t size) {
@@ -210,12 +223,15 @@ namespace bibblevm::gc {
         while (state.phase != NurseryCollectPhase::Done) {
             // Fallthrough is intentional
             switch (state.phase) {
+                case NurseryCollectPhase::Idle:
+                    state.phase = NurseryCollectPhase::Roots;
                 case NurseryCollectPhase::Roots: {
                     // scan the stack root set
                     for (; state.stackIndex < stackCount; state.stackIndex++) {
                         if (shouldPause(vm)) return;
 
-                        executor::Stack& stack = allTasks[state.stackIndex]->stack;
+                        //TODO: make this safer since the program could tear itself down and then this would track nonexistent frame pointers
+                        if (state.currentFrame != nullptr) state.currentFrame = allTasks[state.stackIndex]->stack.getTop();
                         for (; state.currentFrame != nullptr; state.currentFrame = state.currentFrame->getPrev()) {
                             if (shouldPause(vm)) return;
 
@@ -319,14 +335,12 @@ namespace bibblevm::gc {
         if (mNursery.getFromLoadFactor() >= vm.config().memory.nurseryGrowthThreshold) {
             resizeNursery(vm);
         }
-
-        mPhase = Phase::OldHeapCollecting;
     }
 
     void MemoryManager::resizeNursery(VM& vm) {
         auto start = vm.timeManager().now();
 
-        size_t newSize = std::min(static_cast<size_t>(mNursery.getSpaceSize() * vm.config().memory.nurseryGrowthFactor), vm.config().memory.nurseryMaxSize);
+        size_t newSize = std::min(static_cast<size_t>(static_cast<double>(mNursery.getSpaceSize()) * vm.config().memory.nurseryGrowthFactor), vm.config().memory.nurseryMaxSize);
         if (newSize == mNursery.getSpaceSize()) return;
 
         Nursery newNursery;
@@ -419,6 +433,7 @@ namespace bibblevm::gc {
     }
 
     oop::Object* MemoryManager::forward(VM& vm, oop::Object* object) {
+        if (object == nullptr) return nullptr;
         if (!mNursery.isInFromSpace(object)) return object;
         if (object->forward != nullptr) {
             /*
@@ -432,9 +447,15 @@ namespace bibblevm::gc {
             return object->forward;
         }
 
-        oop::Object* newObject = mNursery.allocateInToSpace(object->allocatedSize);
+        oop::Object* newObject;
+        if (object->age >= vm.config().gc.promotionAge) newObject = promote(vm, object);
+        else newObject = mNursery.allocateInToSpace(object->allocatedSize);
+
         memcpy(newObject, object, object->allocatedSize);
         newObject->age++;
+
+        BIBBLEVM_ASSERT(object->allocatedSize != 0);
+        BIBBLEVM_ASSERT(newObject->allocatedSize != 0);
 
         /*
         vm.debugLog(
@@ -450,7 +471,23 @@ namespace bibblevm::gc {
         return newObject;
     }
 
+    oop::Object* MemoryManager::promote(VM& vm, oop::Object* object) {
+        oop::Object* newObject = mOldGenHeap.allocate(vm, object->allocatedSize);
+        /*
+        vm.debugLog(
+            "GC",
+            "Object promotion {:016X} -> {:016X} | size={}",
+            reinterpret_cast<uintptr_t>(object),
+            reinterpret_cast<uintptr_t>(newObject),
+            object->allocatedSize
+        );
+        */
+        return newObject;
+    }
+
     void MemoryManager::finalizeDeadObjectsInNursery(VM& vm) {
+        if (vm.config().gc.disableFinalizers) return;
+
         uint8_t* scan = mNursery.fromStart;
 
         while (scan < mNursery.fromAllocPointer) {
@@ -476,6 +513,7 @@ namespace bibblevm::gc {
     }
 
     void MemoryManager::oldHeapCollect(VM& vm) {
-
+        mOldGenHeap.startCollection(vm); // this function internally checks if it's already active so just remember to update this if that's ever changed
+        mOldGenHeap.stepCollection(vm, mSafePointStart + vm.config().gc.pauseBudget);
     }
 }

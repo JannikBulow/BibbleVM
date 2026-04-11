@@ -22,13 +22,6 @@
 #include <vector>
 
 namespace bibblevm::gc {
-    enum class Phase {
-        Idle,
-        NurseryCollecting,
-        OldHeapCollecting,
-        Done,
-    };
-
     struct Root {
         using Iterator = oop::Object**;
 
@@ -73,6 +66,8 @@ namespace bibblevm::gc {
 
         void writeBarrier(oop::Object* object, oop::Object* child);
 
+        const std::vector<Root>& roots() const { return mRoots; }
+
         void addRoot(oop::Object** root) { addRoot({root, 1}); }
         void addRoot(Root root);
 
@@ -81,6 +76,7 @@ namespace bibblevm::gc {
 
     private:
         enum class NurseryCollectPhase {
+            Idle,
             Roots,
             RememberedSet,
             CheneyScan,
@@ -106,14 +102,17 @@ namespace bibblevm::gc {
         TimeManager<>::TimePoint mSafePointStart;
 
         Nursery mNursery{};
+        OldGenHeap mOldGenHeap{};
 
         std::vector<oop::Object*> mFinalizerQueue;
 
         std::vector<Root> mRoots;
+
         std::vector<oop::Object*> mRememberedSet;
 
-        Phase mPhase = Phase::Idle;
         NurseryCollectState mNurseryCollectState{};
+
+        void queueFinalizer(VM& vm, oop::Object* object);
 
         oop::Object* allocateRawObject(VM& vm, size_t size);
 
@@ -122,6 +121,7 @@ namespace bibblevm::gc {
         void nurseryCollect(VM& vm);
         void resizeNursery(VM& vm);
         oop::Object* forward(VM& vm, oop::Object* object);
+        oop::Object* promote(VM& vm, oop::Object* object);
         void finalizeDeadObjectsInNursery(VM& vm);
 
         void oldHeapCollect(VM& vm);
