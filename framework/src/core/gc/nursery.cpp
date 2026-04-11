@@ -69,7 +69,7 @@ namespace bibblevm::gc {
         if (fromAllocPointer + byteSize > fromEnd) return nullptr;
 
         oop::Object* object = reinterpret_cast<oop::Object*>(fromAllocPointer);
-        new(object) oop::Object(0, byteSize, nullptr, 0);
+        new(object) oop::Object(0, byteSize, nullptr, 0, 0);
         fromAllocPointer += byteSize;
         return object;
     }
@@ -79,7 +79,7 @@ namespace bibblevm::gc {
         if (toAllocPointer + byteSize > toEnd) return nullptr;
 
         oop::Object* object = reinterpret_cast<oop::Object*>(toAllocPointer);
-        new(object) oop::Object(0, byteSize, nullptr, 0);
+        new(object) oop::Object(0, byteSize, nullptr, 0, 0);
         toAllocPointer += byteSize;
         return object;
     }
