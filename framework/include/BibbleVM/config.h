@@ -45,6 +45,8 @@ namespace bibblevm {
         size_t largeObjectCollectionFrequency = 10; // how many gc cycles before we consider scanning the large object heap
         double promotionPressureThreshold = 0.15;
 
+        uint8_t promotionAge = 3;
+
         // For advanced users only. Should NEVER be enabled in programs that utilize the Bibble Standard Library
         bool disableFinalizers = false;
 
