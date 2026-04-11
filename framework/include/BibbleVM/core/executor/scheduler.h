@@ -14,6 +14,7 @@ namespace bibblevm::executor {
     public:
         std::vector<Task*>& allTasks() { return mAllTasks; }
 
+        bool isGCRunning() const { return mGCRunning; }
         void setGCRunning(bool value) { mGCRunning = value; }
         void safeDeleteExpiredTasks();
 
