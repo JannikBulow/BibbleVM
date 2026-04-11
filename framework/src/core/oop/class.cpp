@@ -52,7 +52,7 @@ namespace bibblevm::oop {
         return nullptr;
     }
 
-    executor::Function* Class::dispatchMethod(Method* method) const {
+    executor::Function* Class::dispatchMethod(const Method* method) const {
         return mVtable[method->vtableIndex]->function;
     }
 

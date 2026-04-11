@@ -21,7 +21,7 @@ namespace bibblevm::oop {
         Class(String name, Class* superClass, std::span<Field> fields, std::span<Method> methods, std::span<Method*> unlinkedVtable); // constructor takes unlinked vtable because the linker controls the memory and the Class uses it
 
         String getName() const { return mName; }
-        Class* getSuperClass() { return mSuperClass; }
+        Class* getSuperClass() const { return mSuperClass; }
         Method* getFinalizer() const { return mFinalizer; }
         bool hasFinalizer() const { return mFinalizer != nullptr; }
         uint64_t getMemorySize() const { return mMemorySize; }
@@ -33,7 +33,7 @@ namespace bibblevm::oop {
         const Method* getMethod(String name) const;
         const Method* getMethod(std::string_view name) const;
 
-        executor::Function* dispatchMethod(Method* method) const;
+        executor::Function* dispatchMethod(const Method* method) const;
 
         bool isAssignableTo(Class* other) const;
 
