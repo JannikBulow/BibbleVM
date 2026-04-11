@@ -99,8 +99,6 @@ TEST(MemoryManager, MultipleRoots) {
 
 TEST(MemoryManager, StressAllocationAndCollection) {
     Config config;
-    config.gc.pauseBudget = 10ms;
-    config.memory.nurseryGrowthThreshold = 0.01;
     config.debug.enableDebugLogging = true;
     VM vm(config);
     std::vector<std::unique_ptr<oop::Object*>> roots;
@@ -114,6 +112,7 @@ TEST(MemoryManager, StressAllocationAndCollection) {
         }
 
         if (obj == nullptr) vm.memoryManager().safepoint(vm);
+        else EXPECT_EQ(obj->allocatedSize, 48);
     }
 
     vm.memoryManager().safepoint(vm);
