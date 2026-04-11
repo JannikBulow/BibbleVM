@@ -27,6 +27,7 @@ set(SOURCES
 
     src/core/gc/memory_manager.cpp
     src/core/gc/nursery.cpp
+    src/core/gc/old_gen_heap.cpp
 
     src/core/oop/class.cpp
     src/core/oop/future.cpp
@@ -86,6 +87,7 @@ set(HEADERS
     include/BibbleVM/util/string_pool.h
     include/BibbleVM/util/time_manager.h
 
+    include/BibbleVM/_debug.h
     include/BibbleVM/config.h
     include/BibbleVM/init.h
     include/BibbleVM/vm.h
@@ -93,8 +95,7 @@ set(HEADERS
 
 source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS})
 
-add_library(BibbleVM-framework-shared SHARED ${SOURCES} ${HEADERS}
-    include/BibbleVM/linker/intrinsics.h)
+add_library(BibbleVM-framework-shared SHARED ${SOURCES} ${HEADERS})
 add_library(BibbleVM-framework-static STATIC ${SOURCES} ${HEADERS})
 
 generate_export_header(BibbleVM-framework-shared
@@ -105,6 +106,9 @@ generate_export_header(BibbleVM-framework-shared
 )
 
 target_compile_definitions(BibbleVM-framework-static PUBLIC BIBBLEVM_STATIC_DEFINE)
+
+target_compile_definitions(BibbleVM-framework-shared PRIVATE $<$<CONFIG:Debug>:BIBBLEVM_ENABLE_DEBUG>)
+target_compile_definitions(BibbleVM-framework-static PRIVATE $<$<CONFIG:Debug>:BIBBLEVM_ENABLE_DEBUG>)
 
 target_include_directories(BibbleVM-framework-shared PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
