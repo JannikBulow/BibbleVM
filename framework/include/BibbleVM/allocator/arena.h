@@ -40,6 +40,8 @@ namespace bibblevm {
     // RAII wrapper for StaticArenaAllocator
     class BIBBLEVM_EXPORT ArenaAllocator {
     public:
+        using RestorePoint = StaticArenaAllocator::RestorePoint;
+
         ArenaAllocator(StaticArenaAllocator* allocator)
             : mAllocator(allocator) {}
 
@@ -60,7 +62,8 @@ namespace bibblevm {
             Region* prev;
 
             Region(size_t size, size_t committed, Region* prev)
-                : StaticArenaAllocator(size, committed), prev(prev) {}
+                : StaticArenaAllocator(size, committed)
+                , prev(prev) {}
 
             static Region* Create(size_t size, Region* prev, bool preCommit);
 

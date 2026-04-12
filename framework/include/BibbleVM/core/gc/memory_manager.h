@@ -3,6 +3,8 @@
 #ifndef BIBBLEVM_CORE_GC_MEMORY_MANAGER_H
 #define BIBBLEVM_CORE_GC_MEMORY_MANAGER_H 1
 
+#include "BibbleVM/allocator/arena.h"
+
 #include "BibbleVM/core/executor/stack.h"
 
 #include "BibbleVM/core/gc/nursery.h"
@@ -38,7 +40,7 @@ namespace bibblevm::gc {
     class BIBBLEVM_EXPORT MemoryManager {
     friend class OldGenHeap;
     public:
-        MemoryManager() = default;
+        MemoryManager();
 
         bool init(VM& vm);
 
@@ -62,7 +64,7 @@ namespace bibblevm::gc {
         oop::Object* allocateImmortalString(VM& vm, ULong lengthBytes);
         oop::Object* allocateImmortalString(VM& vm, std::string_view copy);
 
-        oop::Object* allocateFuture();
+        oop::Object* allocateFuture(VM& vm);
 
         void writeBarrier(oop::Object* object, oop::Object* child);
 
@@ -101,6 +103,7 @@ namespace bibblevm::gc {
 
         TimeManager<>::TimePoint mSafePointStart;
 
+        GrowingArenaAllocator mImmortalAllocator;
         Nursery mNursery{};
         OldGenHeap mOldGenHeap{};
 

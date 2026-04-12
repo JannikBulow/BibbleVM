@@ -81,7 +81,7 @@ namespace bibblevm {
     void StaticArenaAllocator::clear(bool decommitMemory) {
         mUsed = sizeof(StaticArenaAllocator);
 
-        if (decommitMemory) {
+        if (decommitMemory) [[unlikely]] {
             os_result res = os_mem_free(
                 static_cast<char*>(base()) + sizeof(StaticArenaAllocator),
                 mCommitted - sizeof(StaticArenaAllocator),

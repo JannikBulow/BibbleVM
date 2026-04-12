@@ -8,6 +8,9 @@
 #include "BibbleVM/vm.h"
 
 namespace bibblevm::gc {
+    MemoryManager::MemoryManager()
+        : mImmortalAllocator(GrowingArenaAllocator::Create(4 * 1024 * 1024)) {}
+
     bool MemoryManager::init(VM& vm) {
         mRememberedSet.reserve(vm.config().gc.rememberedSetReserve);
         if (!mOldGenHeap.init(vm)) return false;
@@ -104,8 +107,7 @@ namespace bibblevm::gc {
     }
 
     oop::Object* MemoryManager::allocateImmortalString(VM& vm, ULong lengthBytes) {
-        //TODO: refine this with custom immortal heap
-        oop::StringObject* object = static_cast<oop::StringObject*>(malloc(sizeof(oop::StringObject) + lengthBytes));
+        oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + lengthBytes));
         new(object) oop::StringObject();
         object->asObject()->type = getStringType();
         object->lengthBytes = lengthBytes;
@@ -113,7 +115,7 @@ namespace bibblevm::gc {
     }
 
     oop::Object* MemoryManager::allocateImmortalString(VM& vm, std::string_view copy) {
-        oop::StringObject* object = static_cast<oop::StringObject*>(malloc(sizeof(oop::StringObject) + copy.size()));
+        oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + copy.size()));
         new(object) oop::StringObject();
         object->asObject()->type = getStringType();
         object->lengthBytes = copy.size();
@@ -121,8 +123,8 @@ namespace bibblevm::gc {
         return object->asObject();
     }
 
-    oop::Object* MemoryManager::allocateFuture() {
-        oop::Object* object = mNursery.allocateInFromSpace(sizeof(oop::Future));
+    oop::Object* MemoryManager::allocateFuture(VM& vm) {
+        oop::Object* object = allocateRawObject(vm, sizeof(oop::Future));
         if (object != nullptr) {
             object->type = getFutureType();
             object->asFuture()->ready = false;
