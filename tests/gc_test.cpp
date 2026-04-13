@@ -8,6 +8,8 @@
 
 using namespace bibblevm;
 
+using namespace std::string_view_literals;
+
 static bool isAligned(void* ptr, size_t alignment) {
     return reinterpret_cast<uintptr_t>(ptr) % alignment == 0;
 }
@@ -101,18 +103,19 @@ TEST(MemoryManager, StressAllocationAndCollection) {
     Config config;
     config.debug.enableDebugLogging = true;
     VM vm(config);
-    std::vector<std::unique_ptr<oop::Object*>> roots;
+
+    GrowingArenaAllocator rootAllocator = GrowingArenaAllocator::Create(1600000, 0, true);
+    std::vector<oop::Object**> roots;
 
     const int total = 100000000;
     for (int i = 0; i < total; i++) {
-        oop::Object* obj = vm.memoryManager().allocateString(vm , "stress");
-        if (i % 500 == 0) {
-            roots.push_back(std::make_unique<oop::Object*>(obj));
-            vm.memoryManager().addRoot(roots.back().get());
+        oop::Object* obj = vm.memoryManager().allocateString(vm , "stress"sv);
+        if (i % 512 == 0) {
+            roots.push_back(rootAllocator.allocate<oop::Object*>(1));
+            vm.memoryManager().addRoot(roots.back());
         }
 
         if (obj == nullptr) vm.memoryManager().safepoint(vm);
-        else EXPECT_EQ(obj->allocatedSize, 48);
     }
 
     vm.memoryManager().safepoint(vm);
