@@ -26,7 +26,7 @@ namespace bibblevm::executor {
         Frame& frame = task->stack.pushFrame(function);
         memcpy(&frame[0], arguments, function.getParameterCount() * sizeof(Value));
 
-        oop::Object* futureObject = vm.memoryManager().allocateFuture();
+        oop::Object* futureObject = vm.memoryManager().allocateFuture(vm);
         task->completionFuture = futureObject->asFuture();
 
         mAllTasks.push_back(task);
