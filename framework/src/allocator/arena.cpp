@@ -39,7 +39,7 @@ namespace bibblevm {
             return nullptr;
         }
 
-        auto* allocator = new(base) StaticArenaAllocator(size, preCommit);
+        auto* allocator = new(base) StaticArenaAllocator(size, preCommit ? size : os_mem_getpagesize());
         allocator->allocate(sizeof(StaticArenaAllocator));
 
         return allocator;
@@ -156,7 +156,7 @@ namespace bibblevm {
             return nullptr;
         }
 
-        auto* allocator = new(base) Region(size, preCommit, prev);
+        auto* allocator = new(base) Region(size, preCommit ? size : os_mem_getpagesize(), prev);
         allocator->allocate(sizeof(Region));
 
         return allocator;
