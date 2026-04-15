@@ -34,7 +34,7 @@ namespace bibblevm::gc {
         Phase getPhase() const { return mPhase; }
         bool isCollecting() const { return mPhase != Phase::Idle; }
 
-        bool containsObject(const oop::Object* object) const;
+        bool containsObject(oop::Object* object);
 
         oop::Object* allocate(VM& vm, size_t byteSize);
 
@@ -100,7 +100,7 @@ namespace bibblevm::gc {
         size_t mTotalUsed = 0;
 
         Phase mPhase = Phase::Idle;
-        uint8_t mMarkEpoch : 1 = 0;
+        uint8_t mMarkEpoch = 0;
 
         union {
             RootsState roots{};

@@ -24,6 +24,13 @@
 #include <vector>
 
 namespace bibblevm::gc {
+    constexpr uint8_t NURSERY_ID = 1;
+    constexpr uint8_t OLD_GEN_ID = 2;
+    constexpr uint8_t IMMORTAL_ID = 3;
+    constexpr uint8_t LOH_ID = 4;
+
+    constexpr uint8_t NOT_OLD_GEN_ID = 253;
+
     struct Root {
         using Iterator = oop::Object**;
 
@@ -88,7 +95,7 @@ namespace bibblevm::gc {
         struct NurseryCollectState {
             uint8_t* scan = nullptr;
 
-            NurseryCollectPhase phase = NurseryCollectPhase::Roots;
+            NurseryCollectPhase phase = NurseryCollectPhase::Idle;
 
             size_t stackIndex = 0;
             executor::Frame* currentFrame = nullptr;

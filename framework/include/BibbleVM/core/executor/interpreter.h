@@ -5,6 +5,8 @@
 
 #include "BibbleVM/core/executor/stack.h"
 
+#include "BibbleVM/core/oop/object.h"
+
 #include "BibbleVM/api.h"
 
 #include <cstdint>
@@ -19,7 +21,8 @@ namespace bibblevm::executor {
     union InstructionArguments;
 
     enum class InterpreterMessageType {
-        NoRequest,
+        Continue,
+        Branch,
         Errored,
         CallFunction,
         ReturnFromFunction,
@@ -30,6 +33,7 @@ namespace bibblevm::executor {
     struct InterpreterMessage {
         InterpreterMessageType type;
         union {
+            int32_t branch;
             struct { Function* function; uint16_t argsBegin; } call;
             uint16_t returnRegister;
             oop::Future* future;
@@ -37,7 +41,12 @@ namespace bibblevm::executor {
 
         constexpr InterpreterMessage(InterpreterMessageType type) : type(type) {}
 
-        static constexpr InterpreterMessage NoRequest() { return InterpreterMessageType::NoRequest; }
+        static constexpr InterpreterMessage Continue() { return InterpreterMessageType::Continue; }
+        static constexpr InterpreterMessage Branch(int32_t branch) {
+            InterpreterMessage m = InterpreterMessageType::Branch;
+            m.branch = branch;
+            return m;
+        }
         static constexpr InterpreterMessage Errored() { return InterpreterMessageType::Errored; }
         static constexpr InterpreterMessage CallFunction(Function* function, uint16_t argsBegin) {
             InterpreterMessage m = InterpreterMessageType::CallFunction;
@@ -58,11 +67,12 @@ namespace bibblevm::executor {
         }
     };
 
-    using Interpreter = InterpreterMessage(*)(VM& vm, Frame& frame, const InstructionArguments& args);
+    using Interpreter = InterpreterMessage(*)(VM& vm, Frame& frame, Task* task, const InstructionArguments& args);
 
     BIBBLEVM_EXPORT Interpreter GetInterpreter(VM& vm, uint8_t opcode);
 
-    BIBBLEVM_EXPORT SchedulerMessage BytecodeInterpreter(VM& vm, Frame& frame);
+    BIBBLEVM_EXPORT SchedulerMessage BytecodeInterpreter(VM& vm, Frame& frame, Task* task);
+    BIBBLEVM_EXPORT SchedulerMessage AutoYieldingBytecodeInterpreter(VM& vm, Frame& frame, Task* task);
 }
 
 #endif // BIBBLEVM_CORE_INTERPRETER_H

@@ -120,7 +120,7 @@ TEST(MemoryManager, StressAllocationAndCollection) {
 
     vm.memoryManager().safepoint(vm);
 
-    for (auto& r : roots) {
+    for (auto r : roots) {
         EXPECT_NE(r, nullptr);
     }
 }

@@ -25,11 +25,21 @@ namespace bibblevm::gc {
         return grow(vm.config().memory.oldGenHeapRegionSize, std::ceil(vm.config().memory.oldGenHeapMinSize / vm.config().memory.oldGenHeapRegionSize));
     }
 
-    bool OldGenHeap::containsObject(const oop::Object* object) const {
-        for (Region* region = mHead; region != nullptr; region = region->next) {
-            if (region->contains(object)) return true;
+    // NOTE: this is kinda shit. rework the object heapID shit later
+    bool OldGenHeap::containsObject(oop::Object* object) {
+        if (object == nullptr) [[unlikely]] return false;
+        if (object->heapID == NOT_OLD_GEN_ID) return false;
+        if (object->heapID == 0) [[unlikely]] {
+            for (Region* region = mHead; region != nullptr; region = region->next) {
+                if (region->contains(object)) {
+                    object->heapID = OLD_GEN_ID;
+                    return true;
+                }
+            }
+            object->heapID = NOT_OLD_GEN_ID;
+            return false;
         }
-        return false;
+        return object->heapID == OLD_GEN_ID;
     }
 
     oop::Object* OldGenHeap::allocate(VM& vm, size_t byteSize) {
@@ -37,7 +47,7 @@ namespace bibblevm::gc {
 
         auto createObject = [this, byteSize] {
             oop::Object* object = reinterpret_cast<oop::Object*>(mAllocRegion->allocPointer);
-            new(object) oop::Object(0, byteSize, nullptr, 0, 0);
+            new(object) oop::Object(0, byteSize, nullptr, 0, 0, OLD_GEN_ID);
             if (isCollecting()) object->markBit = mMarkEpoch; // It's fine to only set the mark bit since sweep will only check for that
             mAllocRegion->allocPointer += byteSize;
             mAllocRegion->liveBytes += byteSize;

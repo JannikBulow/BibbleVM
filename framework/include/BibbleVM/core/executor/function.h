@@ -17,7 +17,7 @@ namespace bibblevm {
 namespace bibblevm::executor {
     class Function;
 
-    using EntryPoint = SchedulerMessage(*)(VM& vm, Frame& frame);
+    using EntryPoint = SchedulerMessage(*)(VM& vm, Frame& frame, Task* task);
 
     enum class FunctionKind : uint8_t {
         Normal,
@@ -38,7 +38,7 @@ namespace bibblevm::executor {
         Instruction* getInstructions() const { return mInstructions; }
         EntryPoint& entryPoint() { return mEntryPoint; }
 
-        SchedulerMessage invoke(VM& vm, Frame& frame) const;
+        SchedulerMessage invoke(VM& vm, Frame& frame, Task* task) const;
 
     private:
         String mName;

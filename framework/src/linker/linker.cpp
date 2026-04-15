@@ -101,7 +101,7 @@ namespace bibblevm::linker {
                     assignExtBC();
                     break;
                 case JMP:
-                    args.extJump.branch = (static_cast<uint32_t>(a) | (static_cast<uint32_t>(b) << 8) | (static_cast<uint32_t>(c) << 16)) / 4; //NOTE: divide by 4 because the interpreter will treat branch as amount of instructions while the bytecode format uses bytes
+                    args.extJump.branch = static_cast<int32_t>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b) << 8 | static_cast<uint32_t>(c) << 16) / 4; //NOTE: divide by 4 because the interpreter will treat branch as amount of instructions while the bytecode format uses bytes
                     break;
                 case JEQ:
                 case JNE:
@@ -110,11 +110,11 @@ namespace bibblevm::linker {
                 case JGT:
                 case JGE:
                     args.extJump.cond = a;
-                    args.extJump.branch = ext8to16(b, c) / 4; //NOTE: see JMP on why we divide by 4
+                    args.extJump.branch = static_cast<int32_t>(ext8to16(b, c)) / 4; //NOTE: see JMP on why we divide by 4
                     break;
                 case CALL:
                 case TAIL_CALL:
-                case ASYNC_CALL:
+                case CALLA:
                 case AWAIT:
                     assignExtBC();
                     break;
@@ -159,7 +159,7 @@ namespace bibblevm::linker {
 
             switch (kind) {
                 case executor::FunctionKind::Normal:
-                    linkedFunction.entryPoint() = executor::BytecodeInterpreter;
+                    linkedFunction.entryPoint() = vm.config().scheduler.autoYielding.enabled ? executor::AutoYieldingBytecodeInterpreter : executor::BytecodeInterpreter; // TODO: cache?
                     break;
                 case executor::FunctionKind::Native: {
                     if (intrinsicModule != nullptr) {

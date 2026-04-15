@@ -4,7 +4,8 @@
 
 namespace bibblevm {
     VM::VM(const Config& config)
-        : mConfig(config) {
+        : mConfig(config)
+        , mScheduler(*this) {
         mMemoryManager.init(*this); // TODO: check result and throw a tantrum
     }
 

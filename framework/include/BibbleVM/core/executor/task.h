@@ -14,6 +14,8 @@ namespace bibblevm::executor {
     struct Task {
         Stack stack;
 
+        uint8_t priority = 0;
+
         oop::Future* completionFuture;
         oop::Future* waitingOn = nullptr;
 

@@ -14,7 +14,7 @@ namespace bibblevm::executor {
         struct { uint8_t a, b, c; } generic;
         struct { uint8_t a; uint16_t bc; } extBC;
         struct { uint16_t ab; uint8_t c; } extAB;
-        struct { uint8_t cond; uint32_t branch; } extJump;
+        struct { uint8_t cond; int32_t branch; } extJump;
     };
 
     // Pre-decoded instruction. Trade memory for 0.0002% faster dispatch

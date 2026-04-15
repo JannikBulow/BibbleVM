@@ -29,6 +29,8 @@ namespace bibblevm::oop {
             Float,
             Double,
 
+            Handle,
+
             // Objects
             Instance,
             Array,
@@ -44,6 +46,7 @@ namespace bibblevm::oop {
         };
 
         Kind kind;
+        size_t primitiveSize; // When storing something of this type as a primitive (object primitives are pointers), this is the size needed
 
         union {
             Class* instanceClass; // instance
@@ -56,6 +59,8 @@ namespace bibblevm::oop {
     };
 
     using TypeID = uint32_t;
+
+    BIBBLEVM_EXPORT size_t GetPrimitiveSizeForTypeKind(Type::Kind kind);
 }
 
 #endif // BIBBLEVM_CORE_OOP_TYPE_H

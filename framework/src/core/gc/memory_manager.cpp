@@ -22,7 +22,7 @@ namespace bibblevm::gc {
         if (id.has_value()) return id.value();
 
         id = mTypes.size();
-        mTypes.emplace_back(kind);
+        mTypes.emplace_back(kind, oop::GetPrimitiveSizeForTypeKind(kind));
 
         return id.value();
     }
@@ -34,7 +34,7 @@ namespace bibblevm::gc {
         }
 
         oop::TypeID id = mTypes.size();
-        mTypes.emplace_back(oop::Type::Instance);
+        mTypes.emplace_back(oop::Type::Instance, oop::GetPrimitiveSizeForTypeKind(oop::Type::Instance));
         mTypes.back().instanceClass = clas;
 
         mInstanceTypes[clas] = id;
@@ -49,8 +49,8 @@ namespace bibblevm::gc {
         }
 
         oop::TypeID id = mTypes.size();
-        mTypes.emplace_back(oop::Type::Array);
-        mTypes.back().baseType = getType(baseType);
+        mTypes.emplace_back(oop::Type::Array, oop::GetPrimitiveSizeForTypeKind(oop::Type::Array));
+        mTypes.back().baseType = &mTypes[baseType];
 
         mArrayTypes[baseType] = id;
 
@@ -80,11 +80,28 @@ namespace bibblevm::gc {
     }
 
     oop::Object* MemoryManager::allocateArray(VM& vm, oop::TypeID baseType, ULong length) {
-        return nullptr;
+        size_t baseTypeSize = oop::GetPrimitiveSizeForTypeKind(mTypes[baseType].kind);
+
+        oop::Object* object = allocateRawObject(vm, sizeof(oop::Array) + baseTypeSize * length);
+        if (object != nullptr) {
+            object->type = getArrayType(baseType);
+            object->asArray()->length = length;
+        }
+
+        return object;
     }
 
     oop::Object* MemoryManager::reallocateArray(VM& vm, oop::Object* array, ULong newLength) {
-        return nullptr;
+        if (array == nullptr) return nullptr;
+
+        oop::Object* newArrayObject = allocateArray(vm, mTypes[array->type].baseType - mTypes.data(), newLength);
+        if (newArrayObject == nullptr) return nullptr;
+
+        oop::Array* newArray = newArrayObject->asArray();
+
+        memcpy(newArray->elementBytes, array->asArray()->elementBytes, newLength * mTypes[newArrayObject->type].primitiveSize);
+
+        return newArrayObject;
     }
 
     oop::Object* MemoryManager::allocateString(VM& vm, ULong lengthBytes) {
@@ -110,6 +127,7 @@ namespace bibblevm::gc {
         oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + lengthBytes));
         new(object) oop::StringObject();
         object->asObject()->type = getStringType();
+        object->asObject()->heapID = IMMORTAL_ID;
         object->lengthBytes = lengthBytes;
         return object->asObject();
     }
@@ -118,6 +136,7 @@ namespace bibblevm::gc {
         oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + copy.size()));
         new(object) oop::StringObject();
         object->asObject()->type = getStringType();
+        object->asObject()->heapID = IMMORTAL_ID;
         object->lengthBytes = copy.size();
         memcpy(object->bytes, copy.data(), copy.size());
         return object->asObject();
@@ -128,7 +147,7 @@ namespace bibblevm::gc {
         if (object != nullptr) {
             object->type = getFutureType();
             object->asFuture()->ready = false;
-            object->asFuture()->waiters = nullptr;
+            object->asFuture()->waiters = allocateArray(vm, getPrimitiveType(oop::Type::Handle), 0);
             object->asFuture()->waiterCount = 0;
         }
         return object;
@@ -184,7 +203,8 @@ namespace bibblevm::gc {
     }
 
     oop::Object* MemoryManager::allocateRawObject(VM& vm, size_t size) {
-        return mNursery.allocateInFromSpace(size);
+        if (mNurseryCollectState.phase != NurseryCollectPhase::Idle) return mNursery.allocateInToSpace(size);
+        else return mNursery.allocateInFromSpace(size);
     }
 
     bool MemoryManager::shouldPause(VM& vm) const {

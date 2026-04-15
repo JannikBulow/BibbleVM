@@ -434,21 +434,41 @@ namespace bibblevm {
         // b = val_high
         RETURN = 0xC2,
 
-        // Calls a function asynchronously and returns an uncompleted future in R0 that will eventually resolve with the returned value of the called function.
+        // Calls a function asynchronously with the priority level of the caller and returns an uncompleted future in R0
+        // that will eventually resolve with the returned value of the called function.
+        // Name means "CALL ASYNC."
         // a = func_reg
         // b = args_low
         // c = args_high
-        ASYNC_CALL = 0xC3,
+        CALLA = 0xC3,
+
+        // Calls a function asynchronously with a priority level specified in the priority_reg register and returns
+        // an uncompleted future in R0 that will eventually resolve with the returned value of the called function.
+        // The priority level will be truncated down to an unsigned 8-bit integer in a similar way to TR8.
+        // Name means "CALL ASYNC PRIORITY."
+        // a = func_reg
+        // b = priority_reg
+        // c = args
+        CALLAP = 0xC4,
+
+        // Calls a function asynchronously with a priority level of the caller plus the specified 8-bit signed immediate
+        // in the priority argument and returns an uncompleted future in R0 that will eventually resolve with
+        // the returned value of the called function.
+        // Name means "CALL ASYNC RELATIVE PRIORITY."
+        // a = func_reg
+        // b = priority
+        // c = args
+        CALLARP = 0xC5,
 
         // Suspends the execution of the current task until the specified future has resolved.
         // Once the future has resolved, its value is moved to the destination register.
         // a = future_reg
         // b = dst_low
         // c = dst_high
-        AWAIT = 0xC4,
+        AWAIT = 0xC6,
 
         // Yields the current task, letting the next one in queue execute.
-        YIELD = 0xC5,
+        YIELD = 0xC7,
     };
 }
 

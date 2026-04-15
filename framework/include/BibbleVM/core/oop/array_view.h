@@ -34,14 +34,14 @@ namespace bibblevm::oop {
         GrowingArrayView(gc::MemoryManager& memoryManager, Object*& array, ULong& size) : mMemoryManager(memoryManager), mArray(array), mSize(size) {}
 
         ULong size() const { return mSize; }
-        ULong capacity() const { return mArray->asArray()->length; }
+        ULong capacity() const { return mArray == nullptr ? 0 : mArray->asArray()->length; }
 
         T& operator[](ULong index) { return data()[index]; }
         const T& operator[](ULong index) const { return data()[index]; }
 
         T* add(VM& vm, const T& value) {
             if (mArray == nullptr || size() >= capacity()) {
-                ULong newCapacity = capacity() * 2;
+                ULong newCapacity = mArray == nullptr ? 8 : capacity() * 2;
                 mArray = mMemoryManager.reallocateArray(vm, mArray, newCapacity);
                 if (mArray == nullptr) {
                     return nullptr;

@@ -54,15 +54,19 @@ namespace bibblevm {
     };
 
     struct SchedulerConfig {
-        size_t maxTasks = -1; // The scheduler will throw an exception and shutdown the whole VM if this gets exceeded, so use with caution.
+        size_t maxTasks = SIZE_MAX; // The scheduler will throw an exception and shutdown the whole VM if this gets exceeded, so use with caution.
 
         size_t maxStackSize = 4 * 1024 * 1024;
 
-        size_t autoYieldInstructionThreshold = 1000; // Anti bad code measure. Will auto yield after this many instructions have executed to allow the scheduler to run other tasks.
+        struct {
+            bool enabled = true;
+            size_t threshold = 1000; // Anti bad code measure. Will auto yield after this many instructions have executed to allow the scheduler to run other tasks.
+        } autoYielding;
 
-        // as great as these two may seem, they waste processing time on scheduling instead of running code. simple scheduler is usually fine
-        bool enableTaskPriorities = false;
-        bool enableFairScheduling = false;
+        struct {
+            uint8_t levels = 1;
+            uint8_t boost = 1;
+        } priority;
     };
 
     struct DebugConfig {

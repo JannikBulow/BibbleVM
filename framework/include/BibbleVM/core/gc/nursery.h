@@ -43,8 +43,8 @@ namespace bibblevm::gc {
         void resetFromSpace();
         void resetToSpace();
 
-        bool isInFromSpace(const void* pointer) const;
-        bool isInToSpace(const void* pointer) const;
+        bool isInFromSpace(const oop::Object* object) const;
+        bool isInToSpace(const oop::Object* object) const;
 
     private:
         void destroy();

@@ -6,7 +6,7 @@
 
 namespace bibblevm::linker {
     namespace Intrinsics {
-        static executor::SchedulerMessage print(VM& vm, executor::Frame& frame) {
+        static executor::SchedulerMessage print(VM& vm, executor::Frame& frame, executor::Task* task) {
             std::cout << String(frame[0].obj->asString()) << std::endl;
             return executor::SchedulerMessage::Returned(Value(0));
         }

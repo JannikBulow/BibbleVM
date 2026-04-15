@@ -28,7 +28,8 @@ namespace bibblevm::oop {
         uint32_t allocatedSize;
         Object* forward = nullptr;
         uint8_t age = 0;
-        uint8_t markBit : 1 = 0;
+        uint8_t markBit = 0;
+        uint8_t heapID = 0; // 0 is reserved here for unknown heap id
 
         Instance* asInstance() { return reinterpret_cast<Instance*>(this); }
         Array* asArray() { return reinterpret_cast<Array*>(this); }
@@ -58,7 +59,7 @@ namespace bibblevm::oop {
         Object header;
 
         ULong length;
-        char elementBytes[];
+        uint8_t elementBytes[];
 
         Object* asObject() { return &header; }
 
