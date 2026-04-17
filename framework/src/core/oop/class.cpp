@@ -69,35 +69,34 @@ namespace bibblevm::oop {
     }
 
     void Class::sortFields() {
-        std::array<FieldBucket, Type::Count> buckets;
+        std::array<FieldBucket, static_cast<size_t>(Type::Count)> buckets;
         for (auto& field : mFields) {
-            FieldBucket& bucket = buckets[field.type->kind];
+            FieldBucket& bucket = buckets[static_cast<size_t>(field.type)];
             bucket.push_back(&field);
         }
 
         orderFieldBuckets(buckets);
     }
 
-    void Class::orderFieldBuckets(std::array<FieldBucket, Type::Count>& buckets) {
+    void Class::orderFieldBuckets(std::array<FieldBucket, static_cast<size_t>(Type::Count)>& buckets) {
         uint64_t offset = mMemorySize;
         offset = (offset + 7) & ~7;
 
-        orderFieldBucket(buckets[Type::Instance], 8, offset);
-        orderFieldBucket(buckets[Type::Array], 8, offset);
-        orderFieldBucket(buckets[Type::String], 8, offset);
-        orderFieldBucket(buckets[Type::Future], 8, offset);
-        orderFieldBucket(buckets[Type::ModuleRef], 8, offset);
-        orderFieldBucket(buckets[Type::FunctionRef], 8, offset);
-        orderFieldBucket(buckets[Type::Double], 8, offset);
-        orderFieldBucket(buckets[Type::ULong], 8, offset);
-        orderFieldBucket(buckets[Type::Long], 8, offset);
-        orderFieldBucket(buckets[Type::Float], 4, offset);
-        orderFieldBucket(buckets[Type::UInt], 4, offset);
-        orderFieldBucket(buckets[Type::Int], 4, offset);
-        orderFieldBucket(buckets[Type::UShort], 2, offset);
-        orderFieldBucket(buckets[Type::Short], 2, offset);
-        orderFieldBucket(buckets[Type::UByte], 1, offset);
-        orderFieldBucket(buckets[Type::Byte], 1, offset);
+#define ORDER_FIELD_BUCKET(type, size) orderFieldBucket(buckets[static_cast<size_t>(type)], size, offset)
+        ORDER_FIELD_BUCKET(Type::Reference, 8);
+        ORDER_FIELD_BUCKET(Type::ModuleRef, 8);
+        ORDER_FIELD_BUCKET(Type::FunctionRef, 8);
+        ORDER_FIELD_BUCKET(Type::Double, 8);
+        ORDER_FIELD_BUCKET(Type::ULong, 8);
+        ORDER_FIELD_BUCKET(Type::Long, 8);
+        ORDER_FIELD_BUCKET(Type::Float, 4);
+        ORDER_FIELD_BUCKET(Type::UInt, 4);
+        ORDER_FIELD_BUCKET(Type::Int, 4);
+        ORDER_FIELD_BUCKET(Type::UShort, 2);
+        ORDER_FIELD_BUCKET(Type::Short, 2);
+        ORDER_FIELD_BUCKET(Type::UByte, 1);
+        ORDER_FIELD_BUCKET(Type::Byte, 1);
+#undef  ORDER_FIELD_BUCKET
 
         mMemorySize = offset;
     }

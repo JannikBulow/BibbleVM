@@ -54,7 +54,7 @@ namespace bibblevm::oop {
         uint16_t mObjectFieldCount;
 
         void sortFields();
-        void orderFieldBuckets(std::array<FieldBucket, Type::Count>& buckets);
+        void orderFieldBuckets(std::array<FieldBucket, static_cast<size_t>(Type::Count)>& buckets);
         static void orderFieldBucket(FieldBucket& bucket, uint32_t size, uint64_t& offset);
 
         void createVtable();

@@ -3,6 +3,7 @@
 #include "BibbleVM/core/gc/memory_manager.h"
 
 #include "BibbleVM/core/oop/class.h"
+#include "BibbleVM/core/oop/visit_children.h"
 
 #include "BibbleVM/_debug.h"
 #include "BibbleVM/vm.h"
@@ -17,74 +18,20 @@ namespace bibblevm::gc {
         return mNursery.init(vm.config().memory.nurseryMinSize);
     }
 
-    oop::TypeID MemoryManager::getPrimitiveType(oop::Type::Kind kind) {
-        auto& id = mPrimitiveTypes[kind];
-        if (id.has_value()) return id.value();
-
-        id = mTypes.size();
-        mTypes.emplace_back(kind, oop::GetPrimitiveSizeForTypeKind(kind));
-
-        return id.value();
-    }
-
-    oop::TypeID MemoryManager::getInstanceType(oop::Class* clas) {
-        auto it = mInstanceTypes.find(clas);
-        if (it != mInstanceTypes.end()) {
-            return it->second;
-        }
-
-        oop::TypeID id = mTypes.size();
-        mTypes.emplace_back(oop::Type::Instance, oop::GetPrimitiveSizeForTypeKind(oop::Type::Instance));
-        mTypes.back().instanceClass = clas;
-
-        mInstanceTypes[clas] = id;
-
-        return id;
-    }
-
-    oop::TypeID MemoryManager::getArrayType(oop::TypeID baseType) {
-        auto it = mArrayTypes.find(baseType);
-        if (it != mArrayTypes.end()) {
-            return it->second;
-        }
-
-        oop::TypeID id = mTypes.size();
-        mTypes.emplace_back(oop::Type::Array, oop::GetPrimitiveSizeForTypeKind(oop::Type::Array));
-        mTypes.back().baseType = &mTypes[baseType];
-
-        mArrayTypes[baseType] = id;
-
-        return id;
-    }
-
-    oop::TypeID MemoryManager::getStringType() {
-        return getPrimitiveType(oop::Type::String);
-    }
-
-    oop::TypeID MemoryManager::getFutureType() {
-        oop::TypeID id = getPrimitiveType(oop::Type::Future);
-        return id;
-    }
-
-    const oop::Type* MemoryManager::getType(oop::TypeID id) const {
-        return &mTypes[id];
-    }
-
     oop::Object* MemoryManager::allocateInstance(VM& vm, oop::Class* clas) {
         oop::Object* object = allocateRawObject(vm, clas->getMemorySize());
         if (object != nullptr) {
-            object->type = getInstanceType(clas);
-            object->asInstance()->finalizerQueued = false;
+            object->asInstance()->clas = clas;
         }
         return object;
     }
 
-    oop::Object* MemoryManager::allocateArray(VM& vm, oop::TypeID baseType, ULong length) {
-        size_t baseTypeSize = oop::GetPrimitiveSizeForTypeKind(mTypes[baseType].kind);
+    oop::Object* MemoryManager::allocateArray(VM& vm, oop::Type baseType, ULong length) {
+        size_t baseTypeSize = oop::GetPrimitiveSizeForType(baseType);
 
         oop::Object* object = allocateRawObject(vm, sizeof(oop::Array) + baseTypeSize * length);
         if (object != nullptr) {
-            object->type = getArrayType(baseType);
+            object->asArray()->baseType = baseType;
             object->asArray()->length = length;
         }
 
@@ -94,12 +41,12 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::reallocateArray(VM& vm, oop::Object* array, ULong newLength) {
         if (array == nullptr) return nullptr;
 
-        oop::Object* newArrayObject = allocateArray(vm, mTypes[array->type].baseType - mTypes.data(), newLength);
+        oop::Object* newArrayObject = allocateArray(vm, array->asArray()->baseType, newLength);
         if (newArrayObject == nullptr) return nullptr;
 
         oop::Array* newArray = newArrayObject->asArray();
 
-        memcpy(newArray->elementBytes, array->asArray()->elementBytes, newLength * mTypes[newArrayObject->type].primitiveSize);
+        memcpy(newArray->elementBytes, array->asArray()->elementBytes, newLength * oop::GetPrimitiveSizeForType(newArray->baseType));
 
         return newArrayObject;
     }
@@ -107,7 +54,6 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateString(VM& vm, ULong lengthBytes) {
         oop::Object* object = allocateRawObject(vm, sizeof(oop::StringObject) + lengthBytes);
         if (object != nullptr) {
-            object->type = getStringType();
             object->asString()->lengthBytes = lengthBytes;
         }
         return object;
@@ -116,7 +62,6 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateString(VM& vm, std::string_view copy) {
         oop::Object* object = allocateRawObject(vm, sizeof(oop::StringObject) + copy.size());
         if (object != nullptr) {
-            object->type = getStringType();
             object->asString()->lengthBytes = copy.size();
             memcpy(object->asString()->bytes, copy.data(), copy.size());
         }
@@ -126,7 +71,6 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateImmortalString(VM& vm, ULong lengthBytes) {
         oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + lengthBytes));
         new(object) oop::StringObject();
-        object->asObject()->type = getStringType();
         object->asObject()->heapID = IMMORTAL_ID;
         object->lengthBytes = lengthBytes;
         return object->asObject();
@@ -135,7 +79,6 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateImmortalString(VM& vm, std::string_view copy) {
         oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + copy.size()));
         new(object) oop::StringObject();
-        object->asObject()->type = getStringType();
         object->asObject()->heapID = IMMORTAL_ID;
         object->lengthBytes = copy.size();
         memcpy(object->bytes, copy.data(), copy.size());
@@ -145,9 +88,8 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateFuture(VM& vm) {
         oop::Object* object = allocateRawObject(vm, sizeof(oop::Future));
         if (object != nullptr) {
-            object->type = getFutureType();
             object->asFuture()->ready = false;
-            object->asFuture()->waiters = allocateArray(vm, getPrimitiveType(oop::Type::Handle), 0);
+            object->asFuture()->waiters = allocateArray(vm, oop::Type::Handle, 0);
             object->asFuture()->waiterCount = 0;
         }
         return object;
@@ -260,7 +202,7 @@ namespace bibblevm::gc {
                             executor::Frame& frame = *state.currentFrame;
                             uint16_t registerCount = frame.getFunction().getRegisterCount();
                             for (uint16_t i = 0; i < registerCount; i++) {
-                                if (mTypes[frame[i].type].isObjectType()) {
+                                if (frame[i].isObject) {
                                     frame[i].obj = forward(vm, frame[i].obj);
                                 }
                             }
@@ -290,7 +232,7 @@ namespace bibblevm::gc {
 
                         oop::Object* object = mRememberedSet[state.rememberedIndex];
                         bool hasYoungChild = false;
-                        object->visitChildren(&mTypes[object->type], [this, &hasYoungChild, &vm](oop::Object*& child) {
+                        object->visitChildren([this, &hasYoungChild, &vm](oop::Object*& child) {
                             child = forward(vm, child);
                             if (mNursery.isInFromSpace(child)) hasYoungChild = true;
                         });
@@ -322,7 +264,7 @@ namespace bibblevm::gc {
                         if (shouldPause(vm)) return;
 
                         oop::Object* object = reinterpret_cast<oop::Object*>(state.scan);
-                        object->visitChildren(&mTypes[object->type], [this, &vm](oop::Object*& child) {
+                        object->visitChildren([this, &vm](oop::Object*& child) {
                             child = forward(vm, child);
                         });
 
@@ -401,7 +343,7 @@ namespace bibblevm::gc {
                 executor::Frame& frame = *framePtr;
                 uint16_t registerCount = frame.getFunction().getRegisterCount();
                 for (uint16_t i = 0; i < registerCount; i++) {
-                    if (mTypes[frame[i].type].isObjectType()) {
+                    if (frame[i].isObject) {
                         if (mNursery.isInFromSpace(frame[i].obj)) {
                             logResize(frame[i].obj);
                             frame[i].obj = reinterpret_cast<oop::Object*>(reinterpret_cast<uint8_t*>(frame[i].obj) + offset);
@@ -421,7 +363,7 @@ namespace bibblevm::gc {
         }
 
         for (oop::Object* object : mRememberedSet) {
-            object->visitChildren(&mTypes[object->type], [this, &logResize, offset](oop::Object*& child) {
+            object->visitChildren([this, &logResize, offset](oop::Object*& child) {
                 if (mNursery.isInFromSpace(child)) {
                     logResize(child);
                     child = reinterpret_cast<oop::Object*>(reinterpret_cast<uint8_t*>(child) + offset);
@@ -433,7 +375,7 @@ namespace bibblevm::gc {
 
         while (scan < newNursery.fromAllocPointer) {
             oop::Object* object = reinterpret_cast<oop::Object*>(scan);
-            object->visitChildren(&mTypes[object->type], [this, &logResize, offset](oop::Object*& child) {
+            object->visitChildren([this, &logResize, offset](oop::Object*& child) {
                 if (mNursery.isInFromSpace(child)) {
                     logResize(child);
                     child = reinterpret_cast<oop::Object*>(reinterpret_cast<uint8_t*>(child) + offset);
@@ -515,17 +457,15 @@ namespace bibblevm::gc {
         while (scan < mNursery.fromAllocPointer) {
             oop::Object* object = reinterpret_cast<oop::Object*>(scan);
 
-            if (object->forward == nullptr && mTypes[object->type].kind == oop::Type::Instance) {
-                if (mTypes[object->type].instanceClass->hasFinalizer()) {
-                    object->asInstance()->finalizerQueued = true;
+            if (object->forward == nullptr && object->kind == oop::ObjectKind::Instance) {
+                if (object->asInstance()->clas->hasFinalizer()) {
                     oop::Object* newObject = forward(vm, object);
                     mFinalizerQueue.push_back(newObject);
 
                     vm.debugLog(
                         "GC",
-                        "Finalizer queued | object={:016X} | typeId={}",
-                        reinterpret_cast<uintptr_t>(object),
-                        object->type
+                        "Finalizer queued | object={:016X}",
+                        reinterpret_cast<uintptr_t>(object)
                     );
                 }
             }

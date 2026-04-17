@@ -34,6 +34,7 @@ namespace bibblevm::linker {
                     break;
                 case module::ConstPool::STRING:
                     linkedEntry.obj = vm.stringPool().intern(vm, entry.u.str).get()->asObject();
+                    linkedEntry.isObject = true;
                     break;
                 case module::ConstPool::MODULE_INFO: {
                     Module* m = vm.getModule(entries[entry.u.mi.name].u.str); // PreVerifier has ensured this exists, but not that it's fully loaded
@@ -41,15 +42,15 @@ namespace bibblevm::linker {
                     break;
                 }
                 case module::ConstPool::FUNCTION_INFO: {
-                    module::ConstPool::FunctionInfo fi = entry.u.fi;
-                    if (entries[fi.module].u.mi.name == module.name) { // loading a function from its own module would lead to a permanent stall, so we use a list of partially initialized functions (just names) to link the pointers
+                    module::ConstPool::FunctionInfo fni = entry.u.fni;
+                    if (entries[fni.module].u.mi.name == module.name) { // loading a function from its own module would lead to a permanent stall, so we use a list of partially initialized functions (just names) to link the pointers
                         for (uint16_t j = 0; j < module.functionCount; j++) {
-                            if (functions[j].getName() == entries[fi.name].u.str) linkedEntry.fi = &functions[j];
+                            if (functions[j].getName() == entries[fni.name].u.str) linkedEntry.fni = &functions[j];
                         }
                     } else {
-                        Module* m = vm.getModule(entries[entries[fi.module].u.mi.name].u.str); // PreVerifier has ensured this exists, but not that it's fully loaded
+                        Module* m = vm.getModule(entries[entries[fni.module].u.mi.name].u.str); // PreVerifier has ensured this exists, but not that it's fully loaded
                         m->waitForStage(Stage::Linked);
-                        linkedEntry.fi = m->linkedModule().getFunction(entries[entry.u.fi.name].u.str);
+                        linkedEntry.fni = m->linkedModule().getFunction(entries[entry.u.fi.name].u.str);
                     }
                     break;
                 }

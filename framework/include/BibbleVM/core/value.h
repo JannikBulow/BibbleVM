@@ -23,11 +23,14 @@ namespace bibblevm {
     }
 
     namespace oop {
+        class Class;
+        struct Field;
+        struct Method;
         struct Object;
     }
 
     struct Value {
-        oop::TypeID type; // TODO: replace the union with a set of get/set functions that handle type assignment
+        bool isObject;
         union {
             Byte b;
             UByte ub;
@@ -41,7 +44,10 @@ namespace bibblevm {
             double d;
             oop::Object* obj;
             executor::Module* mi;
-            executor::Function* fi;
+            oop::Class* ci;
+            oop::Field* fi;
+            oop::Method* mei;
+            executor::Function* fni;
         };
     };
 }

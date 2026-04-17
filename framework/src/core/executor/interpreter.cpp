@@ -397,7 +397,7 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(CALL) {
-        return InterpreterMessage::CallFunction(frame[args.extBC.a].fi, args.extBC.bc);
+        return InterpreterMessage::CallFunction(frame[args.extBC.a].fni, args.extBC.bc);
     }
 
     DEFINE_INTERPRETER(TAIL_CALL) {
@@ -409,20 +409,23 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(CALLA) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame[args.extBC.a].fi, task->priority, &frame[args.extBC.bc]);
+        Task* newTask = vm.scheduler().schedule(vm, *frame[args.extBC.a].fni, task->priority, &frame[args.extBC.bc]);
         frame[0].obj = newTask->completionFuture->asObject();
+        frame[0].isObject = true;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(CALLAP) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame[args.generic.a].fi, static_cast<UByte>(frame[args.generic.b].ul), &frame[args.generic.c]);
+        Task* newTask = vm.scheduler().schedule(vm, *frame[args.generic.a].fni, static_cast<UByte>(frame[args.generic.b].ul), &frame[args.generic.c]);
         frame[0].obj = newTask->completionFuture->asObject();
+        frame[0].isObject = true;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(CALLARP) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame[args.generic.a].fi, task->priority + args.generic.b, &frame[args.generic.c]);
+        Task* newTask = vm.scheduler().schedule(vm, *frame[args.generic.a].fni, task->priority + args.generic.b, &frame[args.generic.c]);
         frame[0].obj = newTask->completionFuture->asObject();
+        frame[0].isObject = true;
         return InterpreterMessage::Continue();
     }
 

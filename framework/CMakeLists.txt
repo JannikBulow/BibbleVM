@@ -75,6 +75,7 @@ set(HEADERS
     include/BibbleVM/core/oop/object.h
     include/BibbleVM/core/oop/string.h
     include/BibbleVM/core/oop/type.h
+    include/BibbleVM/core/oop/visit_children.h
 
     include/BibbleVM/core/opcodes.h
     include/BibbleVM/core/value.h

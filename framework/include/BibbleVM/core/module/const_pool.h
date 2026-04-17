@@ -22,10 +22,28 @@ namespace bibblevm::module {
             LONG = 0x04,
             STRING = 0x05,
             MODULE_INFO = 0x06,
-            FUNCTION_INFO = 0x07,
+            CLASS_INFO = 0x07,
+            FIELD_INFO = 0x08,
+            METHOD_INFO = 0x09,
+            FUNCTION_INFO = 0x0A,
         };
 
         struct ModuleInfo {
+            ConstantIndex name;
+        };
+
+        struct ClassInfo {
+            ConstantIndex module;
+            ConstantIndex name;
+        };
+
+        struct FieldInfo {
+            ConstantIndex clas;
+            ConstantIndex name;
+        };
+
+        struct MethodInfo {
+            ConstantIndex clas;
             ConstantIndex name;
         };
 
@@ -43,7 +61,10 @@ namespace bibblevm::module {
                 Long l;
                 std::string_view str;
                 ModuleInfo mi;
-                FunctionInfo fi;
+                ClassInfo ci;
+                FieldInfo fi;
+                MethodInfo mei;
+                FunctionInfo fni;
             } u;
         };
 

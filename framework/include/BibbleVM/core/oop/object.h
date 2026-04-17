@@ -18,15 +18,24 @@ namespace bibblevm::executor {
 }
 
 namespace bibblevm::oop {
+    class Class;
     struct Instance;
     struct Array;
     struct StringObject;
     struct Future;
 
+    enum class ObjectKind : uint8_t {
+        Newborn, // Objects cannot be this kind after they leave the MemoryManager
+        Instance,
+        Array,
+        String,
+        Future,
+    };
+
     struct Object {
-        TypeID type;
-        uint32_t allocatedSize;
         Object* forward = nullptr;
+        uint32_t allocatedSize;
+        ObjectKind kind;
         uint8_t age = 0;
         uint8_t markBit = 0;
         uint8_t heapID = 0; // 0 is reserved here for unknown heap id
@@ -37,40 +46,28 @@ namespace bibblevm::oop {
         Future* asFuture() { return reinterpret_cast<Future*>(this); }
 
         // Takes its type explicitly because I want this function inline and I can't include memory_manager.
-        constexpr void visitChildren(const Type* resolvedType, auto visitor);
+        constexpr void visitChildren(auto visitor);
     };
 
     struct Instance {
         Object header;
-        bool finalizerQueued = false;
+        Class* clas;
         char fieldBytes[];
 
         Object* asObject() { return &header; }
 
-        constexpr void visitChildren(const Type* resolvedType, auto visitor) {
-            Object** children = reinterpret_cast<Object**>(fieldBytes);
-            for (uint16_t i = 0; i < resolvedType->getObjectFieldCount(); i++) {
-                visitor(children[i]);
-            }
-        }
+        constexpr void visitChildren(auto visitor);
     };
 
     struct Array {
         Object header;
-
+        Type baseType;
         ULong length;
         uint8_t elementBytes[];
 
         Object* asObject() { return &header; }
 
-        constexpr void visitChildren(const Type* resolvedType, auto visitor) {
-            if (resolvedType->baseType->isObjectType()) {
-                Object** children = reinterpret_cast<Object**>(elementBytes);
-                for (ULong i = 0; i < length; i++) {
-                    visitor(children[i]);
-                }
-            }
-        }
+        constexpr void visitChildren(auto visitor);
     };
 
     struct StringObject {
@@ -80,7 +77,7 @@ namespace bibblevm::oop {
 
         Object* asObject() { return &header; }
 
-        constexpr void visitChildren(const Type* resolvedType, auto visitor) {}
+        constexpr void visitChildren(auto visitor);
     };
 
     struct BIBBLEVM_EXPORT Future {
@@ -94,32 +91,11 @@ namespace bibblevm::oop {
 
         Object* asObject() { return &header; }
 
-        constexpr void visitChildren(const Type* resolvedType, auto visitor) {
-            visitor(waiters);
-        }
+        constexpr void visitChildren(auto visitor);
 
         void addWaiter(VM& vm, executor::Task* waiter);
         void complete(VM& vm, Value value);
     };
-
-    constexpr void Object::visitChildren(const Type* resolvedType, auto visitor) {
-        switch (resolvedType->kind) {
-            case Type::Instance:
-                asInstance()->visitChildren(resolvedType, visitor);
-                break;
-            case Type::Array:
-                asArray()->visitChildren(resolvedType, visitor);
-                break;
-            case Type::String:
-                asString()->visitChildren(resolvedType, visitor);
-                break;
-            case Type::Future:
-                asFuture()->visitChildren(resolvedType, visitor);
-                break;
-            default:
-                break;
-        }
-    }
 }
 
 #endif // BIBBLEVM_CORE_OOP_OBJECT_H

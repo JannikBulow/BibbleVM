@@ -51,19 +51,9 @@ namespace bibblevm::gc {
 
         bool init(VM& vm);
 
-        // Be careful because this function will create a Type with only the given kind, which can break with some object type kinds.
-        oop::TypeID getPrimitiveType(oop::Type::Kind kind);
-
-        oop::TypeID getInstanceType(oop::Class* clas);
-        oop::TypeID getArrayType(oop::TypeID baseType);
-        oop::TypeID getStringType();
-        oop::TypeID getFutureType();
-
-        const oop::Type* getType(oop::TypeID id) const;
-
         oop::Object* allocateInstance(VM& vm, oop::Class* clas);
 
-        oop::Object* allocateArray(VM& vm, oop::TypeID baseType, ULong length);
+        oop::Object* allocateArray(VM& vm, oop::Type baseType, ULong length);
         oop::Object* reallocateArray(VM& vm, oop::Object* array, ULong newLength);
 
         oop::Object* allocateString(VM& vm, ULong lengthBytes);
@@ -102,11 +92,6 @@ namespace bibblevm::gc {
             size_t rootIndex = 0;
             size_t rememberedIndex = 0;
         };
-
-        std::vector<oop::Type> mTypes;
-        std::array<std::optional<oop::TypeID>, oop::Type::Kind::Count> mPrimitiveTypes{};
-        std::unordered_map<oop::Class*, oop::TypeID> mInstanceTypes;
-        std::unordered_map<oop::TypeID, oop::TypeID> mArrayTypes;
 
         TimeManager<>::TimePoint mSafePointStart;
 

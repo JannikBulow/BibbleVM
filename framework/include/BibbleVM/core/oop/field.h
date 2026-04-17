@@ -9,11 +9,11 @@
 
 namespace bibblevm::oop {
     struct Field {
-        Type* type;
+        Type type;
         uint64_t memoryOffset;
         String name;
 
-        Field(Type* type, uint64_t memoryOffset, String name) : type(type), memoryOffset(memoryOffset), name(name) {}
+        Field(Type type, uint64_t memoryOffset, String name) : type(type), memoryOffset(memoryOffset), name(name) {}
     };
 }
 

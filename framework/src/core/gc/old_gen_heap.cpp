@@ -3,6 +3,7 @@
 #include "BibbleVM/core/gc/old_gen_heap.h"
 
 #include "BibbleVM/core/oop/class.h"
+#include "BibbleVM/core/oop/visit_children.h"
 
 #include "BibbleVM/_debug.h"
 #include "BibbleVM/vm.h"
@@ -47,7 +48,7 @@ namespace bibblevm::gc {
 
         auto createObject = [this, byteSize] {
             oop::Object* object = reinterpret_cast<oop::Object*>(mAllocRegion->allocPointer);
-            new(object) oop::Object(0, byteSize, nullptr, 0, 0, OLD_GEN_ID);
+            new(object) oop::Object(0, byteSize, oop::ObjectKind::Newborn, 0, 0, OLD_GEN_ID);
             if (isCollecting()) object->markBit = mMarkEpoch; // It's fine to only set the mark bit since sweep will only check for that
             mAllocRegion->allocPointer += byteSize;
             mAllocRegion->liveBytes += byteSize;
@@ -80,8 +81,7 @@ namespace bibblevm::gc {
     }
 
     void OldGenHeap::deallocate(VM& vm, oop::Object* object) {
-        const oop::Type* type = vm.memoryManager().getType(object->type);
-        if (type->kind == oop::Type::Instance && type->instanceClass->hasFinalizer()) {
+        if (object->kind == oop::ObjectKind::Instance && object->asInstance()->clas->hasFinalizer()) {
             vm.memoryManager().queueFinalizer(vm, object);
         }
 
@@ -259,7 +259,7 @@ namespace bibblevm::gc {
                 executor::Frame& frame = *state.currentFrame;
                 uint16_t registerCount = frame.getFunction().getRegisterCount();
                 for (uint16_t i = 0; i < registerCount; i++) {
-                    if (vm.memoryManager().getType(frame[i].type)->isObjectType()) {
+                    if (frame[i].isObject) {
                         markObject(frame[i].obj);
                     }
                 }
@@ -349,7 +349,7 @@ namespace bibblevm::gc {
     }
 
     void OldGenHeap::scanObject(VM& vm, oop::Object* object) {
-        object->visitChildren(vm.memoryManager().getType(object->type), [this](oop::Object*& child) {
+        object->visitChildren([this](oop::Object*& child) {
             markObject(child);
         });
     }
