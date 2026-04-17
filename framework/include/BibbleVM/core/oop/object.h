@@ -86,7 +86,7 @@ namespace bibblevm::oop {
         bool ready = false;
         Value value;
 
-        Object* waiters; // Array with executor::Task* elements
+        Object* waiters; // Array with executor::Task* or "Handle" elements
         ULong waiterCount;
 
         Object* asObject() { return &header; }

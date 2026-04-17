@@ -445,7 +445,7 @@ namespace bibblevm::executor {
         return InterpreterMessageType::YieldExecution;
     }
 
-    Interpreter GetInterpreter(VM& vm, uint8_t opcode) {
+    Interpreter GetInterpreter(VM& vm, Opcode opcode) {
         static const std::array<Interpreter, 256> table = [] {
             std::array<Interpreter, 256> table{};
             REGISTER_INTERPRETER(NOP);

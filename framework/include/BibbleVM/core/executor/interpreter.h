@@ -69,7 +69,7 @@ namespace bibblevm::executor {
 
     using Interpreter = InterpreterMessage(*)(VM& vm, Frame& frame, Task* task, const InstructionArguments& args);
 
-    BIBBLEVM_EXPORT Interpreter GetInterpreter(VM& vm, uint8_t opcode);
+    BIBBLEVM_EXPORT Interpreter GetInterpreter(VM& vm, Opcode opcode);
 
     BIBBLEVM_EXPORT SchedulerMessage BytecodeInterpreter(VM& vm, Frame& frame, Task* task);
     BIBBLEVM_EXPORT SchedulerMessage AutoYieldingBytecodeInterpreter(VM& vm, Frame& frame, Task* task);

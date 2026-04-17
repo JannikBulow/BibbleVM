@@ -8,7 +8,9 @@
 #include <cstdint>
 
 namespace bibblevm {
-    enum Opcodes : uint8_t {
+    using Opcode = uint8_t;
+
+    enum Opcodes : Opcode {
         // No operation.
         NOP = 0x0,
 
@@ -415,6 +417,31 @@ namespace bibblevm {
         RESERVED_FOR_SWITCH_2 = 0x59,
         RESERVED_FOR_SWITCH_3 = 0x5A,
 
+        // Dynamically allocate a new uninitialized instance object based on the given class info constant.
+        // a = dst
+        // b = cidx_low
+        // c = cidx_high
+        NEWINSTANCE = 0x60,
+
+        // Dynamically allocate a new zero-initialized array object with elements based on the given type id
+        // and a size specified in the length_reg register.
+        // a = dst
+        // b = typeid
+        // c = length_reg
+        NEWARRAY = 0x61,
+
+        // Dynamically allocate a new zero-initialized string object from a given byte array
+        // consisting of UTF-8 codepoints in the data_reg register.
+        // The string is constructed with the same length as the data array, then the data from the array is copied into the string.
+        // a = dst
+        // b = data_reg
+        NEWSTRING = 0x62,
+
+        // Dynamically allocate a new uncompleted future object.
+        // This is not really useful, as async/await opcodes will make these automatically.
+        // a = dst
+        NEWFUTURE = 0x63,
+
         // Call a function located in a specified HOT register with a register range starting at a HOT or EXTENDED register.
         // The returned value of the callee is moved to R0.
         // a = func_reg
@@ -470,6 +497,11 @@ namespace bibblevm {
         // Yields the current task, letting the next one in queue execute.
         YIELD = 0xC7,
     };
+
+    namespace opcodeutils {
+        // Including opcode. 0 means variable length, which needs a bit more context to determine size.
+        size_t GetFixedLength(Opcode opcode);
+    }
 }
 
 #endif //BIBBLEVM_OPCODES_H

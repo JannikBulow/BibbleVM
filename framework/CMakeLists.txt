@@ -29,15 +29,17 @@ set(SOURCES
     src/core/gc/nursery.cpp
     src/core/gc/old_gen_heap.cpp
 
+    src/core/module/instruction.cpp
+
     src/core/oop/class.cpp
     src/core/oop/future.cpp
     src/core/oop/string.cpp
     src/core/oop/type.cpp
 
+    src/core/opcodes.cpp
+
     src/linker/intrinsics.cpp
     src/linker/linker.cpp
-
-    src/core/module/instruction.cpp
 
     src/util/string_pool.cpp
 

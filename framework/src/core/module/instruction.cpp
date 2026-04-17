@@ -2,24 +2,22 @@
 
 #include "BibbleVM/core/module/instruction.h"
 
+#include <utility>
+
 namespace bibblevm::module {
-    InstructionStream::InstructionStream(const uint8_t* bytes, size_t size)
-        : mBytes(bytes)
-        , mBytesEnd(bytes + size)
-        , mCurrent(bytes) {}
+    size_t DecodeInstructionCount(BytecodeStream begin, BytecodeStream end) {
+        BytecodeStream current = begin;
+        size_t count = 0;
 
-    size_t InstructionStream::decodeInstructionCount() const {
-        return (mBytesEnd - mCurrent) / 4; // this is probably right
+        while (current != end) {
+            count++;
+            std::ignore = FetchInstruction(begin, end, current);
+        }
+
+        return count;
     }
 
-    Instruction InstructionStream::fetchOne() {
-        if (mCurrent >= mBytesEnd) return {0, 0, 0, 0}; // TODO: proper error
-        const uint8_t* current = mCurrent;
-        mCurrent += 4;
-        return current;
-    }
+    Instruction FetchInstruction(BytecodeStream begin, BytecodeStream end, BytecodeStream& current) {
 
-    void InstructionStream::reset() {
-        mCurrent = mBytes;
     }
 }
