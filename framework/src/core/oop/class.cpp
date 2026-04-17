@@ -5,23 +5,24 @@
 #include <algorithm>
 
 namespace bibblevm::oop {
-    Class::Class(String name, Class* superClass, std::span<Field> fields, std::span<Method> methods, std::span<Method*> unlinkedVtable)
+    constexpr size_t AlignUp(size_t value, size_t alignment) {
+        return (value + (alignment - 1)) & ~(alignment - 1);
+    }
+
+    Class::Class(String name, Class* superClass, std::span<Field> fields, std::span<Method> methods, GrowingArenaAllocator& arena)
         : mName(name)
         , mSuperClass(superClass)
         , mFields(fields)
         , mMethods(methods)
-        , mVtable(unlinkedVtable)
-        , mFinalizer(nullptr)
-        , mObjectFieldCount(0) {
+        , mFinalizer(nullptr) {
         if (mSuperClass != nullptr) {
             mMemorySize = mSuperClass->mMemorySize;
-            std::ranges::copy(mSuperClass->mVtable, mVtable.begin());
         } else {
-            mMemorySize = sizeof(Instance);
+            mMemorySize = 0;
         }
 
-        sortFields();
-        createVtable();
+        sortFields(arena);
+        createVtable(arena);
     }
 
     const Field* Class::getField(String name) const {
@@ -68,7 +69,7 @@ namespace bibblevm::oop {
         return false;
     }
 
-    void Class::sortFields() {
+    void Class::sortFields(GrowingArenaAllocator& arena) {
         std::array<FieldBucket, static_cast<size_t>(Type::Count)> buckets;
         for (auto& field : mFields) {
             FieldBucket& bucket = buckets[static_cast<size_t>(field.type)];
@@ -76,15 +77,41 @@ namespace bibblevm::oop {
         }
 
         orderFieldBuckets(buckets);
+
+        // Should be correct
+        auto& referenceBucket = buckets[static_cast<size_t>(Type::Reference)];
+        if (!referenceBucket.empty()) {
+            if (mSuperClass != nullptr) {
+                mReferenceRegions = {arena.allocate<ReferenceRegion>(mSuperClass->mReferenceRegions.size()) + 1, mSuperClass->mReferenceRegions.size() + 1};
+                std::ranges::copy(mSuperClass->mReferenceRegions, mReferenceRegions.begin());
+            } else {
+                mReferenceRegions = {arena.allocate<ReferenceRegion>(1), 1};
+            }
+
+            mReferenceRegions.back().offset = referenceBucket[0]->memoryOffset;
+            mReferenceRegions.back().count = referenceBucket.size();
+        } else {
+            if (mSuperClass != nullptr && !mSuperClass->mReferenceRegions.empty()) {
+                mReferenceRegions = {arena.allocate<ReferenceRegion>(mSuperClass->mReferenceRegions.size()), mSuperClass->mReferenceRegions.size()};
+                std::ranges::copy(mSuperClass->mReferenceRegions, mReferenceRegions.begin());
+            }
+        }
     }
 
     void Class::orderFieldBuckets(std::array<FieldBucket, static_cast<size_t>(Type::Count)>& buckets) {
         uint64_t offset = mMemorySize;
-        offset = (offset + 7) & ~7;
+        offset = AlignUp(offset, 8);
 
 #define ORDER_FIELD_BUCKET(type, size) orderFieldBucket(buckets[static_cast<size_t>(type)], size, offset)
         ORDER_FIELD_BUCKET(Type::Reference, 8);
+
+        offset = AlignUp(offset, 8);
+
+        ORDER_FIELD_BUCKET(Type::Handle, 8);
         ORDER_FIELD_BUCKET(Type::ModuleRef, 8);
+        ORDER_FIELD_BUCKET(Type::ClassRef, 8);
+        ORDER_FIELD_BUCKET(Type::FieldRef, 8);
+        ORDER_FIELD_BUCKET(Type::MethodRef, 8);
         ORDER_FIELD_BUCKET(Type::FunctionRef, 8);
         ORDER_FIELD_BUCKET(Type::Double, 8);
         ORDER_FIELD_BUCKET(Type::ULong, 8);
@@ -104,7 +131,7 @@ namespace bibblevm::oop {
     void Class::orderFieldBucket(FieldBucket& bucket, uint32_t size, uint64_t& offset) {
         uint64_t tempOffset = offset;
 
-        for (auto& field : bucket) {
+        for (Field* field : bucket) {
             field->memoryOffset = tempOffset;
             tempOffset += size;
         }
@@ -112,20 +139,43 @@ namespace bibblevm::oop {
         offset = tempOffset;
     }
 
-    void Class::createVtable() {
-        size_t i = mSuperClass->mVtable.size();
-        for (auto& method : mMethods) {
-            auto it = std::ranges::find_if(mVtable, [&method](Method* m) {
-                return m->name == method.name;
-            });
+    void Class::createVtable(GrowingArenaAllocator& arena) {
+        if (mSuperClass != nullptr) {
+            size_t size = mSuperClass->mVtable.size();
+            for (auto& method : mMethods) {
+                auto it = std::ranges::find_if(mSuperClass->mVtable, [&method](Method* m) {
+                    return m->name == method.name;
+                });
 
-            if (it != mVtable.end()) {
-                auto index = std::distance(mVtable.begin(), it);
-                mVtable[index] = &method;
-                method.vtableIndex = index;
-            } else {
-                method.vtableIndex = i;
-                mVtable[i++] = &method;
+                if (it == mSuperClass->mVtable.end()) {
+                    size++;
+                }
+            }
+
+            mVtable = {arena.allocate<Method*>(size), size};
+            std::ranges::fill(mVtable, nullptr);
+            std::ranges::copy(mSuperClass->mVtable, mVtable.begin());
+
+            size_t i = mSuperClass->mVtable.size();
+            for (auto& method : mMethods) {
+                auto it = std::ranges::find_if(mVtable, [&method](Method* m) {
+                    return m->name == method.name;
+                });
+
+                if (it != mVtable.end()) {
+                    auto index = std::distance(mVtable.begin(), it);
+                    mVtable[index] = &method;
+                    method.vtableIndex = index;
+                } else {
+                    mVtable[i] = &method;
+                    method.vtableIndex = i;
+                    i++;
+                }
+            }
+        } else {
+            mVtable = {arena.allocate<Method*>(mMethods.size()), mMethods.size()};
+            for (uint16_t i = 0; i < mMethods.size(); i++) {
+                mVtable[i] = &mMethods[i];
             }
         }
     }

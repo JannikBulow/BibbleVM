@@ -19,7 +19,7 @@ namespace bibblevm::gc {
     }
 
     oop::Object* MemoryManager::allocateInstance(VM& vm, oop::Class* clas) {
-        oop::Object* object = allocateRawObject(vm, clas->getMemorySize());
+        oop::Object* object = allocateRawObject(vm, clas->getTotalSize());
         if (object != nullptr) {
             object->asInstance()->clas = clas;
         }

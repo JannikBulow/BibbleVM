@@ -3,6 +3,8 @@
 #ifndef BIBBLEVM_CORE_OOP_CLASS_H
 #define BIBBLEVM_CORE_OOP_CLASS_H 1
 
+#include "BibbleVM/allocator/arena.h"
+
 #include "BibbleVM/core/oop/field.h"
 #include "BibbleVM/core/oop/method.h"
 
@@ -18,14 +20,25 @@ namespace bibblevm::executor {
 namespace bibblevm::oop {
     class BIBBLEVM_EXPORT Class {
     public:
-        Class(String name, Class* superClass, std::span<Field> fields, std::span<Method> methods, std::span<Method*> unlinkedVtable); // constructor takes unlinked vtable because the linker controls the memory and the Class uses it
+        struct ReferenceRegion {
+            uint64_t offset;
+            uint16_t count;
+        };
+
+        Class(String name, Class* superClass, std::span<Field> fields, std::span<Method> methods, GrowingArenaAllocator& arena);
 
         String getName() const { return mName; }
         Class* getSuperClass() const { return mSuperClass; }
         Method* getFinalizer() const { return mFinalizer; }
         bool hasFinalizer() const { return mFinalizer != nullptr; }
         uint64_t getMemorySize() const { return mMemorySize; }
-        uint16_t getObjectFieldCount() const { return mObjectFieldCount; }
+        uint64_t getTotalSize() const { return sizeof(Instance) + mMemorySize; }
+
+        constexpr void visitReferenceRegions(auto visitor) {
+            for (const auto& region : mReferenceRegions) {
+                visitor(region);
+            }
+        }
 
         const Field* getField(String name) const;
         const Field* getField(std::string_view name) const;
@@ -44,6 +57,7 @@ namespace bibblevm::oop {
         Class* mSuperClass;
 
         std::span<Field> mFields;
+        std::span<ReferenceRegion> mReferenceRegions;
         std::span<Method> mMethods;
         std::span<Method*> mVtable;
 
@@ -51,13 +65,11 @@ namespace bibblevm::oop {
 
         uint64_t mMemorySize;
 
-        uint16_t mObjectFieldCount;
-
-        void sortFields();
+        void sortFields(GrowingArenaAllocator& arena);
         void orderFieldBuckets(std::array<FieldBucket, static_cast<size_t>(Type::Count)>& buckets);
         static void orderFieldBucket(FieldBucket& bucket, uint32_t size, uint64_t& offset);
 
-        void createVtable();
+        void createVtable(GrowingArenaAllocator& arena);
     };
 }
 

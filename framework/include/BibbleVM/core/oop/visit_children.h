@@ -9,6 +9,7 @@
 namespace bibblevm::oop {
     constexpr void Object::visitChildren(auto visitor) {
         switch (kind) {
+            case ObjectKind::Newborn: break;
             case ObjectKind::Instance: return asInstance()->visitChildren(visitor);
             case ObjectKind::Array: return asArray()->visitChildren(visitor);
             case ObjectKind::String: return asString()->visitChildren(visitor);
@@ -17,10 +18,12 @@ namespace bibblevm::oop {
     }
 
     constexpr void Instance::visitChildren(auto visitor) {
-        Object** children = reinterpret_cast<Object**>(fieldBytes);
-        for (uint16_t i = 0; i < clas->getObjectFieldCount(); i++) {
-            visitor(children[i]);
-        }
+        clas->visitReferenceRegions([this, &visitor](const Class::ReferenceRegion& region) {
+            Object** children = reinterpret_cast<Object**>(fieldBytes + region.offset);
+            for (uint16_t i = 0; i < region.count; i++) {
+                visitor(children[i]);
+            }
+        });
     }
 
     constexpr void Array::visitChildren(auto visitor) {
@@ -38,6 +41,9 @@ namespace bibblevm::oop {
 
     constexpr void Future::visitChildren(auto visitor) {
         visitor(waiters);
+        if (ready && value.isObject) {
+            visitor(value.obj);
+        }
     }
 }
 
