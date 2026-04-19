@@ -91,7 +91,7 @@ namespace bibblevm::linker {
                 case LOAD_CONST:
                     assignExtBC();
                     break;
-                case LOADB:
+                case LOAD_IMM:
                     assignExtAB();
                     break;
                 case LOADS:

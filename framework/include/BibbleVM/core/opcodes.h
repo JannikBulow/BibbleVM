@@ -8,360 +8,1462 @@
 #include <cstdint>
 
 namespace bibblevm {
+    using Prefix = uint8_t;
     using Opcode = uint8_t;
 
+    constexpr uint8_t PREFIX_BASE = 0xF0;
+
+    enum Prefixes : Prefix {
+        WIDE_OPERAND0 = 0xF0,
+        WIDE_OPERAND1 = 0xF1,
+        WIDE_OPERAND2 = 0xF2,
+        WIDE_OPERAND3 = 0xF3,
+        HUGE_IMMEDIATE = 0xF4,
+        GIGANTIC_IMMEDIATE = 0xF5,
+    };
+
     enum Opcodes : Opcode {
-        // No operation.
+        /*
+        INSTRUCTION: NOP
+
+        PURPOSE:
+            Perform no operation and waste a cycle.
+
+        OPERANDS:
+            none
+
+        ENCODING:
+            PREFIXES:
+                none
+
+            LAYOUT:
+                [PREFIX*] [NOP]
+        */
         NOP = 0x0,
 
-        // Move HOT register to HOT register.
-        // a = dst
-        // b = src
+        /*
+        INSTRUCTION: MOV
+
+        PURPOSE:
+            Copy a register into another register.
+
+        SEMANTICS:
+            dst = src
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16-bit register address
+                    DEFAULT: 8-bit register address
+
+            SRC:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0: dst width control
+                WIDE_OPERAND0: src width control
+
+            LAYOUT:
+                [PREFIX*] [MOV] [DST] [SRC]
+        */
         MOV = 0x1,
 
-        // Move HOT register to EXTENDED register.
-        // a = dst_low
-        // b = dst_high
-        // c = src
-        MOV_HOT_EXT = 0x02,
+        /*
+        INSTRUCTION: MOV_RANGE
 
-        // Move EXTENDED register to HOT register.
-        // a = dst
-        // b = src_low
-        // c = src_high
-        MOV_EXT_HOT = 0x03,
+        PURPOSE:
+            Move a range of registers to another range of registers.
 
-        // Move a range of registers to a range of registers. The range starts at the given registers, then continues to the right for `count` registers. Overlap is allowed and its behavior will be described in detail later.
-        // a = dst
-        // b = src
-        // c = count
-        MOV_RANGE = 0x04,
+        SEMANTICS:
+            for i = 0; i < COUNT; i += 1:
+                REG[DST + i] = REG[SRC + i]
 
-        // Swaps the value of two HOT registers.
-        // a = rA
-        // b = rB
-        SWAP = 0x05,
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
 
-        // Swaps the value of a HOT register with an EXTENDED register.
-        // a = rA
-        // b = rB_low
-        // c = rB_high
-        SWAP_HOT_EXT = 0x06,
+            SRC:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
 
-        // Loads a constant value from the const pool of the currently executing function.
-        // a = dst
-        // b = cidx_low
-        // c = cidx_high
-        LOAD_CONST = 0x07,
+            COUNT:
+                TYPE: immediate
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
 
-        // Loads a single-byte immediate integer into an EXTENDED register.
-        // a = dst_low
-        // b = dst_high
-        // c = imm
-        LOADB = 0x0A,
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
 
-        // Loads a two-byte immediate integer into a HOT register.
-        // a = dst
-        // b = imm_low
-        // c = imm_high
-        LOADS = 0x0B,
+            LAYOUT:
+                [PREFIX*] [MOV_RANGE] [DST] [SRC] [COUNT]
+        */
+        MOV_RANGE = 0x02,
 
-        // Add two 64-bit values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: SWAP
+
+        PURPOSE:
+            Swap the values of two registers.
+
+        SEMANTICS:
+            let tmp = REG[A]
+            REG[A] = REG[B]
+            REG[B] = tmp
+
+        OPERANDS:
+            A:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            B:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [SWAP] [A] [B]
+        */
+        SWAP = 0x03,
+
+        /*
+        INSTRUCTION: LOAD_CONST
+
+        PURPOSE:
+            Load a value from the constant pool of the currently executing function.
+
+        SEMANTICS:
+            REG[DST] = CONST[IDX]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            IDX:
+                TYPE: const-pool index
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [LOAD_CONST] [DST] [IDX]
+        */
+        LOAD_CONST = 0x04,
+
+        /*
+        INSTRUCTION: LOAD_IMM
+
+        PURPOSE:
+            Load an immediate integer value into a register.
+
+        SEMANTICS:
+            REG[DST] = IMM
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            IMM:
+                TYPE: const-pool index
+                SIZE:
+                    GIGANTIC_IMMEDIATE: 64 bits
+                    HUGE_IMMEDIATE: 32 bits
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                HUGE_IMMEDIATE
+                GIGANTIC_IMMEDIATE
+
+            LAYOUT:
+                [PREFIX*] [LOAD_IMM] [DST] [IMM]
+        */
+        LOAD_IMM = 0x05,
+
+        /*
+        INSTRUCTION: ADD
+
+        PURPOSE:
+            Add two values together.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] + REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [ADD] [DST] [LHS] [RHS]
+        */
         ADD = 0x10,
 
-        // Subtract two 64-bit values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: SUB
+
+        PURPOSE:
+            Subtract two values.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] - REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [SUB] [DST] [LHS] [RHS]
+        */
         SUB = 0x11,
 
-        // Multiply two 64-bit values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: MUL
+
+        PURPOSE:
+            Multiply two values together.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] * REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [MUL] [DST] [LHS] [RHS]
+        */
         MUL = 0x12,
 
-        // Divide two 64-bit signed values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: SDIV
+
+        PURPOSE:
+            Divide two signed values.
+
+        SEMANTICS:
+            REG[DST] = (signed) REG[LHS] / (signed) REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [SDIV] [DST] [LHS] [RHS]
+        */
         SDIV = 0x13,
 
-        // Divide two 64-bit unsigned values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: UDIV
+
+        PURPOSE:
+            Divide two unsigned values.
+
+        SEMANTICS:
+            REG[DST] = (unsigned) REG[LHS] / (unsigned) REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [UDIV] [DST] [LHS] [RHS]
+        */
         UDIV = 0x14,
 
-        // Modulo two 64-bit signed values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: SMOD
+
+        PURPOSE:
+            Modulo two signed values.
+
+        SEMANTICS:
+            REG[DST] = (signed) REG[LHS] % (signed) REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [SMOD] [DST] [LHS] [RHS]
+        */
         SMOD = 0x15,
 
-        // Modulo two 64-bit unsigned values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: UMOD
+
+        PURPOSE:
+            Modulo two unsigned values.
+
+        SEMANTICS:
+            REG[DST] = (unsigned) REG[LHS] % (unsigned) REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [UMOD] [DST] [LHS] [RHS]
+        */
         UMOD = 0x16,
 
-        // Negate a 64-bit signed value.
-        // a = dst
-        // b = value
+        /*
+        INSTRUCTION: NEG
+
+        PURPOSE:
+            Negate a value.
+
+        SEMANTICS:
+            REG[DST] = -REG[VALUE]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [NEG] [DST] [VALUE]
+        */
         NEG = 0x17,
 
-        // Get the absolute value of a 64-bit signed value.
-        // a = dst
-        // b = value
+        /*
+        INSTRUCTION: ABS
+
+        PURPOSE:
+            Get the absolute value of a value.
+
+        SEMANTICS:
+            if REG[VALUE] < 0:
+                REG[DST] = -REG[VALUE]
+            else:
+                REG[DST] = REG[VALUE]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [ABS] [DST] [VALUE]
+        */
         ABS = 0x18,
 
-        // Perform bitwise AND on two 64-bit values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: AND
+
+        PURPOSE:
+            Perform bitwise AND on two values.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] & REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [AND] [DST] [LHS] [RHS]
+        */
         AND = 0x19,
 
-        // Perform bitwise OR on two 64-bit values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: OR
+
+        PURPOSE:
+            Perform bitwise OR on two values.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] | REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [OR] [DST] [LHS] [RHS]
+        */
         OR = 0x1A,
 
-        // Perform bitwise XOR on two 64-bit values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: XOR
+
+        PURPOSE:
+            Perform bitwise XOR on two values.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] ^ REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [XOR] [DST] [LHS] [RHS]
+        */
         XOR = 0x1B,
 
-        // Perform bitwise NOT on a 64-bit values.
-        // a = dst
-        // b = value
+        /*
+        INSTRUCTION: NOT
+
+        PURPOSE:
+            Perform bitwise NOT on a value.
+
+        SEMANTICS:
+            REG[DST] = ~REG[VALUE]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [NOT] [DST] [VALUE]
+        */
         NOT = 0x1C,
 
-        // Shift a 64-bit value to the left.
-        // a = dst
-        // b = value
-        // c = shift
+        /*
+        INSTRUCTION: SHL
+
+        PURPOSE:
+            Perform bitwise shifting to the left on a value using another value as the shift amount.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] << REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [SHL] [DST] [LHS] [RHS]
+        */
         SHL = 0x1D,
 
-        // Shift a 64-bit value to the right.
-        // a = dst
-        // b = value
-        // c = shift
+        /*
+        INSTRUCTION: SHR
+
+        PURPOSE:
+            Perform bitwise shifting to the right on a value using another value as the shift amount.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] >> REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [SHR] [DST] [LHS] [RHS]
+        */
         SHR = 0x1E,
 
-        // Shift a 64-bit value to the right while preserving the sign bit.
-        // a = dst
-        // b = value
-        // c = shift
+        /*
+        INSTRUCTION: SHL
+
+        PURPOSE:
+            Perform arithmetic shifting to the right on a value using another value as the shift amount.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] << REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [SHL] [DST] [LHS] [RHS]
+
+        NOTES:
+            - There is no "left" counterpart to this instruction as it would do the exact same.
+            - The difference between bitwise and arithmetic shifting is that arithmetic shifting will preserve the sign bit on signed values.
+        */
         SAR = 0x1F,
 
-        // Add two 32-bit float values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: FADD
+
+        PURPOSE:
+            Add two float values together.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] + REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [FADD] [DST] [LHS] [RHS]
+        */
         FADD = 0x20,
 
-        // Subtract two 32-bit float values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: FSUB
+
+        PURPOSE:
+            Subtract two float values.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] - REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [FSUB] [DST] [LHS] [RHS]
+        */
         FSUB = 0x21,
 
-        // Multiply two 32-bit float values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: FMUL
+
+        PURPOSE:
+            Multiply two float values together.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] * REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [FMUL] [DST] [LHS] [RHS]
+        */
         FMUL = 0x22,
 
-        // Divide two 32-bit float values.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: FDIV
+
+        PURPOSE:
+            Divide two float values.
+
+        SEMANTICS:
+            REG[DST] = REG[LHS] / REG[RHS]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [FDIV] [DST] [LHS] [RHS]
+        */
         FDIV = 0x23,
 
-        // Negate a 32-bit float value.
-        // a = dst
-        // b = value
+        /*
+        INSTRUCTION: FNEG
+
+        PURPOSE:
+            Negate a float value.
+
+        SEMANTICS:
+            REG[DST] = -REG[VALUE]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [FNEG] [DST] [VALUE]
+        */
         FNEG = 0x24,
 
-        // Get the absolute value of a 32-bit float value.
-        // a = dst
-        // b = value
+        /*
+        INSTRUCTION: FABS
+
+        PURPOSE:
+            Get the absolute value of a float value.
+
+        SEMANTICS:
+            if REG[VALUE] < 0:
+                REG[DST] = -REG[VALUE]
+            else:
+                REG[DST] = REG[VALUE]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [FABS] [DST] [VALUE]
+        */
         FABS = 0x25,
 
-        // Add two 64-bit float values.
-        // a = dst
-        // b = lhs
-        // c = rhs
-        DADD = 0x26,
+        /*
+        INSTRUCTION: TR8
 
-        // Subtract two 64-bit float values.
-        // a = dst
-        // b = lhs
-        // c = rhs
-        DSUB = 0x27,
+        PURPOSE:
+            Truncate a 64-bit unsigned integer value down to 8 bits.
 
-        // Multiply two 64-bit float values.
-        // a = dst
-        // b = lhs
-        // c = rhs
-        DMUL = 0x28,
+        SEMANTICS:
+            REG[DST] = REG[VALUE] & 0xFF
 
-        // Divide two 64-bit float values.
-        // a = dst
-        // b = lhs
-        // c = rhs
-        DDIV = 0x29,
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
 
-        // Negate a 64-bit float value.
-        // a = dst
-        // b = value
-        DNEG = 0x2A,
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
 
-        // Get the absolute value of a 64-bit float value.
-        // a = dst
-        // b = value
-        DABS = 0x2B,
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
 
-        // Truncate a 64-bit integer down to 8 bits.
-        // a = dst
-        // b = value
+            LAYOUT:
+                [PREFIX*] [TR8] [DST] [VALUE]
+        */
         TR8 = 0x2C,
 
-        // Truncate a 64-bit integer down to 8 bits while preserving signedness.
-        // a = dst
-        // b = value
-        TR8S = 0x2D,
+        /*
+        INSTRUCTION: TR8
 
-        // Truncate a 64-bit integer down to 16 bits.
-        // a = dst
-        // b = value
+        PURPOSE:
+            Truncate a 64-bit unsigned integer value down to 16 bits.
+
+        SEMANTICS:
+            REG[DST] = REG[VALUE] & 0xFFFF
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [TR16] [DST] [VALUE]
+        */
         TR16 = 0x2E,
 
-        // Truncate a 64-bit integer down to 16 bits while preserving signedness.
-        // a = dst
-        // b = value
-        TR16S = 0x2F,
+        /*
+        INSTRUCTION: TR32
 
-        // Truncate a 64-bit integer down to 32 bits.
-        // a = dst
-        // b = value
+        PURPOSE:
+            Truncate a 64-bit unsigned integer value down to 32 bits.
+
+        SEMANTICS:
+            REG[DST] = REG[VALUE] & 0xFFFFFFFF
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [TR32] [DST] [VALUE]
+        */
         TR32 = 0x30,
 
-        // Truncate a 64-bit integer down to 32 bits while preserving signedness.
-        // a = dst
-        // b = value
-        TR32S = 0x31,
+        /*
+        INSTRUCTION: SEX8
 
-        // Sign-extend an 8-bit integer to a 64-bit integer.
-        // If you read 'SEX' and think of anything other than Sign EXtend, you need to lock in.
-        // a = dst
-        // b = value
+        PURPOSE:
+            Sign-extend an 8-bit integer to a 64-bit integer.
+
+        SEMANTICS:
+            let value = REG[VALUE] & 0xFF
+            if value & 0x80 != 0:
+                REG[DST] = value | 0xFFFFFFFFFFFFFF00
+            else:
+                REG[DST] = value
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [SEX8] [DST] [VALUE]
+
+        NOTES:
+            - If you read 'SEX' and think of anything other than Sign EXtend, you need to lock in.
+        */
         SEX8 = 0x32,
 
-        // Sign-extend a 16-bit integer to a 64-bit integer.
-        // If you read 'SEX' and think of anything other than Sign EXtend, you need to lock in.
-        // a = dst
-        // b = value
-        SEX16 = 0x32,
+        /*
+        INSTRUCTION: SEX16
 
-        // Sign-extend a 32-bit integer to a 64-bit integer.
-        // If you read 'SEX' and think of anything other than Sign EXtend, you need to lock in.
-        // a = dst
-        // b = value
-        SEX32 = 0x32,
+        PURPOSE:
+            Sign-extend an 16-bit integer to a 64-bit integer.
 
-        // Zero-extend an 8-bit integer to a 64-bit integer.
-        // a = dst
-        // b = value
-        ZEX8 = 0x32,
+        SEMANTICS:
+            let value = REG[VALUE] & 0xFFFF
+            if value & 0x8000 != 0:
+                REG[DST] = value | 0xFFFFFFFFFFFF0000
+            else:
+                REG[DST] = value
 
-        // Zero-extend a 16-bit integer to a 64-bit integer.
-        // a = dst
-        // b = value
-        ZEX16 = 0x32,
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
 
-        // Zero-extend a 32-bit integer to a 64-bit integer.
-        // a = dst
-        // b = value
-        ZEX32 = 0x32,
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
 
-        // Convert a 64-bit integer to a 32-bit float.
-        // a = dst
-        // b = value
-        I2F = 0x33,
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [SEX16] [DST] [VALUE]
+
+        NOTES:
+            - If you read 'SEX' and think of anything other than Sign EXtend, you need to lock in.
+        */
+        SEX16 = 0x33,
+
+        /*
+        INSTRUCTION: SEX32
+
+        PURPOSE:
+            Sign-extend an 32-bit integer to a 64-bit integer.
+
+        SEMANTICS:
+            let value = REG[VALUE] & 0xFFFFFFFF
+            if value & 0x80000000 != 0:
+                REG[DST] = value | 0xFFFFFFFF00000000
+            else:
+                REG[DST] = value
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [SEX32] [DST] [VALUE]
+
+        NOTES:
+            - If you read 'SEX' and think of anything other than Sign EXtend, you need to lock in.
+        */
+        SEX32 = 0x34,
+
+        /*
+        INSTRUCTION: ZEX8
+
+        PURPOSE:
+            Zero-extend an 8-bit integer to a 64-bit integer.
+
+        SEMANTICS:
+            REG[DST] = REG[VALUE] & 0xFF
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [ZEX8] [DST] [VALUE]
+        */
+        ZEX8 = 0x35,
+
+        /*
+        INSTRUCTION: ZEX16
+
+        PURPOSE:
+            Zero-extend an 16-bit integer to a 64-bit integer.
+
+        SEMANTICS:
+            REG[DST] = REG[VALUE] & 0xFFFF
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [ZEX16] [DST] [VALUE]
+        */
+        ZEX16 = 0x36,
+
+        /*
+        INSTRUCTION: ZEX32
+
+        PURPOSE:
+            Zero-extend an 32-bit integer to a 64-bit integer.
+
+        SEMANTICS:
+            REG[DST] = REG[VALUE] & 0xFFFFFFFF
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [ZEX32] [DST] [VALUE]
+        */
+        ZEX32 = 0x37,
+
+        /*
+        INSTRUCTION: I2F
+
+        PURPOSE:
+            Convert a 64-bit signed integer to a 32-bit float.
+
+        SEMANTICS:
+            REG[DST] = IEEE754_s64_to_binary32(REG[VALUE])
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [I2F] [DST] [VALUE]
+        */
+        I2F = 0x38,
+
+        U2F = 0x39,
 
         // Convert a 64-bit integer to a 64-bit float.
         // a = dst
         // b = value
-        I2D = 0x34,
+        I2D = 0x3A,
+
+        U2D = 0x3B,
 
         // Convert a 32-bit float to a 64-bit integer.
         // a = dst
         // b = value
-        F2I = 0x35,
+        F2I = 0x3C,
+
+        F2U = 0x3D,
 
         // Convert a 64-bit float to a 64-bit integer.
         // a = dst
         // b = value
-        D2I = 0x36,
+        D2I = 0x3E,
+
+        D2U = 0x3F,
 
         // Promote a 32-bit float to a 64-bit float.
         // a = dst
         // b = value
-        F2D = 0x37,
+        F2D = 0x40,
 
         // Demote a 64-bit float to a 32-bit float.
         // a = dst
         // b = value
-        D2F = 0x38,
+        D2F = 0x41,
 
         // Compare 2 64-bit signed integers and produce a special comparison value used by conditional jump instructions.
         // a = dst
         // b = lhs
         // c = rhs
-        ICMP = 0x39,
+        ICMP = 0x42,
 
         // Compare 2 64-bit unsigned integers and produce a special comparison value used by conditional jump instructions.
         // a = dst
         // b = lhs
         // c = rhs
-        UCMP = 0x40,
+        UCMP = 0x43,
 
         // Compare 2 32-bit floats and produce a special comparison value used by conditional jump instructions.
         // a = dst
         // b = lhs
         // c = rhs
-        FCMP = 0x41,
+        FCMP = 0x44,
 
         // Compare 2 64-bit floats and produce a special comparison value used by conditional jump instructions.
         // a = dst
         // b = lhs
         // c = rhs
-        DCMP = 0x42,
+        DCMP = 0x45,
 
         // Compare 2 strings and produce a special comparison value used by conditional jump instructions.
         // The produced value of STRCMP is the same as the strcmp() function in C, just operating on UTF-8 codepoints instead of bytes.
         // a = dst
         // b = lhs
         // c = rhs
-        STRCMP = 0x43,
+        STRCMP = 0x46,
 
         // Increment a given 64-bit integer by a 16-bit immediate unsigned integer.
         // a = reg
         // b = value_low
         // c = value_high
-        INC = 0x44,
+        INC = 0x47,
 
         // Decrement a given 64-bit integer by a 16-bit immediate unsigned integer.
         // a = reg
         // b = value_low
         // c = value_high
-        DEC = 0x45,
+        DEC = 0x48,
 
         // Advance the instruction pointer.
         // a = branch_low
@@ -499,8 +1601,17 @@ namespace bibblevm {
     };
 
     namespace opcodeutils {
+        struct PrefixState {
+            bool wideOperand0 = false;
+            bool wideOperand1 = false;
+            bool wideOperand2 = false;
+            bool wideOperand3 = false;
+            bool hugeImmediate = false;
+            bool giganticImmediate = false;
+        };
+
         // Including opcode. 0 means variable length, which needs a bit more context to determine size.
-        size_t GetFixedLength(Opcode opcode);
+        size_t GetFixedLength(Opcode opcode, const PrefixState& prefixState);
     }
 }
 

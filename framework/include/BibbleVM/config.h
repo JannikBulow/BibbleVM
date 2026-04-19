@@ -26,7 +26,7 @@ namespace bibblevm {
 
         uint8_t promotionAge = 3;
 
-        bool implicitInternStrings = false; // all string allocations are implicitly interned in the string pool. very inefficient
+        bool implicitInternStrings = false; // all string allocations are implicitly interned in the string pool. very inefficient speed wise but less memory consumption
 
         bool enableLargeHeap = true; // enable whole separate heap for large object allocation (instead of using the old generation heap)
 
@@ -42,7 +42,6 @@ namespace bibblevm {
         double nurseryCollectionThreshold = 0.95;
         double oldGenHeapCollectionThreshold = 0.7;
         double oldGenHeapCompactThreshold = 0.7; // how fragmented should the heap be before compaction
-        size_t largeObjectCollectionFrequency = 10; // how many gc cycles before we consider scanning the large object heap
         double promotionPressureThreshold = 0.15;
 
         uint8_t promotionAge = 3;

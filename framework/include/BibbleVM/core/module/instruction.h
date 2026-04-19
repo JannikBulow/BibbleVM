@@ -8,6 +8,7 @@
 #include "BibbleVM/api.h"
 
 #include <cstdint>
+#include <optional>
 
 namespace bibblevm::module {
     using BytecodeStream = const uint8_t*;
@@ -19,7 +20,8 @@ namespace bibblevm::module {
     };
 
     size_t DecodeInstructionCount(BytecodeStream begin, BytecodeStream end);
-    Instruction FetchInstruction(BytecodeStream begin, BytecodeStream end, BytecodeStream& current);
+
+    std::optional<Instruction> FetchInstruction(BytecodeStream begin, BytecodeStream end, BytecodeStream& current);
 }
 
 #endif //BIBBLEVM_CORE_MODULE_INSTRUCTION_H

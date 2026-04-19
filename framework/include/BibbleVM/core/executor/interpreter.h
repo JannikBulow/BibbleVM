@@ -7,6 +7,8 @@
 
 #include "BibbleVM/core/oop/object.h"
 
+#include "BibbleVM/core/opcodes.h"
+
 #include "BibbleVM/api.h"
 
 #include <cstdint>

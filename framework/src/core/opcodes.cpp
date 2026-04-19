@@ -3,18 +3,14 @@
 #include "BibbleVM/core/opcodes.h"
 
 namespace bibblevm::opcodeutils {
-    size_t GetFixedLength(Opcode opcode) {
+    size_t GetFixedLength(Opcode opcode, const PrefixState& prefixState) {
         switch (static_cast<Opcodes>(opcode)) {
             case NOP: return 1;
-            case MOV: break;
-            case MOV_HOT_EXT: break;
-            case MOV_EXT_HOT: break;
+            case MOV: return 3;
             case MOV_RANGE: break;
             case SWAP: break;
-            case SWAP_HOT_EXT: break;
             case LOAD_CONST: break;
-            case LOADB: break;
-            case LOADS: break;
+            case LOAD_IMM: break;
             case ADD: break;
             case SUB: break;
             case MUL: break;
@@ -37,18 +33,9 @@ namespace bibblevm::opcodeutils {
             case FDIV: break;
             case FNEG: break;
             case FABS: break;
-            case DADD: break;
-            case DSUB: break;
-            case DMUL: break;
-            case DDIV: break;
-            case DNEG: break;
-            case DABS: break;
             case TR8: break;
-            case TR8S: break;
             case TR16: break;
-            case TR16S: break;
             case TR32: break;
-            case TR32S: break;
             case SEX8: break;
             case SEX16: break;
             case SEX32: break;
@@ -91,6 +78,7 @@ namespace bibblevm::opcodeutils {
             case CALLARP: break;
             case AWAIT: break;
             case YIELD: break;
+
         }
     }
 }

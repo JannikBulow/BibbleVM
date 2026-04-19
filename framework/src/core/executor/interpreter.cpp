@@ -23,15 +23,6 @@ namespace bibblevm::executor {
         return InterpreterMessage::Continue();
     }
 
-    DEFINE_INTERPRETER(MOV_HOT_EXT) {
-        frame[args.extAB.ab] = frame[args.extAB.c];
-        return InterpreterMessage::Continue();
-    }
-
-    DEFINE_INTERPRETER(MOV_EXT_HOT) {
-        frame[args.extBC.a] = frame[args.extBC.bc];
-        return InterpreterMessage::Continue();
-    }
 
     DEFINE_INTERPRETER(MOV_RANGE) {
         memmove(&frame[args.generic.a], &frame[args.generic.b], args.generic.c * sizeof(Value));
@@ -45,25 +36,13 @@ namespace bibblevm::executor {
         return InterpreterMessage::Continue();
     }
 
-    DEFINE_INTERPRETER(SWAP_HOT_EXT) {
-        Value tmp = frame[args.extBC.a];
-        frame[args.extBC.a] = frame[args.extBC.bc];
-        frame[args.extBC.bc] = tmp;
-        return InterpreterMessage::Continue();
-    }
-
     DEFINE_INTERPRETER(LOAD_CONST) {
         frame[args.extBC.a] = frame.getFunction().mergedConstPool().get(args.extBC.bc);
         return InterpreterMessage::Continue();
     }
 
-    DEFINE_INTERPRETER(LOADB) {
+    DEFINE_INTERPRETER(LOAD_IMM) {
         frame[args.extAB.ab].ul = args.extAB.c;
-        return InterpreterMessage::Continue();
-    }
-
-    DEFINE_INTERPRETER(LOADS) {
-        frame[args.extBC.a].ul = args.extBC.bc;
         return InterpreterMessage::Continue();
     }
 
@@ -177,63 +156,19 @@ namespace bibblevm::executor {
         return InterpreterMessage::Continue();
     }
 
-    DEFINE_INTERPRETER(DADD) {
-        frame[args.generic.a].d = frame[args.generic.b].d + frame[args.generic.c].d;
-        return InterpreterMessage::Continue();
-    }
-
-    DEFINE_INTERPRETER(DSUB) {
-        frame[args.generic.a].d = frame[args.generic.b].d - frame[args.generic.c].d;
-        return InterpreterMessage::Continue();
-    }
-
-    DEFINE_INTERPRETER(DMUL) {
-        frame[args.generic.a].d = frame[args.generic.b].d * frame[args.generic.c].d;
-        return InterpreterMessage::Continue();
-    }
-
-    DEFINE_INTERPRETER(DDIV) {
-        frame[args.generic.a].d = frame[args.generic.b].d / frame[args.generic.c].d;
-        return InterpreterMessage::Continue();
-    }
-
-    DEFINE_INTERPRETER(DNEG) {
-        frame[args.generic.a].d = -frame[args.generic.b].d;
-        return InterpreterMessage::Continue();
-    }
-
-    DEFINE_INTERPRETER(DABS) {
-        frame[args.generic.a].d = std::abs(frame[args.generic.b].d);
-        return InterpreterMessage::Continue();
-    }
-
     DEFINE_INTERPRETER(TR8) {
         frame[args.generic.a].ub = static_cast<UByte>(frame[args.generic.b].ul);
         return InterpreterMessage::Continue();
     }
 
-    DEFINE_INTERPRETER(TR8S) {
-        frame[args.generic.a].b = static_cast<Byte>(frame[args.generic.b].l);
-        return InterpreterMessage::Continue();
-    }
 
     DEFINE_INTERPRETER(TR16) {
         frame[args.generic.a].us = static_cast<UShort>(frame[args.generic.b].ul);
         return InterpreterMessage::Continue();
     }
 
-    DEFINE_INTERPRETER(TR16S) {
-        frame[args.generic.a].s = static_cast<Short>(frame[args.generic.b].l);
-        return InterpreterMessage::Continue();
-    }
-
     DEFINE_INTERPRETER(TR32) {
         frame[args.generic.a].ui = static_cast<UInt>(frame[args.generic.b].ul);
-        return InterpreterMessage::Continue();
-    }
-
-    DEFINE_INTERPRETER(TR32S) {
-        frame[args.generic.a].i = static_cast<Int>(frame[args.generic.b].l);
         return InterpreterMessage::Continue();
     }
 
@@ -450,14 +385,10 @@ namespace bibblevm::executor {
             std::array<Interpreter, 256> table{};
             REGISTER_INTERPRETER(NOP);
             REGISTER_INTERPRETER(MOV);
-            REGISTER_INTERPRETER(MOV_HOT_EXT);
-            REGISTER_INTERPRETER(MOV_EXT_HOT);
             REGISTER_INTERPRETER(MOV_RANGE);
             REGISTER_INTERPRETER(SWAP);
-            REGISTER_INTERPRETER(SWAP_HOT_EXT);
             REGISTER_INTERPRETER(LOAD_CONST);
-            REGISTER_INTERPRETER(LOADB);
-            REGISTER_INTERPRETER(LOADS);
+            REGISTER_INTERPRETER(LOAD_IMM);
             REGISTER_INTERPRETER(ADD);
             REGISTER_INTERPRETER(SUB);
             REGISTER_INTERPRETER(MUL);
@@ -480,18 +411,9 @@ namespace bibblevm::executor {
             REGISTER_INTERPRETER(FDIV);
             REGISTER_INTERPRETER(FNEG);
             REGISTER_INTERPRETER(FABS);
-            REGISTER_INTERPRETER(DADD);
-            REGISTER_INTERPRETER(DSUB);
-            REGISTER_INTERPRETER(DMUL);
-            REGISTER_INTERPRETER(DDIV);
-            REGISTER_INTERPRETER(DNEG);
-            REGISTER_INTERPRETER(DABS);
             REGISTER_INTERPRETER(TR8);
-            REGISTER_INTERPRETER(TR8S);
             REGISTER_INTERPRETER(TR16);
-            REGISTER_INTERPRETER(TR16S);
             REGISTER_INTERPRETER(TR32);
-            REGISTER_INTERPRETER(TR32S);
             REGISTER_INTERPRETER(SEX8);
             REGISTER_INTERPRETER(SEX16);
             REGISTER_INTERPRETER(SEX32);
