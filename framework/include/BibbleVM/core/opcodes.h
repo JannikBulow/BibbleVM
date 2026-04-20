@@ -2009,10 +2009,10 @@ namespace bibblevm {
         DEC = 0x47,
 
         /*
-        INSTRUCTION: INC
+        INSTRUCTION: JMP
 
         PURPOSE:
-            Increment a register value by an immediate value
+            Increment the instruction pointer by a given signed immediate value.
 
         SEMANTICS:
             REG[VALUE] += IMM
@@ -2023,18 +2023,16 @@ namespace bibblevm {
                 SIZE:
                     GIGANTIC_IMMEDIATE: 64 bits
                     HUGE_IMMEDIATE: 32 bits
-                    WIDE_OPERAND1: 16 bits
                     DEFAULT: 16 bits
 
         ENCODING:
             PREFIXES:
                 WIDE_OPERAND0
-                WIDE_OPERAND1
                 HUGE_IMMEDIATE
                 GIGANTIC_IMMEDIATE
 
             LAYOUT:
-                [PREFIX*] [INC] [VALUE] [IMM]
+                [PREFIX*] [JMP] [VALUE] [IMM]
         */
         JMP = 0x50,
 
