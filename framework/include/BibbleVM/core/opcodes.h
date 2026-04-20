@@ -196,7 +196,7 @@ namespace bibblevm {
                     DEFAULT: 8 bits
 
             IMM:
-                TYPE: const-pool index
+                TYPE: immediate
                 SIZE:
                     GIGANTIC_IMMEDIATE: 64 bits
                     HUGE_IMMEDIATE: 32 bits
@@ -1386,89 +1386,656 @@ namespace bibblevm {
 
             LAYOUT:
                 [PREFIX*] [I2F] [DST] [VALUE]
+
+        NOTES:
+            - Conversion may lose precision.
+            - Values outside the exact representable range of IEEE 754 binary32 are rounded.
         */
         I2F = 0x38,
 
+        /*
+        INSTRUCTION: U2F
+
+        PURPOSE:
+            Convert a 64-bit unsigned integer to a 32-bit float.
+
+        SEMANTICS:
+            REG[DST] = IEEE754_u64_to_binary32(REG[VALUE])
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [U2F] [DST] [VALUE]
+
+        NOTES:
+            - Conversion may lose precision.
+            - Values outside the exact representable range of IEEE 754 binary32 are rounded.
+        */
         U2F = 0x39,
 
-        // Convert a 64-bit integer to a 64-bit float.
-        // a = dst
-        // b = value
+        /*
+        INSTRUCTION: I2D
+
+        PURPOSE:
+            Convert a 64-bit signed integer to a 64-bit float.
+
+        SEMANTICS:
+            REG[DST] = IEEE754_s64_to_binary64(REG[VALUE])
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [I2D] [DST] [VALUE]
+
+        NOTES:
+            - Conversion may lose precision.
+            - Values outside the exact representable range of IEEE 754 binary64 are rounded.
+        */
         I2D = 0x3A,
 
+        /*
+        INSTRUCTION: U2D
+
+        PURPOSE:
+            Convert a 64-bit unsigned integer to a 64-bit float.
+
+        SEMANTICS:
+            REG[DST] = IEEE754_u64_to_binary64(REG[VALUE])
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [U2D] [DST] [VALUE]
+
+        NOTES:
+            - Conversion may lose precision.
+            - Values outside the exact representable range of IEEE 754 binary64 are rounded.
+        */
         U2D = 0x3B,
 
-        // Convert a 32-bit float to a 64-bit integer.
-        // a = dst
-        // b = value
+        /*
+        INSTRUCTION: F2I
+
+        PURPOSE:
+            Convert a 32-bit float to a 64-bit signed integer.
+
+        SEMANTICS:
+            REG[DST] = IEEE754_binary32_to_s64(REG[VALUE])
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [F2I] [DST] [VALUE]
+
+        NOTES:
+            - Fractions are discarded (round toward zero).
+            - Values greater than LONG_MAX are clamped to LONG_MAX.
+            - Values less than LONG_MIN are clamped to LONG_MIN.
+            - +Infinity is converted to LONG_MAX.
+            - -Infinity is converted to LONG_MIN.
+            - NaN is converted to 0.
+            - +0.0 and -0.0 both convert to 0.
+        */
         F2I = 0x3C,
 
+        /*
+        INSTRUCTION: F2U
+
+        PURPOSE:
+            Convert a 32-bit float to a 64-bit unsigned integer.
+
+        SEMANTICS:
+            REG[DST] = IEEE754_binary32_to_u64(REG[VALUE])
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [F2U] [DST] [VALUE]
+
+        NOTES:
+            - Fractions are discarded (round toward zero).
+            - Values greater than ULONG_MAX are clamped to ULONG_MAX.
+            - Values less than ULONG_MIN are clamped to ULONG_MIN.
+            - +Infinity is converted to ULONG_MAX.
+            - -Infinity is converted to ULONG_MIN.
+            - NaN is converted to 0.
+            - +0.0 and -0.0 both convert to 0.
+        */
         F2U = 0x3D,
 
-        // Convert a 64-bit float to a 64-bit integer.
-        // a = dst
-        // b = value
+        /*
+        INSTRUCTION: D2I
+
+        PURPOSE:
+            Convert a 64-bit float to a 64-bit signed integer.
+
+        SEMANTICS:
+            REG[DST] = IEEE754_binary64_to_s64(REG[VALUE])
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [D2I] [DST] [VALUE]
+
+        NOTES:
+            - Fractions are discarded (round toward zero).
+            - Values greater than LONG_MAX are clamped to LONG_MAX.
+            - Values less than LONG_MIN are clamped to LONG_MIN.
+            - +Infinity is converted to LONG_MAX.
+            - -Infinity is converted to LONG_MIN.
+            - NaN is converted to 0.
+            - +0.0 and -0.0 both convert to 0.
+        */
         D2I = 0x3E,
 
+        /*
+        INSTRUCTION: D2I
+
+        PURPOSE:
+            Convert a 64-bit float to a 64-bit unsigned integer.
+
+        SEMANTICS:
+            REG[DST] = IEEE754_binary64_to_s64(REG[VALUE])
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [F2I] [DST] [VALUE]
+
+        NOTES:
+            - Fractions are discarded (round toward zero).
+            - Values greater than LONG_MAX are clamped to LONG_MAX.
+            - Values less than LONG_MIN are clamped to LONG_MIN.
+            - +Infinity is converted to LONG_MAX.
+            - -Infinity is converted to LONG_MIN.
+            - NaN is converted to 0.
+            - +0.0 and -0.0 both convert to 0.
+        */
         D2U = 0x3F,
 
-        // Promote a 32-bit float to a 64-bit float.
-        // a = dst
-        // b = value
+        /*
+        INSTRUCTION: F2D
+
+        PURPOSE:
+            Convert a 32-bit float to a 64-bit float.
+
+        SEMANTICS:
+            REG[DST] = IEEE754_binary32_to_binary64(REG[VALUE])
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [F2D] [DST] [VALUE]
+
+        NOTES:
+            - Everything is preserved.
+            - Overflow not possible.
+        */
         F2D = 0x40,
 
-        // Demote a 64-bit float to a 32-bit float.
-        // a = dst
-        // b = value
+        /*
+        INSTRUCTION: D2F
+
+        PURPOSE:
+            Convert a 64-bit float to a 32-bit float.
+
+        SEMANTICS:
+            REG[DST] = IEEE754_binary64_to_binary32(REG[VALUE])
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [D2F] [DST] [VALUE]
+
+        NOTES:
+            - Rounded to nearest representable binary32 value (ties to even).
+            - Overflow is converted to +-Infinity.
+            - NaN is preserved.
+        */
         D2F = 0x41,
 
-        // Compare 2 64-bit signed integers and produce a special comparison value used by conditional jump instructions.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: ICMP
+
+        PURPOSE:
+            Compare two signed values and produce a result equal to -1, 0 or 1 based on whether lhs is less than, equal to or greater than rhs.
+
+        SEMANTICS:
+            let lhs = REG[LHS]
+            let rhs = REG[RHS]
+
+            if lhs < rhs: REG[DST] = -1
+            else if lhs > rhs: REG[DST] = 1
+            else: REG[DST] = 0
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [ICMP] [DST] [LHS] [RHS]
+        */
         ICMP = 0x42,
 
-        // Compare 2 64-bit unsigned integers and produce a special comparison value used by conditional jump instructions.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: UCMP
+
+        PURPOSE:
+            Compare two unsigned values and produce a result equal to -1, 0 or 1 based on whether lhs is less than, equal to or greater than rhs.
+
+        SEMANTICS:
+            let lhs = REG[LHS]
+            let rhs = REG[RHS]
+
+            if lhs < rhs: REG[DST] = -1
+            else if lhs > rhs: REG[DST] = 1
+            else: REG[DST] = 0
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [UCMP] [DST] [LHS] [RHS]
+        */
         UCMP = 0x43,
 
-        // Compare 2 32-bit floats and produce a special comparison value used by conditional jump instructions.
-        // a = dst
-        // b = lhs
-        // c = rhs
+        /*
+        INSTRUCTION: FCMP
+
+        PURPOSE:
+            Compare two float values and produce an integer result equal to -1, 0 or 1 based on whether lhs is less than, equal to or greater than rhs.
+
+        SEMANTICS:
+            let lhs = REG[LHS]
+            let rhs = REG[RHS]
+
+            if lhs < rhs: REG[DST] = -1
+            else if lhs > rhs: REG[DST] = 1
+            else: REG[DST] = 0
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [FCMP] [DST] [LHS] [RHS]
+        */
         FCMP = 0x44,
 
-        // Compare 2 64-bit floats and produce a special comparison value used by conditional jump instructions.
-        // a = dst
-        // b = lhs
-        // c = rhs
-        DCMP = 0x45,
+        /*
+        INSTRUCTION: STRCMP
 
-        // Compare 2 strings and produce a special comparison value used by conditional jump instructions.
-        // The produced value of STRCMP is the same as the strcmp() function in C, just operating on UTF-8 codepoints instead of bytes.
-        // a = dst
-        // b = lhs
-        // c = rhs
-        STRCMP = 0x46,
+        PURPOSE:
+            Compare 2 string objects and produces the value 0 if they are equal,
+            a value less than 0 if lhs is lexicographically less than rhs
+            and a value greater than 0 if lhs is lexicographically greater than rhs.
 
-        // Increment a given 64-bit integer by a 16-bit immediate unsigned integer.
-        // a = reg
-        // b = value_low
-        // c = value_high
-        INC = 0x47,
+        SEMANTICS:
+            let lhs = REG[LHS]
+            let rhs = REG[RHS]
 
-        // Decrement a given 64-bit integer by a 16-bit immediate unsigned integer.
-        // a = reg
-        // b = value_low
-        // c = value_high
-        DEC = 0x48,
+            let iteratorA = UTF-8 iterator of lhs
+            let iteratorB = UTF-8 iterator of rhs
 
-        // Advance the instruction pointer.
-        // a = branch_low
-        // b = branch_mid
-        // c = branch_high
+            while iteratorA has next && iteratorB has next:
+                let codepointA = next UTF-8 character from iteratorA
+                let codepointB = next UTF-8 character from iteratorB
+
+                advance iteratorA
+                advance iteratorB
+
+                if codepointA != codepointB:
+                    if codepointA < codepointB:
+                        return -1
+                    else:
+                        return 1
+
+            if iteratorA has ended && iteratorB has ended:
+                return 0
+
+            if iteratorA not ended:
+                return 1
+            else:
+                return -1
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            RHS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [STRCMP] [DST] [LHS] [RHS]
+        */
+        STRCMP = 0x45,
+
+        /*
+        INSTRUCTION: INC
+
+        PURPOSE:
+            Increment a register value by an immediate value
+
+        SEMANTICS:
+            REG[VALUE] += IMM
+
+        OPERANDS:
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            IMM:
+                TYPE: immediate
+                SIZE:
+                    GIGANTIC_IMMEDIATE: 64 bits
+                    HUGE_IMMEDIATE: 32 bits
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                HUGE_IMMEDIATE
+                GIGANTIC_IMMEDIATE
+
+            LAYOUT:
+                [PREFIX*] [INC] [VALUE] [IMM]
+        */
+        INC = 0x46,
+
+        /*
+        INSTRUCTION: DEC
+
+        PURPOSE:
+            Decrement a register value by an immediate value
+
+        SEMANTICS:
+            REG[VALUE] -= IMM
+
+        OPERANDS:
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            IMM:
+                TYPE: immediate
+                SIZE:
+                    GIGANTIC_IMMEDIATE: 64 bits
+                    HUGE_IMMEDIATE: 32 bits
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                HUGE_IMMEDIATE
+                GIGANTIC_IMMEDIATE
+
+            LAYOUT:
+                [PREFIX*] [DEC] [VALUE] [IMM]
+        */
+        DEC = 0x47,
+
+        /*
+        INSTRUCTION: INC
+
+        PURPOSE:
+            Increment a register value by an immediate value
+
+        SEMANTICS:
+            REG[VALUE] += IMM
+
+        OPERANDS:
+            BRANCH:
+                TYPE: immediate
+                SIZE:
+                    GIGANTIC_IMMEDIATE: 64 bits
+                    HUGE_IMMEDIATE: 32 bits
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 16 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                HUGE_IMMEDIATE
+                GIGANTIC_IMMEDIATE
+
+            LAYOUT:
+                [PREFIX*] [INC] [VALUE] [IMM]
+        */
         JMP = 0x50,
 
         // Advance the instruction pointer if the 8-bit signed integer specified in the value register is equal to zero.

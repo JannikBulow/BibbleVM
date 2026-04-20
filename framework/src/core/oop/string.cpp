@@ -31,11 +31,11 @@ namespace bibblevm::oop {
         auto endB = other.mObject->bytes + other.mObject->lengthBytes;
 
         while (itA < endA && itB < endB) {
-            utf8::utfchar32_t cp_a = utf8::next(itA, endA);
-            utf8::utfchar32_t cp_b = utf8::next(itB, endB);
+            utf8::utfchar32_t cpA = utf8::next(itA, endA);
+            utf8::utfchar32_t cpB = utf8::next(itB, endB);
 
-            if (cp_a != cp_b)
-                return (cp_a < cp_b) ? -1 : 1;
+            if (cpA != cpB)
+                return (cpA < cpB) ? -1 : 1;
         }
 
         if (itA == endA && itB == endB) return 0;

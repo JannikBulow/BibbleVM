@@ -203,22 +203,42 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(I2F) {
-        frame[args.generic.a].f = static_cast<float>(frame[args.generic.b].l);
+        frame[args.generic.a].f = math::IntToFP<float, Long>(frame[args.generic.b].l);
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(U2F) {
+        frame[args.generic.a].f = math::IntToFP<float, ULong>(frame[args.generic.b].ul);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(I2D) {
-        frame[args.generic.a].d = static_cast<double>(frame[args.generic.b].l);
+        frame[args.generic.a].d = math::IntToFP<double, Long>(frame[args.generic.b].l);
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(U2D) {
+        frame[args.generic.a].d = math::IntToFP<double, ULong>(frame[args.generic.b].ul);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(F2I) {
-        frame[args.generic.a].l = static_cast<Long>(frame[args.generic.b].f);
+        frame[args.generic.a].l = math::FPToInt<float, Long>(frame[args.generic.b].f);
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(F2U) {
+        frame[args.generic.a].ul = math::FPToInt<float, ULong>(frame[args.generic.b].f);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(D2I) {
-        frame[args.generic.a].l = static_cast<Long>(frame[args.generic.b].d);
+        frame[args.generic.a].l = math::FPToInt<double, Long>(frame[args.generic.b].d);
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(D2U) {
+        frame[args.generic.a].ul = math::FPToInt<double, ULong>(frame[args.generic.b].d);
         return InterpreterMessage::Continue();
     }
 
@@ -233,7 +253,7 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(ICMP) {
-        Byte& dst = frame[args.generic.a].b;
+        Long& dst = frame[args.generic.a].l;
         Long lhs = frame[args.generic.b].l;
         Long rhs = frame[args.generic.c].l;
 
@@ -245,7 +265,7 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(UCMP) {
-        Byte& dst = frame[args.generic.a].b;
+        Long& dst = frame[args.generic.a].l;
         ULong lhs = frame[args.generic.b].ul;
         ULong rhs = frame[args.generic.c].ul;
 
@@ -257,21 +277,9 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(FCMP) {
-        Byte& dst = frame[args.generic.a].b;
+        Long& dst = frame[args.generic.a].l;
         float lhs = frame[args.generic.b].f;
         float rhs = frame[args.generic.c].f;
-
-        if (lhs < rhs) dst = -1;
-        if (lhs > rhs) dst = 1;
-        else dst = 0;
-
-        return InterpreterMessage::Continue();
-    }
-
-    DEFINE_INTERPRETER(DCMP) {
-        Byte& dst = frame[args.generic.a].b;
-        double lhs = frame[args.generic.b].d;
-        double rhs = frame[args.generic.c].d;
 
         if (lhs < rhs) dst = -1;
         if (lhs > rhs) dst = 1;
@@ -283,7 +291,7 @@ namespace bibblevm::executor {
     DEFINE_INTERPRETER(STRCMP) {
         String str1 = frame[args.generic.b].obj->asString();
         String str2 = frame[args.generic.c].obj->asString();
-        frame[args.generic.a].b = static_cast<Byte>(str1.compareCorrect(str2));
+        frame[args.generic.a].l = static_cast<Long>(str1.compareCorrect(str2));
         return InterpreterMessage::Continue();
     }
 
@@ -421,15 +429,18 @@ namespace bibblevm::executor {
             REGISTER_INTERPRETER(ZEX16);
             REGISTER_INTERPRETER(ZEX32);
             REGISTER_INTERPRETER(I2F);
+            REGISTER_INTERPRETER(U2F);
             REGISTER_INTERPRETER(I2D);
+            REGISTER_INTERPRETER(U2D);
             REGISTER_INTERPRETER(F2I);
+            REGISTER_INTERPRETER(F2U);
             REGISTER_INTERPRETER(D2I);
+            REGISTER_INTERPRETER(D2U);
             REGISTER_INTERPRETER(F2D);
             REGISTER_INTERPRETER(D2F);
             REGISTER_INTERPRETER(ICMP);
             REGISTER_INTERPRETER(UCMP);
             REGISTER_INTERPRETER(FCMP);
-            REGISTER_INTERPRETER(DCMP);
             REGISTER_INTERPRETER(STRCMP);
             REGISTER_INTERPRETER(INC);
             REGISTER_INTERPRETER(DEC);
