@@ -2599,13 +2599,13 @@ namespace bibblevm {
             IDX:
                 TYPE: const-pool index
                 SIZE:
-                    WIDE_OPERAND2: 16 bits
+                    WIDE_OPERAND1: 16 bits
                     DEFAULT: 8 bits
 
             ARGS:
                 TYPE: register
                 SIZE:
-                    WIDE_OPERAND3: 16 bits
+                    WIDE_OPERAND2: 16 bits
                     DEFAULT: 8 bits
 
         ENCODING:
@@ -2613,7 +2613,6 @@ namespace bibblevm {
                 WIDE_OPERAND0
                 WIDE_OPERAND1
                 WIDE_OPERAND2
-                WIDE_OPERAND3
 
             LAYOUT:
                 [PREFIX*] [CALLARP] [DST] [PRIORITY] [IDX] [ARGS]
@@ -2767,7 +2766,7 @@ namespace bibblevm {
             FN:
                 TYPE: register
                 SIZE:
-                    WIDE_OPERAND1: 16 bits
+                    WIDE_OPERAND2: 16 bits
                     DEFAULT: 8 bits
 
             ARGS:
@@ -2824,7 +2823,7 @@ namespace bibblevm {
             ARGS:
                 TYPE: register
                 SIZE:
-                    WIDE_OPERAND3: 16 bits
+                    WIDE_OPERAND2: 16 bits
                     DEFAULT: 8 bits
 
         ENCODING:
@@ -2832,7 +2831,6 @@ namespace bibblevm {
                 WIDE_OPERAND0
                 WIDE_OPERAND1
                 WIDE_OPERAND2
-                WIDE_OPERAND3
 
             LAYOUT:
                 [PREFIX*] [CALLARP_DYN] [DST] [PRIORITY] [FN] [ARGS]
@@ -2865,7 +2863,7 @@ namespace bibblevm {
         RETURN = 0xCA,
 
         /*
-        INSTRUCTION: RETURN
+        INSTRUCTION: AWAIT
 
         PURPOSE:
             Return from the current function with a provided value.
@@ -2893,12 +2891,12 @@ namespace bibblevm {
                 WIDE_OPERAND1
 
             LAYOUT:
-                [PREFIX*] [RETURN] [DST] [FUTURE]
+                [PREFIX*] [AWAIT] [DST] [FUTURE]
         */
         AWAIT = 0xCB,
 
         /*
-        INSTRUCTION: RETURN
+        INSTRUCTION: YIELD
 
         PURPOSE:
             Yield the current executing task early, letting the next one in queue execute.
