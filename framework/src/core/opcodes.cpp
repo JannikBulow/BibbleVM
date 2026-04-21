@@ -75,10 +75,15 @@ namespace bibblevm::opcodeutils {
             case NEWFUTURE: break;
             case CALL: break;
             case TAIL_CALL: break;
-            case RETURN: break;
             case CALLA: break;
             case CALLAP: break;
             case CALLARP: break;
+            case CALL_DYN: break;
+            case TAIL_CALL_DYN: break;
+            case CALLA_DYN: break;
+            case CALLAP_DYN: break;
+            case CALLARP_DYN: break;
+            case RETURN: break;
             case AWAIT: break;
             case YIELD: break;
 

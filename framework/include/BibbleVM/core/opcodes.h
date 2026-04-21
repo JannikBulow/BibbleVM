@@ -11,7 +11,7 @@ namespace bibblevm {
     using Prefix = uint8_t;
     using Opcode = uint8_t;
 
-    constexpr uint8_t PREFIX_BASE = 0xF0;
+    constexpr uint8_t PREFIX_MASK = 0xF0;
 
     enum Prefixes : Prefix {
         WIDE_OPERAND0 = 0xF0,
@@ -2015,7 +2015,7 @@ namespace bibblevm {
             Increment the instruction pointer by a given signed immediate value.
 
         SEMANTICS:
-            REG[VALUE] += IMM
+            InstructionPointer += BRANCH
 
         OPERANDS:
             BRANCH:
@@ -2023,7 +2023,8 @@ namespace bibblevm {
                 SIZE:
                     GIGANTIC_IMMEDIATE: 64 bits
                     HUGE_IMMEDIATE: 32 bits
-                    DEFAULT: 16 bits
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
 
         ENCODING:
             PREFIXES:
@@ -2032,50 +2033,230 @@ namespace bibblevm {
                 GIGANTIC_IMMEDIATE
 
             LAYOUT:
-                [PREFIX*] [JMP] [VALUE] [IMM]
+                [PREFIX*] [JMP] [BRANCH]
         */
         JMP = 0x50,
 
-        // Advance the instruction pointer if the 8-bit signed integer specified in the value register is equal to zero.
-        // The condition might be weirdly worded, so just know that the CMP instructions produce 0 if both values are equal.
-        // a = value
-        // b = branch_low
-        // c = branch_high
+        /*
+        INSTRUCTION: JEQ
+
+        PURPOSE:
+            Increment the instruction pointer by a given signed immediate value if the value is equal to 0.
+
+        SEMANTICS:
+            if REG[VALUE] == 0:
+                InstructionPointer += BRANCH
+
+        OPERANDS:
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            BRANCH:
+                TYPE: immediate
+                SIZE:
+                    GIGANTIC_IMMEDIATE: 64 bits
+                    HUGE_IMMEDIATE: 32 bits
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                HUGE_IMMEDIATE
+                GIGANTIC_IMMEDIATE
+
+            LAYOUT:
+                [PREFIX*] [JEQ] [VALUE] [BRANCH]
+        */
         JEQ = 0x51,
 
-        // Advance the instruction pointer if the 8-bit signed integer specified in the value register is not equal to zero.
-        // The condition might be weirdly worded, so just know that the CMP instructions produce 0 if both values are equal.
-        // a = value
-        // b = branch_low
-        // c = branch_high
+        /*
+        INSTRUCTION: JNE
+
+        PURPOSE:
+            Increment the instruction pointer by a given signed immediate value if the value isn't equal to 0.
+
+        SEMANTICS:
+            if REG[VALUE] != 0:
+                InstructionPointer += BRANCH
+
+        OPERANDS:
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            BRANCH:
+                TYPE: immediate
+                SIZE:
+                    GIGANTIC_IMMEDIATE: 64 bits
+                    HUGE_IMMEDIATE: 32 bits
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                HUGE_IMMEDIATE
+                GIGANTIC_IMMEDIATE
+
+            LAYOUT:
+                [PREFIX*] [JNE] [VALUE] [BRANCH]
+        */
         JNE = 0x52,
 
-        // Advance the instruction pointer if the 8-bit signed integer specified in the value register is less than zero.
-        // The condition might be weirdly worded, so just know that the CMP instructions produce -1 if lhs is less than rhs.
-        // a = value
-        // b = branch_low
-        // c = branch_high
+        /*
+        INSTRUCTION: JLT
+
+        PURPOSE:
+            Increment the instruction pointer by a given signed immediate value if the value is less than 0.
+
+        SEMANTICS:
+            if REG[VALUE] < 0:
+                InstructionPointer += BRANCH
+
+        OPERANDS:
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            BRANCH:
+                TYPE: immediate
+                SIZE:
+                    GIGANTIC_IMMEDIATE: 64 bits
+                    HUGE_IMMEDIATE: 32 bits
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                HUGE_IMMEDIATE
+                GIGANTIC_IMMEDIATE
+
+            LAYOUT:
+                [PREFIX*] [JLT] [VALUE] [BRANCH]
+        */
         JLT = 0x53,
 
-        // Advance the instruction pointer if the 8-bit signed integer specified in the value register is less than or equal to zero.
-        // The condition might be weirdly worded, so just know that the CMP instructions produce -1 if lhs is less than rhs and 0 if they are equal.
-        // a = value
-        // b = branch_low
-        // c = branch_high
+        /*
+        INSTRUCTION: JLE
+
+        PURPOSE:
+            Increment the instruction pointer by a given signed immediate value if the value is less than or equal to 0.
+
+        SEMANTICS:
+            if REG[VALUE] <= 0:
+                InstructionPointer += BRANCH
+
+        OPERANDS:
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            BRANCH:
+                TYPE: immediate
+                SIZE:
+                    GIGANTIC_IMMEDIATE: 64 bits
+                    HUGE_IMMEDIATE: 32 bits
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                HUGE_IMMEDIATE
+                GIGANTIC_IMMEDIATE
+
+            LAYOUT:
+                [PREFIX*] [JLE] [VALUE] [BRANCH]
+        */
         JLE = 0x54,
 
-        // Advance the instruction pointer if the 8-bit signed integer specified in the value register is greater than zero.
-        // The condition might be weirdly worded, so just know that the CMP instructions produce 1 if lhs is greater than rhs.
-        // a = value
-        // b = branch_low
-        // c = branch_high
+        /*
+        INSTRUCTION: JGT
+
+        PURPOSE:
+            Increment the instruction pointer by a given signed immediate value if the value is greater than 0.
+
+        SEMANTICS:
+            if REG[VALUE] > 0:
+                InstructionPointer += BRANCH
+
+        OPERANDS:
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            BRANCH:
+                TYPE: immediate
+                SIZE:
+                    GIGANTIC_IMMEDIATE: 64 bits
+                    HUGE_IMMEDIATE: 32 bits
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                HUGE_IMMEDIATE
+                GIGANTIC_IMMEDIATE
+
+            LAYOUT:
+                [PREFIX*] [JGT] [VALUE] [BRANCH]
+        */
         JGT = 0x55,
 
-        // Advance the instruction pointer if the 8-bit signed integer specified in the value register is greater than or equal to zero.
-        // The condition might be weirdly worded, so just know that the CMP instructions produce 1 if lhs is greater than rhs and 0 if they are equal.
-        // a = value
-        // b = branch_low
-        // c = branch_high
+        /*
+        INSTRUCTION: JGE
+
+        PURPOSE:
+            Increment the instruction pointer by a given signed immediate value if the value is greater than or equal to 0.
+
+        SEMANTICS:
+            if REG[VALUE] >= 0:
+                InstructionPointer += BRANCH
+
+        OPERANDS:
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            BRANCH:
+                TYPE: immediate
+                SIZE:
+                    GIGANTIC_IMMEDIATE: 64 bits
+                    HUGE_IMMEDIATE: 32 bits
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                HUGE_IMMEDIATE
+                GIGANTIC_IMMEDIATE
+
+            LAYOUT:
+                [PREFIX*] [JGE] [VALUE] [BRANCH]
+        */
         JGE = 0x56,
 
         // 4 opcodes reserved for future switch instructions with different strategies.
@@ -2084,85 +2265,661 @@ namespace bibblevm {
         RESERVED_FOR_SWITCH_2 = 0x59,
         RESERVED_FOR_SWITCH_3 = 0x5A,
 
-        // Dynamically allocate a new uninitialized instance object based on the given class info constant.
-        // a = dst
-        // b = cidx_low
-        // c = cidx_high
+        /*
+        INSTRUCTION: NEWINSTANCE
+
+        PURPOSE:
+            Dynamically allocate a new uninitialized instance object with the class specified in the constant pool.
+
+        SEMANTICS:
+            REG[DST] = internals.AllocateObject(CONST[IDX].classinfo.size())
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            IDX:
+                TYPE: const-pool index
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [NEWINSTANCE] [DST] [IDX]
+
+        NOTES:
+            - Uninitialized can mean the object data is either zeroed out or garbage data.
+        */
         NEWINSTANCE = 0x60,
 
-        // Dynamically allocate a new zero-initialized array object with elements based on the given type id
-        // and a size specified in the length_reg register.
-        // a = dst
-        // b = typeid
-        // c = length_reg
+        /*
+        INSTRUCTION: NEWARRAY
+
+        PURPOSE:
+            Dynamically allocate a new zero-initialized array object with the given type id and length provided.
+
+        SEMANTICS:
+            let size = internals.TypeSize(typeid) * REG[LENGTH
+            let arr = internals.AllocateObject(size)
+            memset(arr.elements, 0, size)
+            REG[DST] = arr
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            LENGTH:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            TYPEID:
+                TYPE: immediate
+                SIZE: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [NEWARRAY] [DST] [LENGTH] [TYPEID]
+        */
         NEWARRAY = 0x61,
 
-        // Dynamically allocate a new zero-initialized string object from a given byte array
-        // consisting of UTF-8 codepoints in the data_reg register.
-        // The string is constructed with the same length as the data array, then the data from the array is copied into the string.
-        // a = dst
-        // b = data_reg
+        /*
+        INSTRUCTION: NEWSTRING
+
+        PURPOSE:
+            Dynamically allocate a new string object with its UTF-8 characters copied from the byte array containing the raw UTF-8 bytes.
+
+        SEMANTICS:
+            let str = internals.AllocateObject(REG[DATA].length)
+            memcpy(str, REG[DATA].elements, REG[DATA].length)
+            REG[DST] = str
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            DATA:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [NEWSTRING] [DST] [DATA]
+        */
         NEWSTRING = 0x62,
 
-        // Dynamically allocate a new uncompleted future object.
-        // This is not really useful, as async/await opcodes will make these automatically.
-        // a = dst
+        /*
+        INSTRUCTION: NEWARRAY
+
+        PURPOSE:
+            Dynamically allocate a new uncompleted future object.
+
+        SEMANTICS:
+            REG[DST] = internals.AllocateObject(sizeof(Future))
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+
+            LAYOUT:
+                [PREFIX*] [NEWFUTURE] [DST]
+
+        NOTES:
+            - This is almost never needed as ASYNC/AWAIT type instructions will generate futures automatically.
+        */
         NEWFUTURE = 0x63,
 
-        // Call a function located in a specified HOT register with a register range starting at a HOT or EXTENDED register.
-        // The returned value of the callee is moved to R0.
-        // a = func_reg
-        // b = args_low
-        // c = args_high
+        /*
+        INSTRUCTION: CALL
+
+        PURPOSE:
+            Call a function found in the constant entry specified with the arguments in the register range starting at the given argument register and continuing right and move its returned value into the specified destination register.
+
+        SEMANTICS:
+            REG[DST] = CONST[IDX].call(REG[ARGS]...)
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            IDX:
+                TYPE: const-pool index
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            ARGS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [CALL] [DST] [IDX] [ARGS]
+
+        NOTES:
+            - If the function returns void, possible garbage will still be moved into the destination register.
+        */
         CALL = 0xC0,
 
-        // Same as CALL, except the current frame is reused (and possibly resized) for the callee.
-        // The returned value of the callee is moved to R0.
-        // a = func_reg
-        // b = args_low
-        // c = args_high
+        /*
+        INSTRUCTION: TAIL_CALL
+
+        PURPOSE:
+            Prepare the current stack frame for running the specified function (if needed)
+            and move the specified argument range down to 0, then transfer control over to the function.
+
+        SEMANTICS:
+            memmove(REG[0], REG[ARGS], CONST[IDX].paramCount)
+            InstructionPointer = CONST[IDX].entry
+
+        OPERANDS:
+            IDX:
+                TYPE: const-pool index
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            ARGS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [TAIL_CALL] [IDX] [ARGS]
+
+        NOTES:
+            - As this instruction transfers control without creating a new frame, all following instructions are
+              unreachable
+        */
         TAIL_CALL = 0xC1,
 
-        // Return from the current function, providing a register containing the returned value.
-        // a = val_low
-        // b = val_high
-        RETURN = 0xC2,
+        /*
+        INSTRUCTION: CALLA
 
-        // Calls a function asynchronously with the priority level of the caller and returns an uncompleted future in R0
-        // that will eventually resolve with the returned value of the called function.
-        // Name means "CALL ASYNC."
-        // a = func_reg
-        // b = args_low
-        // c = args_high
-        CALLA = 0xC3,
+        PURPOSE:
+            Call a function found in the constant entry specified asynchronously with the same priority of the currently executing task with the arguments in the register range starting at the given argument register and continuing right and move a new future to the specified destination register which will resolve to the returned value of the function once it returns.
 
-        // Calls a function asynchronously with a priority level specified in the priority_reg register and returns
-        // an uncompleted future in R0 that will eventually resolve with the returned value of the called function.
-        // The priority level will be truncated down to an unsigned 8-bit integer in a similar way to TR8.
-        // Name means "CALL ASYNC PRIORITY."
-        // a = func_reg
-        // b = priority_reg
-        // c = args
-        CALLAP = 0xC4,
+        SEMANTICS:
+            REG[DST] = CONST[IDX].callAsync(...REG[ARGS], CurrentTask.priority)
 
-        // Calls a function asynchronously with a priority level of the caller plus the specified 8-bit signed immediate
-        // in the priority argument and returns an uncompleted future in R0 that will eventually resolve with
-        // the returned value of the called function.
-        // Name means "CALL ASYNC RELATIVE PRIORITY."
-        // a = func_reg
-        // b = priority
-        // c = args
-        CALLARP = 0xC5,
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
 
-        // Suspends the execution of the current task until the specified future has resolved.
-        // Once the future has resolved, its value is moved to the destination register.
-        // a = future_reg
-        // b = dst_low
-        // c = dst_high
-        AWAIT = 0xC6,
+            IDX:
+                TYPE: const-pool index
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
 
-        // Yields the current task, letting the next one in queue execute.
-        YIELD = 0xC7,
+            ARGS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [CALLA] [DST] [IDX] [ARGS]
+        */
+        CALLA = 0xC2,
+
+        /*
+        INSTRUCTION: CALLAP
+
+        PURPOSE:
+            Call a function found in the constant entry specified asynchronously with the specified priority
+            with the arguments in the register range starting at the given argument register and continuing
+            right and move a new future to the specified destination register which will resolve to the returned
+            value of the function once it returns.
+
+        SEMANTICS:
+            REG[DST] = CONST[IDX].callAsync(REG[ARGS]..., REG[PRIORITY] & 0xFF)
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            PRIORITY:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            IDX:
+                TYPE: const-pool index
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+            ARGS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND3: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+                WIDE_OPERAND3
+
+            LAYOUT:
+                [PREFIX*] [CALLAP] [DST] [PRIORITY] [IDX] [ARGS]
+
+        NOTES:
+            - The priority register must hold an unsigned value which is then truncated down to 8 bits.
+        */
+        CALLAP = 0xC3,
+
+        /*
+        INSTRUCTION: CALLARP
+
+        PURPOSE:
+            Call a function found in the constant entry specified asynchronously with the current
+            executing tasks priority plus the specified priority as a signed value with the arguments
+            in the register range starting at the given argument register and continuing right and move
+            a new future to the specified destination register which will resolve to the
+            returned value of the function once it returns.
+
+        SEMANTICS:
+            REG[DST] = CONST[IDX].callAsync(REG[ARGS]..., CurrentTask.priority + PRIORITY)
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            PRIORITY:
+                TYPE: immediate
+                SIZE: 8 bits
+
+            IDX:
+                TYPE: const-pool index
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+            ARGS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND3: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+                WIDE_OPERAND3
+
+            LAYOUT:
+                [PREFIX*] [CALLARP] [DST] [PRIORITY] [IDX] [ARGS]
+        */
+        CALLARP = 0xC4,
+
+        /*
+        INSTRUCTION: CALL_DYN
+
+        PURPOSE:
+            Call a function found in the specified register with the arguments in the register range starting at the given argument register and continuing right and move its returned value into the specified destination register.
+
+        SEMANTICS:
+            REG[DST] = REG[FN].call(REG[ARGS]...)
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            FN:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            ARGS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [CALL_DYN] [DST] [FN] [ARGS]
+
+        NOTES:
+            - If the function returns void, possible garbage will still be moved into the destination register.
+        */
+        CALL_DYN = 0xC5,
+
+        /*
+        INSTRUCTION: TAIL_CALL_DYN
+
+        PURPOSE:
+            Prepare the current stack frame for running the specified function (if needed)
+            and move the specified argument range down to 0, then transfer control over to the function.
+
+        SEMANTICS:
+            memmove(REG[0], REG[ARGS], REG[FN].paramCount)
+            InstructionPointer = CONST[IDX].entry
+
+        OPERANDS:
+            FN:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            ARGS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [TAIL_CALL_DYN] [FN] [ARGS]
+
+        NOTES:
+            - As this instruction transfers control without creating a new frame, all following instructions are
+              unreachable
+        */
+        TAIL_CALL_DYN = 0xC6,
+
+        /*
+        INSTRUCTION: CALLA_DYN
+
+        PURPOSE:
+            Call a function found in the specified register asynchronously with the same priority of the currently executing task with the arguments in the register range starting at the given argument register and continuing right and move a new future to the specified destination register which will resolve to the returned value of the function once it returns.
+
+        SEMANTICS:
+            REG[DST] = REG[FN].callAsync(...REG[ARGS], CurrentTask.priority)
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            FN:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            ARGS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [CALLA_DYN] [DST] [FN] [ARGS]
+        */
+        CALLA_DYN = 0xC7,
+
+        /*
+        INSTRUCTION: CALLAP_DYN
+
+        PURPOSE:
+            Call a function found in the specified register asynchronously with the specified priority
+            with the arguments in the register range starting at the given argument register and continuing
+            right and move a new future to the specified destination register which will resolve to the returned
+            value of the function once it returns.
+
+        SEMANTICS:
+            REG[DST] = REG[FN].callAsync(REG[ARGS]..., REG[PRIORITY] & 0xFF)
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            PRIORITY:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            FN:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            ARGS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND3: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+                WIDE_OPERAND3
+
+            LAYOUT:
+                [PREFIX*] [CALLAP_DYN] [DST] [PRIORITY] [FN] [ARGS]
+
+        NOTES:
+            - The priority register must hold an unsigned value which is then truncated down to 8 bits.
+        */
+        CALLAP_DYN = 0xC8,
+
+        /*
+        INSTRUCTION: CALLARP_DYN
+
+        PURPOSE:
+            Call a function found in the specified register asynchronously with the current
+            executing tasks priority plus the specified priority as a signed value with the arguments
+            in the register range starting at the given argument register and continuing right and move
+            a new future to the specified destination register which will resolve to the
+            returned value of the function once it returns.
+
+        SEMANTICS:
+            REG[DST] = REG[FN].callAsync(REG[ARGS]..., CurrentTask.priority + PRIORITY)
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            PRIORITY:
+                TYPE: immediate
+                SIZE: 8 bits
+
+            FN:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            ARGS:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND3: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+                WIDE_OPERAND3
+
+            LAYOUT:
+                [PREFIX*] [CALLARP_DYN] [DST] [PRIORITY] [FN] [ARGS]
+        */
+        CALLARP_DYN = 0xC9,
+
+        /*
+        INSTRUCTION: RETURN
+
+        PURPOSE:
+            Return from the current function with a provided value.
+
+        SEMANTICS:
+            return REG[VALUE]
+
+        OPERANDS:
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+
+            LAYOUT:
+                [PREFIX*] [RETURN] [VALUE]
+        */
+        RETURN = 0xCA,
+
+        /*
+        INSTRUCTION: RETURN
+
+        PURPOSE:
+            Return from the current function with a provided value.
+
+        SEMANTICS:
+            if REG[FUTURE].ready():
+                REG[DST] = REG[FUTURE].value
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            FUTURE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [RETURN] [DST] [FUTURE]
+        */
+        AWAIT = 0xCB,
+
+        /*
+        INSTRUCTION: RETURN
+
+        PURPOSE:
+            Yield the current executing task early, letting the next one in queue execute.
+
+        SEMANTICS:
+            yield()
+
+        OPERANDS:
+            none
+
+        ENCODING:
+            PREFIXES:
+                none
+
+            LAYOUT:
+                [PREFIX*] [YIELD]
+
+        NOTES:
+            - With how priority is implemented, there's a chance that the task will begin executing immediately again. I do not know yet if that is the case, but I will update this once I figure it out.
+        */
+        YIELD = 0xCC,
     };
 
     namespace opcodeutils {

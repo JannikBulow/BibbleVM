@@ -339,16 +339,14 @@ namespace bibblevm::executor {
         return InterpreterMessage::Continue();
     }
 
+    // oop
+
     DEFINE_INTERPRETER(CALL) {
         return InterpreterMessage::CallFunction(frame[args.extBC.a].fni, args.extBC.bc);
     }
 
     DEFINE_INTERPRETER(TAIL_CALL) {
         return InterpreterMessage::Errored(); // TODO: implement
-    }
-
-    DEFINE_INTERPRETER(RETURN) {
-        return InterpreterMessage::ReturnFromFunction(args.extAB.ab);
     }
 
     DEFINE_INTERPRETER(CALLA) {
@@ -370,6 +368,30 @@ namespace bibblevm::executor {
         frame[0].obj = newTask->completionFuture->asObject();
         frame[0].isObject = true;
         return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(CALL_DYN) {
+
+    }
+
+    DEFINE_INTERPRETER(TAIL_CALL_DYN) {
+
+    }
+
+    DEFINE_INTERPRETER(CALLA_DYN) {
+
+    }
+
+    DEFINE_INTERPRETER(CALLAP_DYN) {
+
+    }
+
+    DEFINE_INTERPRETER(CALLARP_DYN) {
+
+    }
+
+    DEFINE_INTERPRETER(RETURN) {
+        return InterpreterMessage::ReturnFromFunction(args.extAB.ab);
     }
 
     // This interpreter gets called again once the future is completed if it wasn't completed before reaching this.
@@ -453,8 +475,15 @@ namespace bibblevm::executor {
             REGISTER_INTERPRETER(JGE);
             REGISTER_INTERPRETER(CALL);
             REGISTER_INTERPRETER(TAIL_CALL);
-            REGISTER_INTERPRETER(RETURN);
             REGISTER_INTERPRETER(CALLA);
+            REGISTER_INTERPRETER(CALLAP);
+            REGISTER_INTERPRETER(CALLARP);
+            REGISTER_INTERPRETER(CALL_DYN);
+            REGISTER_INTERPRETER(TAIL_CALL_DYN);
+            REGISTER_INTERPRETER(CALLA_DYN);
+            REGISTER_INTERPRETER(CALLAP_DYN);
+            REGISTER_INTERPRETER(CALLARP_DYN);
+            REGISTER_INTERPRETER(RETURN);
             REGISTER_INTERPRETER(AWAIT);
             REGISTER_INTERPRETER(YIELD);
             return table;

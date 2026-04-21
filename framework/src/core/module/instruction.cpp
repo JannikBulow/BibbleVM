@@ -20,8 +20,34 @@ namespace bibblevm::module {
 
         BytecodeStream start = current;
 
+        opcodeutils::PrefixState prefix{};
+
         Opcode opcode = *current++;
-        size_t length = opcodeutils::GetFixedLength(opcode, TODO);
+        while ((opcode & PREFIX_MASK) == PREFIX_MASK) {
+            switch (static_cast<Prefixes>(opcode)) {
+                case WIDE_OPERAND0:
+                    prefix.wideOperand0 = true;
+                    break;
+                case WIDE_OPERAND1:
+                    prefix.wideOperand1 = true;
+                    break;
+                case WIDE_OPERAND2:
+                    prefix.wideOperand2 = true;
+                    break;
+                case WIDE_OPERAND3:
+                    prefix.wideOperand3 = true;
+                    break;
+                case HUGE_IMMEDIATE:
+                    prefix.hugeImmediate = true;
+                    break;
+                case GIGANTIC_IMMEDIATE:
+                    prefix.giganticImmediate = true;
+                    break;
+            }
+            opcode = *current++;
+        }
+
+        size_t length = opcodeutils::GetFixedLength(opcode, prefix);
 
         if (length == 0) {
             return std::nullopt; // TODO: decode variable-length instructions
