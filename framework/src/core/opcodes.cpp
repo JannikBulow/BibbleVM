@@ -3,90 +3,225 @@
 #include "BibbleVM/core/opcodes.h"
 
 namespace bibblevm::opcodeutils {
-    size_t GetFixedLength(Opcode opcode, const PrefixState& prefixState) {
-        switch (static_cast<Opcodes>(opcode)) {
-            case NOP: return 1;
-            case MOV: return 3;
-            case MOV_RANGE: break;
-            case SWAP: break;
-            case LOAD_CONST: break;
-            case LOAD_IMM: break;
-            case ADD: break;
-            case SUB: break;
-            case MUL: break;
-            case SDIV: break;
-            case UDIV: break;
-            case SMOD: break;
-            case UMOD: break;
-            case NEG: break;
-            case ABS: break;
-            case AND: break;
-            case OR: break;
-            case XOR: break;
-            case NOT: break;
-            case SHL: break;
-            case SHR: break;
-            case SAR: break;
-            case FADD: break;
-            case FSUB: break;
-            case FMUL: break;
-            case FDIV: break;
-            case FNEG: break;
-            case FABS: break;
-            case TR8: break;
-            case TR16: break;
-            case TR32: break;
-            case SEX8: break;
-            case SEX16: break;
-            case SEX32: break;
-            case ZEX8: break;
-            case ZEX16: break;
-            case ZEX32: break;
-            case I2F: break;
-            case U2F: break;
-            case I2D: break;
-            case U2D: break;
-            case F2I: break;
-            case F2U: break;
-            case D2I: break;
-            case D2U: break;
-            case F2D: break;
-            case D2F: break;
-            case ICMP: break;
-            case UCMP: break;
-            case FCMP: break;
-            case STRCMP: break;
-            case INC: break;
-            case DEC: break;
-            case JMP: break;
-            case JEQ: break;
-            case JNE: break;
-            case JLT: break;
-            case JLE: break;
-            case JGT: break;
-            case JGE: break;
-            case RESERVED_FOR_SWITCH_0: break;
-            case RESERVED_FOR_SWITCH_1: break;
-            case RESERVED_FOR_SWITCH_2: break;
-            case RESERVED_FOR_SWITCH_3: break;
-            case NEWINSTANCE: break;
-            case NEWARRAY: break;
-            case NEWSTRING: break;
-            case NEWFUTURE: break;
-            case CALL: break;
-            case TAIL_CALL: break;
-            case CALLA: break;
-            case CALLAP: break;
-            case CALLARP: break;
-            case CALL_DYN: break;
-            case TAIL_CALL_DYN: break;
-            case CALLA_DYN: break;
-            case CALLAP_DYN: break;
-            case CALLARP_DYN: break;
-            case RETURN: break;
-            case AWAIT: break;
-            case YIELD: break;
+    static size_t GetRegisterSize(bool wide) {
+        return wide ? 2 : 1;
+    }
 
+    static size_t GetImmediateSize(bool wide, bool huge = false, bool gigantic = false) {
+        if (gigantic) return 8;
+        if (huge) return 4;
+        if (wide) return 2;
+        return 1;
+    }
+
+    static size_t GetConstPoolIndexSize(bool wide) {
+        return wide ? 2 : 1;
+    }
+
+    size_t GetFixedLength(Opcode opcode, const PrefixState& prefixState) {
+        size_t size = 1;
+        if (prefixState.wideOperand0) size++;
+        if (prefixState.wideOperand1) size++;
+        if (prefixState.wideOperand2) size++;
+        if (prefixState.wideOperand3) size++;
+        if (prefixState.hugeImmediate) size++;
+        if (prefixState.giganticImmediate) size++;
+
+        switch (static_cast<Opcodes>(opcode)) {
+            case NOP:
+                break;
+            case MOV:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case MOV_RANGE:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetImmediateSize(prefixState.wideOperand2);
+                break;
+            case SWAP:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case LOAD_CONST:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetConstPoolIndexSize(prefixState.wideOperand1);
+                break;
+            case LOAD_IMM:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetImmediateSize(prefixState.wideOperand1, prefixState.hugeImmediate, prefixState.giganticImmediate);
+                break;
+            case ADD:
+            case SUB:
+            case MUL:
+            case SDIV:
+            case UDIV:
+            case SMOD:
+            case UMOD:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case NEG:
+            case ABS:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case AND:
+            case OR:
+            case XOR:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case NOT:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case SHL:
+            case SHR:
+            case SAR:
+            case FADD:
+            case FSUB:
+            case FMUL:
+            case FDIV:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case FNEG:
+            case FABS:
+            case TR8:
+            case TR16:
+            case TR32:
+            case SEX8:
+            case SEX16:
+            case SEX32:
+            case ZEX8:
+            case ZEX16:
+            case ZEX32:
+            case I2F:
+            case U2F:
+            case I2D:
+            case U2D:
+            case F2I:
+            case F2U:
+            case D2I:
+            case D2U:
+            case F2D:
+            case D2F:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case ICMP:
+            case UCMP:
+            case FCMP:
+            case STRCMP:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case INC:
+            case DEC:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetImmediateSize(prefixState.wideOperand1, prefixState.hugeImmediate, prefixState.giganticImmediate);
+                break;
+            case JMP:
+                size += GetImmediateSize(prefixState.wideOperand0, prefixState.hugeImmediate, prefixState.giganticImmediate);
+                break;
+            case JEQ:
+            case JNE:
+            case JLT:
+            case JLE:
+            case JGT:
+            case JGE:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetImmediateSize(prefixState.wideOperand1, prefixState.hugeImmediate, prefixState.giganticImmediate);
+                break;
+            case RESERVED_FOR_SWITCH_0:
+            case RESERVED_FOR_SWITCH_1:
+            case RESERVED_FOR_SWITCH_2:
+            case RESERVED_FOR_SWITCH_3:
+                break;
+            case NEWINSTANCE:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetConstPoolIndexSize(prefixState.wideOperand1);
+                break;
+            case NEWARRAY:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += 1;
+                break;
+            case NEWSTRING:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case NEWFUTURE:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                break;
+            case CALL:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetConstPoolIndexSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case TAIL_CALL:
+                size += GetConstPoolIndexSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case CALLA:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetConstPoolIndexSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case CALLAP:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetConstPoolIndexSize(prefixState.wideOperand2);
+                size += GetRegisterSize(prefixState.wideOperand3);
+                break;
+            case CALLARP:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += 1;
+                size += GetConstPoolIndexSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case CALL_DYN:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case TAIL_CALL_DYN:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case CALLA_DYN:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case CALLAP_DYN:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                size += GetRegisterSize(prefixState.wideOperand3);
+                break;
+            case CALLARP_DYN:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += 1;
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case RETURN:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                break;
+            case AWAIT:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case YIELD:
+                break;
         }
+
+        return size;
     }
 }
