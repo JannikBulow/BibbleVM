@@ -5,16 +5,21 @@
 
 #include "BibbleVM/core/executor/function.h"
 
+#include "BibbleVM/core/oop/class.h"
+
 #include "BibbleVM/util/string_pool.h"
 
 namespace bibblevm::executor {
     class BIBBLEVM_EXPORT Module {
     public:
         Module() = default;
-        Module(String name, ConstPool constPool, uint16_t functionCount, Function* functions);
+        Module(String name, ConstPool constPool, uint16_t classCount, oop::Class* classes, uint16_t functionCount, Function* functions);
 
         String getName() const { return mName; }
         const ConstPool& getConstPool() const { return mConstPool; }
+
+        oop::Class* getClass(String name) const;
+        oop::Class* getClass(std::string_view name) const;
 
         Function* getFunction(String name) const;
         Function* getFunction(std::string_view name) const;
@@ -23,6 +28,9 @@ namespace bibblevm::executor {
         String mName;
 
         ConstPool mConstPool;
+
+        uint16_t mClassCount;
+        oop::Class* mClasses;
 
         uint16_t mFunctionCount;
         Function* mFunctions;

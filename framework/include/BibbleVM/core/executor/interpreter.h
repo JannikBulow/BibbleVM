@@ -20,7 +20,7 @@ namespace bibblevm {
 namespace bibblevm::executor {
     class Function;
     struct SchedulerMessage;
-    union InstructionArguments;
+    struct InstructionArguments;
 
     enum class InterpreterMessageType {
         Continue,
@@ -36,7 +36,7 @@ namespace bibblevm::executor {
         InterpreterMessageType type;
         union {
             int32_t branch;
-            struct { Function* function; uint16_t argsBegin; } call;
+            struct { Function* function; uint16_t destinationRegister; uint16_t argsBegin; } call;
             uint16_t returnRegister;
             oop::Future* future;
         };
@@ -50,9 +50,10 @@ namespace bibblevm::executor {
             return m;
         }
         static constexpr InterpreterMessage Errored() { return InterpreterMessageType::Errored; }
-        static constexpr InterpreterMessage CallFunction(Function* function, uint16_t argsBegin) {
+        static constexpr InterpreterMessage CallFunction(Function* function, uint16_t destinationRegister, uint16_t argsBegin) {
             InterpreterMessage m = InterpreterMessageType::CallFunction;
             m.call.function = function;
+            m.call.destinationRegister = destinationRegister;
             m.call.argsBegin = argsBegin;
             return m;
         }

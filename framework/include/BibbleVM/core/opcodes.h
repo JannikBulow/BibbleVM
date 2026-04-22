@@ -2932,6 +2932,8 @@ namespace bibblevm {
 
         // Including opcode. 0 means variable length, which needs a bit more context to determine size.
         size_t GetFixedLength(Opcode opcode, const PrefixState& prefixState);
+
+        bool IsBranch(Opcode opcode);
     }
 }
 

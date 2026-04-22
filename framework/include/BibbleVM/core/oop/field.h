@@ -13,7 +13,7 @@ namespace bibblevm::oop {
         uint64_t memoryOffset;
         String name;
 
-        Field(Type type, uint64_t memoryOffset, String name) : type(type), memoryOffset(memoryOffset), name(name) {}
+        Field(Type type, String name) : type(type), memoryOffset(0), name(name) {}
     };
 }
 

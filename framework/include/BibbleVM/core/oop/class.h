@@ -18,6 +18,7 @@ namespace bibblevm::executor {
 }
 
 namespace bibblevm::oop {
+    //TODO: replace span with uint16_t and pointers to save a few bytes per class
     class BIBBLEVM_EXPORT Class {
     public:
         struct ReferenceRegion {
@@ -25,11 +26,12 @@ namespace bibblevm::oop {
             uint16_t count;
         };
 
+        explicit Class(String name); // partial initializing for linker shit
         Class(String name, Class* superClass, std::span<Field> fields, std::span<Method> methods, GrowingArenaAllocator& arena);
 
         String getName() const { return mName; }
         Class* getSuperClass() const { return mSuperClass; }
-        Method* getFinalizer() const { return mFinalizer; }
+        const Method* getFinalizer() const { return mFinalizer; }
         bool hasFinalizer() const { return mFinalizer != nullptr; }
         uint64_t getMemorySize() const { return mMemorySize; }
         uint64_t getTotalSize() const { return sizeof(Instance) + mMemorySize; }
@@ -61,7 +63,7 @@ namespace bibblevm::oop {
         std::span<Method> mMethods;
         std::span<Method*> mVtable;
 
-        Method* mFinalizer;
+        const Method* mFinalizer;
 
         uint64_t mMemorySize;
 

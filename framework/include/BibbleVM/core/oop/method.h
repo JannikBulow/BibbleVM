@@ -11,7 +11,7 @@ namespace bibblevm::oop {
         uint32_t vtableIndex;
         executor::Function* function;
 
-        Method(String name, uint32_t vtableIndex, executor::Function* function) : name(name), vtableIndex(vtableIndex), function(function) {}
+        Method(String name, executor::Function* function) : name(name), vtableIndex(0), function(function) {}
     };
 }
 

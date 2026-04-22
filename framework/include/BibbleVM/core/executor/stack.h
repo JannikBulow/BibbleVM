@@ -15,11 +15,12 @@ namespace bibblevm::executor {
 
     class BIBBLEVM_EXPORT Frame {
     public:
-        Frame(Snapshot<GrowingArenaAllocator> arena, Frame* prev, Function& function, uint16_t registerCount);
+        Frame(Snapshot<GrowingArenaAllocator> arena, Frame* prev, Function& function, uint16_t registerCount, Value* returnRegister);
 
         Frame* getPrev() const { return mPrev; }
         Function& getFunction() const { return mFunction; }
         Instruction*& ip() { return mIP; }
+        Value* returnRegister() const { return mReturnRegister; }
 
         Value& operator[](uint16_t index) const { return mRegisters[index]; }
 
@@ -31,6 +32,7 @@ namespace bibblevm::executor {
         Function& mFunction;
         Instruction* mIP;
         Value* mRegisters;
+        Value* mReturnRegister; // pointer to single register which is where eventual return value will go
     };
 
     class BIBBLEVM_EXPORT Stack {
@@ -39,7 +41,7 @@ namespace bibblevm::executor {
 
         Frame* getTop() const { return mTop; }
 
-        Frame& pushFrame(Function& function);
+        Frame& pushFrame(Function& function, Value* returnRegister);
         void popFrame();
 
     private:

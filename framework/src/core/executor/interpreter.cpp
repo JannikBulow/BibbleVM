@@ -19,243 +19,243 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(MOV) {
-        frame[args.generic.a] = frame[args.generic.b];
+        frame[args.a] = frame[args.b];
         return InterpreterMessage::Continue();
     }
 
 
     DEFINE_INTERPRETER(MOV_RANGE) {
-        memmove(&frame[args.generic.a], &frame[args.generic.b], args.generic.c * sizeof(Value));
+        memmove(&frame[args.a], &frame[args.b], args.c * sizeof(Value));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(SWAP) {
-        Value tmp = frame[args.generic.a];
-        frame[args.generic.a] = frame[args.generic.b];
-        frame[args.generic.b] = tmp;
+        Value tmp = frame[args.a];
+        frame[args.a] = frame[args.b];
+        frame[args.b] = tmp;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(LOAD_CONST) {
-        frame[args.extBC.a] = frame.getFunction().mergedConstPool().get(args.extBC.bc);
+        frame[args.a] = frame.getFunction().mergedConstPool().get(args.b);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(LOAD_IMM) {
-        frame[args.extAB.ab].ul = args.extAB.c;
+        frame[args.a].ul = args.b;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(ADD) {
-        frame[args.generic.a].l = frame[args.generic.b].l + frame[args.generic.c].l;
+        frame[args.a].l = frame[args.b].l + frame[args.c].l;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(SUB) {
-        frame[args.generic.a].l = frame[args.generic.b].l - frame[args.generic.c].l;
+        frame[args.a].l = frame[args.b].l - frame[args.c].l;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(MUL) {
-        frame[args.generic.a].l = frame[args.generic.b].l * frame[args.generic.c].l;
+        frame[args.a].l = frame[args.b].l * frame[args.c].l;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(SDIV) {
-        frame[args.generic.a].l = frame[args.generic.b].l / frame[args.generic.c].l;
+        frame[args.a].l = frame[args.b].l / frame[args.c].l;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(UDIV) {
-        frame[args.generic.a].ul = frame[args.generic.b].ul / frame[args.generic.c].ul;
+        frame[args.a].ul = frame[args.b].ul / frame[args.c].ul;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(SMOD) {
-        frame[args.generic.a].l = frame[args.generic.b].l % frame[args.generic.c].l;
+        frame[args.a].l = frame[args.b].l % frame[args.c].l;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(UMOD) {
-        frame[args.generic.a].ul = frame[args.generic.b].ul % frame[args.generic.c].ul;
+        frame[args.a].ul = frame[args.b].ul % frame[args.c].ul;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(NEG) {
-        frame[args.generic.a].l = -frame[args.generic.b].l;
+        frame[args.a].l = -frame[args.b].l;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(ABS) {
-        frame[args.generic.a].l = std::abs(frame[args.generic.b].l);
+        frame[args.a].l = std::abs(frame[args.b].l);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(AND) {
-        frame[args.generic.a].ul = frame[args.generic.b].ul & frame[args.generic.c].ul;
+        frame[args.a].ul = frame[args.b].ul & frame[args.c].ul;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(OR) {
-        frame[args.generic.a].ul = frame[args.generic.b].ul | frame[args.generic.c].ul;
+        frame[args.a].ul = frame[args.b].ul | frame[args.c].ul;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(XOR) {
-        frame[args.generic.a].ul = frame[args.generic.b].ul ^ frame[args.generic.c].ul;
+        frame[args.a].ul = frame[args.b].ul ^ frame[args.c].ul;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(NOT) {
-        frame[args.generic.a].ul = ~frame[args.generic.b].ul;
+        frame[args.a].ul = ~frame[args.b].ul;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(SHL) {
-        frame[args.generic.a].ul = math::LogicalShiftLeft(frame[args.generic.b].ul, frame[args.generic.c].ui);
+        frame[args.a].ul = math::LogicalShiftLeft(frame[args.b].ul, frame[args.c].ui);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(SHR) {
-        frame[args.generic.a].ul = math::LogicalShiftRight(frame[args.generic.b].ul, frame[args.generic.c].ui);
+        frame[args.a].ul = math::LogicalShiftRight(frame[args.b].ul, frame[args.c].ui);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(SAR) {
-        frame[args.generic.a].l = math::ArithmeticShiftRight(frame[args.generic.b].l, frame[args.generic.c].ui);
+        frame[args.a].l = math::ArithmeticShiftRight(frame[args.b].l, frame[args.c].ui);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(FADD) {
-        frame[args.generic.a].f = frame[args.generic.b].f + frame[args.generic.c].f;
+        frame[args.a].f = frame[args.b].f + frame[args.c].f;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(FSUB) {
-        frame[args.generic.a].f = frame[args.generic.b].f - frame[args.generic.c].f;
+        frame[args.a].f = frame[args.b].f - frame[args.c].f;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(FMUL) {
-        frame[args.generic.a].f = frame[args.generic.b].f * frame[args.generic.c].f;
+        frame[args.a].f = frame[args.b].f * frame[args.c].f;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(FDIV) {
-        frame[args.generic.a].f = frame[args.generic.b].f / frame[args.generic.c].f;
+        frame[args.a].f = frame[args.b].f / frame[args.c].f;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(FNEG) {
-        frame[args.generic.a].f = -frame[args.generic.b].f;
+        frame[args.a].f = -frame[args.b].f;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(FABS) {
-        frame[args.generic.a].f = std::abs(frame[args.generic.b].f);
+        frame[args.a].f = std::abs(frame[args.b].f);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(TR8) {
-        frame[args.generic.a].ub = static_cast<UByte>(frame[args.generic.b].ul);
+        frame[args.a].ub = static_cast<UByte>(frame[args.b].ul);
         return InterpreterMessage::Continue();
     }
 
 
     DEFINE_INTERPRETER(TR16) {
-        frame[args.generic.a].us = static_cast<UShort>(frame[args.generic.b].ul);
+        frame[args.a].us = static_cast<UShort>(frame[args.b].ul);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(TR32) {
-        frame[args.generic.a].ui = static_cast<UInt>(frame[args.generic.b].ul);
+        frame[args.a].ui = static_cast<UInt>(frame[args.b].ul);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(SEX8) {
-        frame[args.generic.a].l = static_cast<Long>(frame[args.generic.b].b);
+        frame[args.a].l = static_cast<Long>(frame[args.b].b);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(SEX16) {
-        frame[args.generic.a].l = static_cast<Long>(frame[args.generic.b].s);
+        frame[args.a].l = static_cast<Long>(frame[args.b].s);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(SEX32) {
-        frame[args.generic.a].l = static_cast<Long>(frame[args.generic.b].i);
+        frame[args.a].l = static_cast<Long>(frame[args.b].i);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(ZEX8) {
-        frame[args.generic.a].ul = static_cast<ULong>(frame[args.generic.b].ub);
+        frame[args.a].ul = static_cast<ULong>(frame[args.b].ub);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(ZEX16) {
-        frame[args.generic.a].ul = static_cast<ULong>(frame[args.generic.b].us);
+        frame[args.a].ul = static_cast<ULong>(frame[args.b].us);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(ZEX32) {
-        frame[args.generic.a].ul = static_cast<ULong>(frame[args.generic.b].ui);
+        frame[args.a].ul = static_cast<ULong>(frame[args.b].ui);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(I2F) {
-        frame[args.generic.a].f = math::IntToFP<float, Long>(frame[args.generic.b].l);
+        frame[args.a].f = math::IntToFP<float, Long>(frame[args.b].l);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(U2F) {
-        frame[args.generic.a].f = math::IntToFP<float, ULong>(frame[args.generic.b].ul);
+        frame[args.a].f = math::IntToFP<float, ULong>(frame[args.b].ul);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(I2D) {
-        frame[args.generic.a].d = math::IntToFP<double, Long>(frame[args.generic.b].l);
+        frame[args.a].d = math::IntToFP<double, Long>(frame[args.b].l);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(U2D) {
-        frame[args.generic.a].d = math::IntToFP<double, ULong>(frame[args.generic.b].ul);
+        frame[args.a].d = math::IntToFP<double, ULong>(frame[args.b].ul);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(F2I) {
-        frame[args.generic.a].l = math::FPToInt<float, Long>(frame[args.generic.b].f);
+        frame[args.a].l = math::FPToInt<float, Long>(frame[args.b].f);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(F2U) {
-        frame[args.generic.a].ul = math::FPToInt<float, ULong>(frame[args.generic.b].f);
+        frame[args.a].ul = math::FPToInt<float, ULong>(frame[args.b].f);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(D2I) {
-        frame[args.generic.a].l = math::FPToInt<double, Long>(frame[args.generic.b].d);
+        frame[args.a].l = math::FPToInt<double, Long>(frame[args.b].d);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(D2U) {
-        frame[args.generic.a].ul = math::FPToInt<double, ULong>(frame[args.generic.b].d);
+        frame[args.a].ul = math::FPToInt<double, ULong>(frame[args.b].d);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(F2D) {
-        frame[args.generic.a].d = static_cast<double>(frame[args.generic.b].f);
+        frame[args.a].d = static_cast<double>(frame[args.b].f);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(D2F) {
-        frame[args.generic.a].f = static_cast<float>(frame[args.generic.b].d);
+        frame[args.a].f = static_cast<float>(frame[args.b].d);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(ICMP) {
-        Long& dst = frame[args.generic.a].l;
-        Long lhs = frame[args.generic.b].l;
-        Long rhs = frame[args.generic.c].l;
+        Long& dst = frame[args.a].l;
+        Long lhs = frame[args.b].l;
+        Long rhs = frame[args.c].l;
 
         if (lhs < rhs) dst = -1;
         if (lhs > rhs) dst = 1;
@@ -265,9 +265,9 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(UCMP) {
-        Long& dst = frame[args.generic.a].l;
-        ULong lhs = frame[args.generic.b].ul;
-        ULong rhs = frame[args.generic.c].ul;
+        Long& dst = frame[args.a].l;
+        ULong lhs = frame[args.b].ul;
+        ULong rhs = frame[args.c].ul;
 
         if (lhs < rhs) dst = -1;
         if (lhs > rhs) dst = 1;
@@ -277,9 +277,9 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(FCMP) {
-        Long& dst = frame[args.generic.a].l;
-        float lhs = frame[args.generic.b].f;
-        float rhs = frame[args.generic.c].f;
+        Long& dst = frame[args.a].l;
+        float lhs = frame[args.b].f;
+        float rhs = frame[args.c].f;
 
         if (lhs < rhs) dst = -1;
         if (lhs > rhs) dst = 1;
@@ -289,60 +289,60 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(STRCMP) {
-        String str1 = frame[args.generic.b].obj->asString();
-        String str2 = frame[args.generic.c].obj->asString();
-        frame[args.generic.a].l = static_cast<Long>(str1.compareCorrect(str2));
+        String str1 = frame[args.b].obj->asString();
+        String str2 = frame[args.c].obj->asString();
+        frame[args.a].l = static_cast<Long>(str1.compareCorrect(str2));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(INC) {
-        frame[args.extBC.a].l += args.extBC.bc;
+        frame[args.a].l += static_cast<Long>(args.b);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(DEC) {
-        frame[args.extBC.a].l -= args.extBC.bc;
+        frame[args.a].l -= static_cast<Long>(args.b);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JMP) {
-        return InterpreterMessage::Branch(args.extJump.branch);
+        return InterpreterMessage::Branch(args.a);
     }
 
     DEFINE_INTERPRETER(JEQ) {
-        if (frame[args.extJump.cond].b == 0) return InterpreterMessage::Branch(args.extJump.branch);
+        if (frame[args.a].l == 0) return InterpreterMessage::Branch(static_cast<int32_t>(args.b));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JNE) {
-        if (frame[args.extJump.cond].b != 0) return InterpreterMessage::Branch(args.extJump.branch);
+        if (frame[args.a].l != 0) return InterpreterMessage::Branch(static_cast<int32_t>(args.b));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JLT) {
-        if (frame[args.extJump.cond].b < 0) return InterpreterMessage::Branch(args.extJump.branch);
+        if (frame[args.a].l < 0) return InterpreterMessage::Branch(static_cast<int32_t>(args.b));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JLE) {
-        if (frame[args.extJump.cond].b <= 0) return InterpreterMessage::Branch(args.extJump.branch);
+        if (frame[args.a].l <= 0) return InterpreterMessage::Branch(static_cast<int32_t>(args.b));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JGT) {
-        if (frame[args.extJump.cond].b > 0) return InterpreterMessage::Branch(args.extJump.branch);
+        if (frame[args.a].l > 0) return InterpreterMessage::Branch(static_cast<int32_t>(args.b));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JGE) {
-        if (frame[args.extJump.cond].b >= 0) return InterpreterMessage::Branch(args.extJump.branch);
+        if (frame[args.a].l >= 0) return InterpreterMessage::Branch(static_cast<int32_t>(args.b));
         return InterpreterMessage::Continue();
     }
 
     // oop
 
     DEFINE_INTERPRETER(CALL) {
-        return InterpreterMessage::CallFunction(frame[args.extBC.a].fni, args.extBC.bc);
+        return InterpreterMessage::CallFunction(frame.getFunction().mergedConstPool().get(args.b).fni, args.a, args.c);
     }
 
     DEFINE_INTERPRETER(TAIL_CALL) {
@@ -350,56 +350,65 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(CALLA) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame[args.extBC.a].fni, task->priority, &frame[args.extBC.bc]);
-        frame[0].obj = newTask->completionFuture->asObject();
-        frame[0].isObject = true;
+        Task* newTask = vm.scheduler().schedule(vm, *frame.getFunction().mergedConstPool().get(args.b).fni, task->priority, &frame[args.c]);
+        frame[args.a].obj = newTask->completionFuture->asObject();
+        frame[args.a].isObject = true;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(CALLAP) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame[args.generic.a].fni, static_cast<UByte>(frame[args.generic.b].ul), &frame[args.generic.c]);
-        frame[0].obj = newTask->completionFuture->asObject();
-        frame[0].isObject = true;
+        Task* newTask = vm.scheduler().schedule(vm, *frame.getFunction().mergedConstPool().get(args.c).fni, static_cast<uint8_t>(frame[args.b].ul), &frame[args.d]);
+        frame[args.a].obj = newTask->completionFuture->asObject();
+        frame[args.a].isObject = true;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(CALLARP) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame[args.generic.a].fni, task->priority + args.generic.b, &frame[args.generic.c]);
-        frame[0].obj = newTask->completionFuture->asObject();
-        frame[0].isObject = true;
+        Task* newTask = vm.scheduler().schedule(vm, *frame.getFunction().mergedConstPool().get(args.c).fni, task->priority + static_cast<uint8_t>(args.b), &frame[args.d]);
+        frame[args.a].obj = newTask->completionFuture->asObject();
+        frame[args.a].isObject = true;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(CALL_DYN) {
-
+        return InterpreterMessage::CallFunction(frame[args.b].fni, args.a, args.c);
     }
 
     DEFINE_INTERPRETER(TAIL_CALL_DYN) {
-
+        return InterpreterMessage::Errored(); // TODO: implement
     }
 
     DEFINE_INTERPRETER(CALLA_DYN) {
-
+        Task* newTask = vm.scheduler().schedule(vm, *frame[args.b].fni, task->priority, &frame[args.c]);
+        frame[args.a].obj = newTask->completionFuture->asObject();
+        frame[args.a].isObject = true;
+        return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(CALLAP_DYN) {
-
+        Task* newTask = vm.scheduler().schedule(vm, *frame[args.b].fni, static_cast<uint8_t>(frame[args.b].ul), &frame[args.d]);
+        frame[args.a].obj = newTask->completionFuture->asObject();
+        frame[args.a].isObject = true;
+        return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(CALLARP_DYN) {
-
+        Task* newTask = vm.scheduler().schedule(vm, *frame[args.b].fni, task->priority + static_cast<uint8_t>(args.b), &frame[args.d]);
+        frame[args.a].obj = newTask->completionFuture->asObject();
+        frame[args.a].isObject = true;
+        return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(RETURN) {
-        return InterpreterMessage::ReturnFromFunction(args.extAB.ab);
+        return InterpreterMessage::ReturnFromFunction(args.a);
     }
 
     // This interpreter gets called again once the future is completed if it wasn't completed before reaching this.
     // That design is technically a little inefficient, but it's way easier and better looking than the alternatives.
     DEFINE_INTERPRETER(AWAIT) {
-        oop::Future* future = frame[args.extBC.a].obj->asFuture();
+        oop::Future* future = frame[args.b].obj->asFuture();
         if (future->ready) {
-            frame[args.extBC.bc] = future->value;
+            frame[args.a] = future->value;
             return InterpreterMessage::Continue();
         }
         return InterpreterMessage::AwaitFuture(future);
@@ -506,7 +515,7 @@ namespace bibblevm::executor {
                     return SchedulerMessage::Errored();
                 case InterpreterMessageType::CallFunction:
                     instruction++;
-                    return SchedulerMessage::Called(message.call.function, message.call.argsBegin);
+                    return SchedulerMessage::Called(message.call.function, message.call.destinationRegister, message.call.argsBegin);
                 case InterpreterMessageType::ReturnFromFunction:
                     return SchedulerMessage::Returned(frame[message.returnRegister]);
                 case InterpreterMessageType::YieldExecution:
@@ -533,7 +542,7 @@ namespace bibblevm::executor {
                     return SchedulerMessage::Errored();
                 case InterpreterMessageType::CallFunction:
                     instruction++;
-                    return SchedulerMessage::Called(message.call.function, message.call.argsBegin);
+                    return SchedulerMessage::Called(message.call.function, message.call.destinationRegister, message.call.argsBegin);
                 case InterpreterMessageType::ReturnFromFunction:
                     return SchedulerMessage::Returned(frame[message.returnRegister]);
                 case InterpreterMessageType::YieldExecution:

@@ -49,6 +49,7 @@ namespace bibblevm {
         // For advanced users only. Should NEVER be enabled in programs that utilize the Bibble Standard Library
         bool disableFinalizers = false;
 
+        // This will be implemented in 2055
         bool enableConcurrentGC = false;
     };
 

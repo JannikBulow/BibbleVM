@@ -10,12 +10,53 @@
 #include "BibbleVM/vm.h"
 
 namespace bibblevm::linker {
-    executor::ConstPool LinkConstPool(VM& vm, GrowingArenaAllocator& arena, const module::ConstPool& constPool, const module::Module& module, executor::Function* functions) {
+    struct ArgReader {
+        module::BytecodeStream current;
+        const module::BytecodeStream end;
+
+        ArgReader(module::BytecodeStream current, module::BytecodeStream end)
+            : current(current)
+            , end(end) {}
+
+        bool has(size_t length) const {
+            return static_cast<size_t>(end - current) >= length;
+        }
+
+        template<class T>
+        std::optional<uint64_t> readLE() {
+            if (!has(sizeof(T))) return std::nullopt;
+
+            uint64_t value = 0;
+            for (size_t i = 0; i < sizeof(T); i++) {
+                value |= static_cast<uint64_t>(current[i]) << (8 * i);
+            }
+
+            current += sizeof(T);
+            return value;
+        }
+
+        std::optional<uint64_t> readRegister(bool wide) {
+            return wide ? readLE<uint16_t>() : readLE<uint8_t>();
+        }
+
+        std::optional<uint64_t> readConstPoolIndex(bool wide) {
+            return wide ? readLE<uint16_t>() : readLE<uint8_t>();
+        }
+
+        std::optional<uint64_t> readImmediate(bool wide, bool huge = false, bool gigantic = false) {
+            if (gigantic) return readLE<uint64_t>();
+            if (huge) return readLE<uint32_t>();
+            if (wide) return readLE<uint16_t>();
+            return readLE<uint8_t>();
+        }
+    };
+
+    executor::ConstPool LinkConstPool(VM& vm, GrowingArenaAllocator& arena, const module::ConstPool& constPool, const module::Module& module, oop::Class* classes, executor::Function* functions) {
         uint16_t entryCount = constPool.getEntryCount();
         module::ConstPool::Entry* entries = constPool.getEntries();
         auto* linkedEntries = arena.allocate<Value>(entryCount);
 
-        for (uint16_t i = 0; i < entryCount; i++) {
+        for (uint16_t i = 1; i < entryCount; i++) {
             auto& entry = entries[i];
             auto& linkedEntry = linkedEntries[i];
 
@@ -41,6 +82,15 @@ namespace bibblevm::linker {
                     linkedEntry.mi = &m->linkedModule();
                     break;
                 }
+                case module::ConstPool::CLASS_INFO: {
+                    module::ConstPool::ClassInfo ci = entry.u.ci;
+                    
+                    break;
+                }
+                case module::ConstPool::FIELD_INFO:
+                    break;
+                case module::ConstPool::METHOD_INFO:
+                    break;
                 case module::ConstPool::FUNCTION_INFO: {
                     module::ConstPool::FunctionInfo fni = entry.u.fni;
                     if (entries[fni.module].u.mi.name == module.name) { // loading a function from its own module would lead to a permanent stall, so we use a list of partially initialized functions (just names) to link the pointers
@@ -60,81 +110,287 @@ namespace bibblevm::linker {
         return { entryCount, linkedEntries };
     }
 
-    executor::Instruction* DecodeInstructions(VM& vm, GrowingArenaAllocator& arena, const module::Function& function) {
-        module::InstructionStream instructionStream(function.bytecode, function.bytecodeSize);
-        size_t instructionCount = instructionStream.decodeInstructionCount();
+    bool LinkClasses(oop::Class* classes, VM& vm, GrowingArenaAllocator& arena, const executor::ConstPool& moduleConstPool, const module::Module& module) {
+        for (uint16_t i = 0; i < module.classCount; i++) {
+            const module::Class& clas = module.classes[i];
+            oop::Class& linkedClass = classes[i];
 
-        auto* instructions = arena.allocate<executor::Instruction>(instructionCount);
+            oop::Class* superClass = clas.superClass == 0 ? nullptr : moduleConstPool.get(clas.superClass).ci;
 
-        for (size_t i = 0; i < instructionCount; i++) {
-            module::Instruction instruction = instructionStream.fetchOne();
-            uint8_t a = instruction.getArgumentA();
-            uint8_t b = instruction.getArgumentB();
-            uint8_t c = instruction.getArgumentC();
-            executor::InstructionArguments args{};
-
-            auto ext8to16 = [](uint8_t low, uint8_t high) -> uint16_t { return static_cast<uint16_t>(low) | (static_cast<uint16_t>(high) << 8); };
-            auto assignGeneric = [&args, a, b, c] { args.generic = {a, b, c}; };
-            auto assignExtAB = [&args, &ext8to16, a, b, c] { args.extAB = {ext8to16(a, b), c}; };
-            auto assignExtBC = [&args, &ext8to16, a, b, c] { args.extBC = {a, ext8to16(b, c)}; };
-
-            switch (instruction.getOpcode()) {
-                case MOV_HOT_EXT:
-                    assignExtAB();
-                    break;
-                case MOV_EXT_HOT:
-                    assignExtBC();
-                    break;
-                case SWAP_HOT_EXT:
-                    assignExtBC();
-                    break;
-                case LOAD_CONST:
-                    assignExtBC();
-                    break;
-                case LOAD_IMM:
-                    assignExtAB();
-                    break;
-                case LOADS:
-                    assignExtBC();
-                    break;
-                case INC:
-                case DEC:
-                    assignExtBC();
-                    break;
-                case JMP:
-                    args.extJump.branch = static_cast<int32_t>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b) << 8 | static_cast<uint32_t>(c) << 16) / 4; //NOTE: divide by 4 because the interpreter will treat branch as amount of instructions while the bytecode format uses bytes
-                    break;
-                case JEQ:
-                case JNE:
-                case JLT:
-                case JLE:
-                case JGT:
-                case JGE:
-                    args.extJump.cond = a;
-                    args.extJump.branch = static_cast<int32_t>(ext8to16(b, c)) / 4; //NOTE: see JMP on why we divide by 4
-                    break;
-                case CALL:
-                case TAIL_CALL:
-                case CALLA:
-                case AWAIT:
-                    assignExtBC();
-                    break;
-                case RETURN:
-                    assignExtAB();
-                    break;
-
-                default:
-                    assignGeneric();
-                    break;
+            oop::Field* fields = arena.allocate<oop::Field>(clas.fieldCount);
+            for (uint16_t j = 0; j < clas.fieldCount; j++) {
+                module::Field& field = clas.fields[j];
+                fields[j] = oop::Field(static_cast<oop::Type>(field.typeID), moduleConstPool.get(field.name).obj->asString());
             }
 
-            instructions[i] = executor::Instruction(executor::GetInterpreter(vm, instruction.getOpcode()), args);
+            oop::Method* methods = arena.allocate<oop::Method>(clas.methodCount);
+            for (uint16_t j = 0; j < clas.methodCount; j++) {
+                module::Method& method = clas.methods[j];
+                methods[j] = oop::Method(moduleConstPool.get(method.name).obj->asString(), moduleConstPool.get(method.function).fni);
+            }
+
+            linkedClass = oop::Class(linkedClass.getName(), superClass, {fields, clas.fieldCount}, {methods, clas.methodCount}, arena);
+        }
+
+        return true;
+    }
+
+    std::optional<executor::InstructionArguments> DecodeArgs(module::Instruction instruction, ArgReader& argReader) {
+        executor::InstructionArguments args{};
+
+        opcodeutils::PrefixState p = instruction.prefixState;
+
+#define OPT_ASSIGN_OR_RETURN(stmt, var) if (auto opt_ = stmt; opt_.has_value()) var = opt_.value(); else return std::nullopt
+        switch (static_cast<Opcodes>(instruction.opcode)) {
+            case NOP:
+                break;
+            case MOV:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case MOV_RANGE:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(p.wideOperand2), args.c);
+                break;
+            case SWAP:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case LOAD_CONST:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand1), args.b);
+                break;
+            case LOAD_IMM:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
+                break;
+            case ADD:
+            case SUB:
+            case MUL:
+            case SDIV:
+            case UDIV:
+            case SMOD:
+            case UMOD:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
+                break;
+            case NEG:
+            case ABS:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case AND:
+            case OR:
+            case XOR:
+            case NOT:
+            case SHL:
+            case SHR:
+            case SAR:
+            case FADD:
+            case FSUB:
+            case FMUL:
+            case FDIV:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
+                break;
+            case FNEG:
+            case FABS:
+            case TR8:
+            case TR16:
+            case TR32:
+            case SEX8:
+            case SEX16:
+            case SEX32:
+            case ZEX8:
+            case ZEX16:
+            case ZEX32:
+            case I2F:
+            case U2F:
+            case I2D:
+            case U2D:
+            case F2I:
+            case F2U:
+            case D2I:
+            case D2U:
+            case F2D:
+            case D2F:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case ICMP:
+            case UCMP:
+            case FCMP:
+            case STRCMP:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
+                break;
+            case INC:
+            case DEC:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
+                break;
+            case JMP:
+                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(p.wideOperand0, p.hugeImmediate, p.giganticImmediate), args.a);
+                break;
+            case JEQ:
+            case JNE:
+            case JLT:
+            case JLE:
+            case JGT:
+            case JGE:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
+                break;
+            case RESERVED_FOR_SWITCH_0:
+            case RESERVED_FOR_SWITCH_1:
+            case RESERVED_FOR_SWITCH_2:
+            case RESERVED_FOR_SWITCH_3:
+                break;
+            case NEWINSTANCE:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand1), args.b);
+                break;
+            case NEWARRAY:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(false), args.c);
+                break;
+            case NEWSTRING:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case NEWFUTURE:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                break;
+            case CALL:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
+                break;
+            case TAIL_CALL:
+                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case CALLA:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
+                break;
+            case CALLAP:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand2), args.c);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand3), args.d);
+                break;
+            case CALLARP:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(false), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand1), args.c);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.d);
+                break;
+            case CALL_DYN:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
+                break;
+            case TAIL_CALL_DYN:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case CALLA_DYN:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
+                break;
+            case CALLAP_DYN:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand3), args.d);
+                break;
+            case CALLARP_DYN:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(false), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.c);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.d);
+                break;
+            case RETURN:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                break;
+            case AWAIT:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case YIELD:
+                break;
+        }
+#undef OPT_ASSIGN_OR_RETURN
+
+        return args;
+    }
+
+    executor::Instruction* DecodeInstructions(VM& vm, GrowingArenaAllocator& arena, const module::Function& function) {
+        module::BytecodeStream current = function.bytecode;
+        module::BytecodeStream end = function.bytecode + function.bytecodeSize;
+
+        size_t instructionCount = module::DecodeInstructionCount(current, end);
+
+        executor::Instruction* instructions = arena.allocate<executor::Instruction>(instructionCount);
+
+        // For patching branching instructions
+        std::vector<module::BytecodeStream> instStart;
+        std::vector<module::BytecodeStream> instEnd;
+        std::unordered_map<module::BytecodeStream, size_t> byteToIndex;
+        instStart.reserve(instructionCount);
+        instEnd.reserve(instructionCount);
+        byteToIndex.reserve(instructionCount);
+
+        for (size_t i = 0; i < instructionCount; i++) {
+            instStart.push_back(current);
+            std::optional<module::Instruction> instructionOpt = module::FetchInstruction(current, end);
+            if (!instructionOpt.has_value()) return nullptr;
+            instEnd.push_back(current);
+            byteToIndex[instStart[i]] = i;
+
+            module::Instruction instruction = instructionOpt.value();
+
+            executor::Interpreter interpreter = executor::GetInterpreter(vm, instruction.opcode);
+            if (interpreter == nullptr) return nullptr;
+
+            ArgReader argReader(instruction.argsBegin, instruction.argsEnd);
+            std::optional<executor::InstructionArguments> decodedArgsOpt = DecodeArgs(instruction, argReader);
+            if (!decodedArgsOpt.has_value()) return nullptr;
+
+            instructions[i] = executor::Instruction(instruction.opcode, interpreter, decodedArgsOpt.value());
+        }
+
+        // Patch branch instructions
+        for (size_t i = 0; i < instructionCount; i++) {
+            executor::Instruction& instruction = instructions[i];
+            if (!opcodeutils::IsBranch(instruction.opcode)) continue;
+
+            int64_t offset = static_cast<int64_t>((instruction.opcode == JMP) ? instruction.args.a : instruction.args.b);
+
+            module::BytecodeStream target = instEnd[i] + offset;
+            auto it = byteToIndex.find(target);
+            if (it == byteToIndex.end()) {
+                return nullptr;
+            }
+
+            size_t targetIndex = it->second;
+
+            if (instruction.opcode == JMP) instruction.args.a = targetIndex - i;
+            else instruction.args.b = targetIndex - i;
         }
 
         return instructions;
     }
 
-    bool LinkFunctions(executor::Function* functions, VM& vm, GrowingArenaAllocator& arena, const executor::ConstPool& moduleConstPool, const module::Module& module) {
+    bool LinkFunctions(oop::Class* classes, executor::Function* functions, VM& vm, GrowingArenaAllocator& arena, const executor::ConstPool& moduleConstPool, const module::Module& module) {
         const IntrinsicModule* intrinsicModule = GetIntrinsicsModule(String(moduleConstPool.get(module.name).obj->asString()));
 
         for (uint16_t i = 0; i < module.functionCount; i++) {
@@ -148,7 +404,7 @@ namespace bibblevm::linker {
                 kind = executor::FunctionKind::Normal;
             }
 
-            executor::ConstPool functionConstPool = LinkConstPool(vm, arena, function.constPool, module, functions);
+            executor::ConstPool functionConstPool = LinkConstPool(vm, arena, function.constPool, module, classes, functions);
             std::optional<executor::ConstPool> constPoolOpt = moduleConstPool.merge(functionConstPool, arena);
             if (!constPoolOpt.has_value()) return false;
             executor::ConstPool& constPool = constPoolOpt.value();
@@ -186,7 +442,14 @@ namespace bibblevm::linker {
         module::Module& rawModule = module.rawModule();
         executor::Module& linkedModule = module.linkedModule();
 
-        auto* linkedFunctions = module.arena().allocate<executor::Function>(rawModule.functionCount);
+        oop::Class* linkedClasses = module.arena().allocate<oop::Class>(rawModule.classCount);
+        for (uint16_t i = 0; i < rawModule.classCount; i++) {
+            module::Class& clas = rawModule.classes[i];
+            String name = vm.stringPool().intern(vm, rawModule.constPool.getEntries()[clas.name - rawModule.constPool.getEntryCount()].u.str);
+            linkedClasses[i] = oop::Class(name);
+        }
+
+        executor::Function* linkedFunctions = module.arena().allocate<executor::Function>(rawModule.functionCount);
         for (uint16_t i = 0; i < rawModule.functionCount; i++) {
             module::Function& function = rawModule.functions[i];
             String name{};
@@ -198,11 +461,12 @@ namespace bibblevm::linker {
             linkedFunctions[i] = executor::Function(name); // holy fuck this is ugly
         }
 
-        executor::ConstPool linkedConstPool = LinkConstPool(vm, module.arena(), rawModule.constPool, rawModule, linkedFunctions);
+        executor::ConstPool linkedConstPool = LinkConstPool(vm, module.arena(), rawModule.constPool, rawModule, linkedClasses, linkedFunctions);
 
-        if (!LinkFunctions(linkedFunctions, vm, module.arena(), linkedConstPool, rawModule)) return false;
+        if (!LinkClasses(linkedClasses, vm, module.arena(), linkedConstPool, rawModule)) return false;
+        if (!LinkFunctions(linkedClasses, linkedFunctions, vm, module.arena(), linkedConstPool, rawModule)) return false;
 
-        linkedModule = executor::Module(linkedConstPool.get(rawModule.name).obj->asString(), std::move(linkedConstPool), rawModule.functionCount, linkedFunctions);
+        linkedModule = executor::Module(linkedConstPool.get(rawModule.name).obj->asString(), std::move(linkedConstPool), rawModule.classCount, linkedClasses, rawModule.functionCount, linkedFunctions);
 
         module.setStage(Stage::Linked);
 

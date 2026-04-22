@@ -9,6 +9,9 @@ namespace bibblevm::oop {
         return (value + (alignment - 1)) & ~(alignment - 1);
     }
 
+    Class::Class(String name)
+        : mName(name) {}
+
     Class::Class(String name, Class* superClass, std::span<Field> fields, std::span<Method> methods, GrowingArenaAllocator& arena)
         : mName(name)
         , mSuperClass(superClass)
@@ -23,6 +26,8 @@ namespace bibblevm::oop {
 
         sortFields(arena);
         createVtable(arena);
+
+        mFinalizer = getMethod(".finalize");
     }
 
     const Field* Class::getField(String name) const {

@@ -11,9 +11,11 @@
 #include <optional>
 
 namespace bibblevm::module {
+    // This type must be hashable in case it's changed in the future
     using BytecodeStream = const uint8_t*;
 
     struct Instruction {
+        opcodeutils::PrefixState prefixState;
         Opcode opcode;
         BytecodeStream argsBegin;
         BytecodeStream argsEnd;
@@ -21,7 +23,7 @@ namespace bibblevm::module {
 
     size_t DecodeInstructionCount(BytecodeStream begin, BytecodeStream end);
 
-    std::optional<Instruction> FetchInstruction(BytecodeStream begin, BytecodeStream end, BytecodeStream& current);
+    std::optional<Instruction> FetchInstruction(BytecodeStream& current, BytecodeStream end);
 }
 
 #endif //BIBBLEVM_CORE_MODULE_INSTRUCTION_H

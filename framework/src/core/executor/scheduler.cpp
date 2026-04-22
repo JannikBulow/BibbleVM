@@ -63,7 +63,7 @@ namespace bibblevm::executor {
         task->priority = priority;
         task->scheduler = this;
 
-        Frame& frame = task->stack.pushFrame(function);
+        Frame& frame = task->stack.pushFrame(function, &task->result);
         memcpy(&frame[0], arguments, function.getParameterCount() * sizeof(Value));
 
         oop::Object* futureObject = vm.memoryManager().allocateFuture(vm);
@@ -87,7 +87,7 @@ namespace bibblevm::executor {
             switch (message.type) {
                 case SchedulerMessageType::Errored: return message;
                 case SchedulerMessageType::Called: {
-                    Frame& newFrame = task.stack.pushFrame(*message.call.function);
+                    Frame& newFrame = task.stack.pushFrame(*message.call.function, &(*task.stack.getTop())[message.call.returnRegister]);
 
                     for (uint16_t i = 0; i < message.call.function->getParameterCount(); i++) {
                         newFrame[i] = frame[message.call.argsBegin + i];
@@ -98,9 +98,9 @@ namespace bibblevm::executor {
                     break;
                 }
                 case SchedulerMessageType::Returned: {
-                    task.result = message.returnValue;
+                    Value* returnRegister = task.stack.getTop()->returnRegister();
                     task.stack.popFrame();
-                    if (task.stack.getTop() != nullptr) (*task.stack.getTop())[0] = message.returnValue;
+                    *returnRegister = message.returnValue; // returnRegister should never be nullptr as long as dumbasses don't touch it
                     vm.memoryManager().safepoint(vm);
                     break;
                 }

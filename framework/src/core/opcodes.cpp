@@ -224,4 +224,8 @@ namespace bibblevm::opcodeutils {
 
         return size;
     }
+
+    bool IsBranch(Opcode opcode) {
+        return opcode >= JMP && opcode <= JGE;
+    }
 }

@@ -65,9 +65,12 @@ set(HEADERS
     include/BibbleVM/core/gc/nursery.h
     include/BibbleVM/core/gc/old_gen_heap.h
 
+    include/BibbleVM/core/module/class.h
     include/BibbleVM/core/module/const_pool.h
+    include/BibbleVM/core/module/field.h
     include/BibbleVM/core/module/function.h
     include/BibbleVM/core/module/instruction.h
+    include/BibbleVM/core/module/method.h
     include/BibbleVM/core/module/module.h
 
     include/BibbleVM/core/oop/array_view.h

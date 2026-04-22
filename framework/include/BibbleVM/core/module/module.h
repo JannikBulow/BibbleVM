@@ -3,6 +3,7 @@
 #ifndef BIBBLEVM_CORE_MODULE_MODULE_H
 #define BIBBLEVM_CORE_MODULE_MODULE_H 1
 
+#include "BibbleVM/core/module/class.h"
 #include "BibbleVM/core/module/function.h"
 
 namespace bibblevm::module {
@@ -16,7 +17,10 @@ namespace bibblevm::module {
 
         ConstPool constPool;
 
+        uint16_t classCount;
         uint16_t functionCount;
+
+        Class* classes;
         Function* functions;
     };
 }
