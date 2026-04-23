@@ -7,7 +7,11 @@
 #include "BibbleVM/linker/intrinsics.h"
 #include "BibbleVM/linker/linker.h"
 
+#include "BibbleVM/native/trampoline.h"
+
 #include "BibbleVM/vm.h"
+
+#include <unordered_map>
 
 namespace bibblevm::linker {
     struct ArgReader {
@@ -391,7 +395,8 @@ namespace bibblevm::linker {
     }
 
     bool LinkFunctions(oop::Class* classes, executor::Function* functions, VM& vm, GrowingArenaAllocator& arena, const executor::ConstPool& moduleConstPool, const module::Module& module) {
-        const IntrinsicModule* intrinsicModule = GetIntrinsicsModule(String(moduleConstPool.get(module.name).obj->asString()));
+        String moduleName = moduleConstPool.get(module.name).obj->asString();
+        const IntrinsicModule* intrinsicModule = GetIntrinsicsModule(moduleName);
 
         for (uint16_t i = 0; i < module.functionCount; i++) {
             const module::Function& function = module.functions[i];
@@ -427,7 +432,13 @@ namespace bibblevm::linker {
                         }
                     }
 
-                    //TODO: search loaded libraries for function
+                    void* implementation = vm.pluginManager().getNativeFunction<void*>(moduleName, linkedFunction.getName());
+
+                    if (implementation != nullptr) {
+                        linkedFunction.entryPoint() = native::FunctionTrampoline;
+                        linkedFunction.implementation() = implementation;
+                    } //TODO: else error
+
                     break;
                 }
             }

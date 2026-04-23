@@ -16,14 +16,6 @@ static uint8_t mainFunctionCode[] = {
 };
 static constexpr uint32_t mainFunctionCodeLength = sizeof(mainFunctionCode);
 
-static uint8_t testFunctionCode[] = {
-    bibblevm::LOAD_CONST, 1, 3,
-    bibblevm::CALL, 0, 9, 1,
-    bibblevm::LOAD_IMM, 0, 69,
-    bibblevm::RETURN, 0
-};
-static constexpr uint32_t testFunctionCodeLength = sizeof(testFunctionCode);
-
 void DefineIntrinsicsModule(bibblevm::linker::Module& linkerModule) {
     auto* moduleConstEntries = linkerModule.arena().allocate<bibblevm::module::ConstPool::Entry>(3);
     moduleConstEntries[1].tag = bibblevm::module::ConstPool::Tag::STRING;
@@ -65,7 +57,7 @@ void DefineMainModule(bibblevm::linker::Module& linkerModule) {
 
     auto* functions = linkerModule.arena().allocate<bibblevm::module::Function>(2);
     functions[0] = {2, 0, 4, 0, {}, mainFunctionCodeLength, mainFunctionCode};
-    functions[1] = {3, 0, 2, 0, {}, testFunctionCodeLength, testFunctionCode};
+    functions[1] = {3, bibblevm::module::FUNC_NATIVE, 0, 0, {}, 0, nullptr};
 
     bibblevm::module::Module module(bibblevm::module::MAGIC, 0, 1, moduleConstPool, 0, 2, nullptr, functions);
 
@@ -77,7 +69,11 @@ int main(int argc, char** argv) {
     bibblevm::InitDependencies();
 
     bibblevm::Config config;
+    config.debug.enableDebugLogging = true;
+
     bibblevm::VM vm(config);
+
+    if (!vm.pluginManager().load("libBibbleVM-testplugin")) return 1;
 
     std::unique_ptr<bibblevm::linker::Module> module = std::make_unique<bibblevm::linker::Module>();
     DefineIntrinsicsModule(*module);

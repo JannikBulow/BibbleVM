@@ -9,6 +9,8 @@
 
 #include "BibbleVM/linker/module.h"
 
+#include "BibbleVM/native/plugin_manager.h"
+
 #include "BibbleVM/util/time_manager.h"
 
 #include "BibbleVM/api.h"
@@ -43,6 +45,7 @@ namespace bibblevm {
 
         StringPool& stringPool() { return mStringPool; }
         TimeManager<> timeManager() const { return mTimeManager; }
+        native::PluginManager& pluginManager() { return mPluginManager; }
         gc::MemoryManager& memoryManager() { return mMemoryManager; }
         executor::Scheduler& scheduler() { return mScheduler; }
 
@@ -66,6 +69,7 @@ namespace bibblevm {
 
         StringPool mStringPool;
         TimeManager<> mTimeManager;
+        native::PluginManager mPluginManager;
         gc::MemoryManager mMemoryManager;
         executor::Scheduler mScheduler;
 

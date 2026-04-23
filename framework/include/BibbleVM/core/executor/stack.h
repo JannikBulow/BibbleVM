@@ -17,6 +17,7 @@ namespace bibblevm::executor {
     public:
         Frame(Snapshot<GrowingArenaAllocator> arena, Frame* prev, Function& function, uint16_t registerCount, Value* returnRegister);
 
+        Snapshot<GrowingArenaAllocator>& arena() { return mArena; }
         Frame* getPrev() const { return mPrev; }
         Function& getFunction() const { return mFunction; }
         Instruction*& ip() { return mIP; }

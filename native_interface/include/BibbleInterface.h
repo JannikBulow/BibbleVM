@@ -5,6 +5,22 @@
 
 #include <stdint.h>
 
+#ifdef _WIN32
+#   ifdef __cplusplus
+#       define BIBBLE_EXPORT extern "C" __declspec(dllexport)
+#   else
+#       define BIBBLE_EXPORT __declspec(dllexport)
+#   endif
+#   define BIBBLE_CALL __stdcall
+#else
+#   ifdef __cplusplus
+#       define BIBBLE_EXPORT extern "C"
+#   else
+#       define BIBBLE_EXPORT
+#   endif
+#   define BIBBLE_CALL
+#endif
+
 // Actual data
 typedef int8_t VMByte;
 typedef uint8_t VMUByte;
@@ -28,6 +44,11 @@ typedef struct VMField_* VMField;
 typedef struct VMMethod_* VMMethod;
 typedef struct VMFunction_* VMFunction;
 
+typedef enum VMTypeTag {
+    VM_TYPE_PRIMITIVE,
+    VM_TYPE_REFERENCE
+} VMTypeTag;
+
 typedef union VMValue {
     VMByte b;
     VMUByte ub;
@@ -45,6 +66,12 @@ typedef union VMValue {
     VMString str;
     VMFuture fut;
 } VMValue;
+
+// Workaround for not having static types at runtime. Trusting the native authors a lot with this one...
+typedef struct VMReturnValue {
+    VMTypeTag tag;
+    VMValue value;
+} VMReturnValue;
 
 typedef struct BibbleVM BibbleVM;
 

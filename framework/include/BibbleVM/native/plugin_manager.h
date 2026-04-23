@@ -9,6 +9,7 @@
 
 #include <libos/dynlib.h>
 
+#include <algorithm>
 #include <vector>
 
 namespace bibblevm::native {
@@ -17,12 +18,30 @@ namespace bibblevm::native {
         ~PluginManager();
 
         bool load(String path);
+        bool load(const char* path);
 
         template<class T>
         T getNativeFunction(std::string_view moduleName, std::string_view functionName) const {
-            std::string name;
+            std::string name = "Bibble/";
             name += moduleName;
+            name += "/";
             name += functionName;
+
+            auto replace = [](std::string str, std::string_view value, std::string_view replacement) {
+                size_t pos = 0;
+                while ((pos = str.find(value, pos)) != std::string::npos) {
+                    str.replace(pos, value.length(), replacement);
+                    pos += replacement.length();
+                }
+            };
+
+            replace(name, "_", "_1");
+            replace(name, ".", "_2");
+            replace(name, "::", "_3");
+            replace(name, "$", "_4");
+
+            std::ranges::replace(name, '/', '_');
+
             return static_cast<T>(getSymbol0(name.c_str()));
         }
 

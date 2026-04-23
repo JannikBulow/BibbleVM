@@ -36,6 +36,7 @@ namespace bibblevm::executor {
         const ConstPool& constPool() const { return mConstPool; }
         const ConstPool& mergedConstPool() const { return mMergedConstPool; }
         Instruction* getInstructions() const { return mInstructions; }
+        void*& implementation() { return mImplementation; }
         EntryPoint& entryPoint() { return mEntryPoint; }
 
         SchedulerMessage invoke(VM& vm, Frame& frame, Task* task) const;
@@ -50,7 +51,10 @@ namespace bibblevm::executor {
         ConstPool mConstPool; // for viewing the function const pool. never really used for reals
         ConstPool mMergedConstPool;
 
-        Instruction* mInstructions; // No size needed here as the verifier will ensure us that all paths terminate appropriately
+        union {
+            Instruction* mInstructions; // No size needed here as the verifier will ensure us that all paths terminate appropriately
+            void* mImplementation; // native functions
+        };
 
         EntryPoint mEntryPoint;
     };

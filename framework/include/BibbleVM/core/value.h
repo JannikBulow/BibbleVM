@@ -54,8 +54,26 @@ namespace bibblevm {
             executor::Function* fni;
         };
 
-        ::Value toNative() const {
-            ::Value out{};
+        static Value FromNative(VMValue v, VMTypeTag type) {
+            Value out{};
+            out.isObject = type == VM_TYPE_REFERENCE;
+            out.b = v.b;
+            out.ub = v.ub;
+            out.s = v.s;
+            out.us = v.us;
+            out.i = v.i;
+            out.ui = v.ui;
+            out.l = v.l;
+            out.ul = v.ul;
+            out.f = v.f;
+            out.d = v.d;
+            out.h = v.h;
+            out.obj = reinterpret_cast<oop::Object*>(v.obj);
+            return out;
+        }
+
+        VMValue toNative() const {
+            VMValue out{};
             out.b = b;
             out.ub = ub;
             out.s = s;

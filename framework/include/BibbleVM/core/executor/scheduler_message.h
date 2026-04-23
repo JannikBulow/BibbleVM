@@ -5,6 +5,8 @@
 
 #include "BibbleVM/core/executor/task.h"
 
+#include "BibbleVM/util/string_pool.h"
+
 namespace bibblevm::executor {
     enum class SchedulerMessageType {
         Errored,
@@ -24,7 +26,7 @@ namespace bibblevm::executor {
 
         constexpr SchedulerMessage(SchedulerMessageType type) : type(type) {}
 
-        static constexpr SchedulerMessage Errored() { return SchedulerMessageType::Errored; }
+        static constexpr SchedulerMessage Errored(std::string_view name = ""sv) { return SchedulerMessageType::Errored; }
         static constexpr SchedulerMessage Called(Function* function, uint16_t returnRegister, uint16_t argsBegin) {
             SchedulerMessage m = SchedulerMessageType::Called;
             m.call.function = function;

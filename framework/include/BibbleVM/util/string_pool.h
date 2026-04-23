@@ -10,6 +10,7 @@
 #include <unordered_set>
 
 namespace bibblevm {
+    using namespace std::string_view_literals;
     using String = oop::String;
 
     class BIBBLEVM_EXPORT StringPool {

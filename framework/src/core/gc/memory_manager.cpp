@@ -52,36 +52,40 @@ namespace bibblevm::gc {
     }
 
     oop::Object* MemoryManager::allocateString(VM& vm, ULong lengthBytes) {
-        oop::Object* object = allocateRawObject(vm, sizeof(oop::StringObject) + lengthBytes);
+        oop::Object* object = allocateRawObject(vm, sizeof(oop::StringObject) + lengthBytes + 1);
         if (object != nullptr) {
             object->asString()->lengthBytes = lengthBytes;
+            object->asString()->bytes[lengthBytes] = '\0';
         }
         return object;
     }
 
     oop::Object* MemoryManager::allocateString(VM& vm, std::string_view copy) {
-        oop::Object* object = allocateRawObject(vm, sizeof(oop::StringObject) + copy.size());
+        oop::Object* object = allocateRawObject(vm, sizeof(oop::StringObject) + copy.size() + 1);
         if (object != nullptr) {
             object->asString()->lengthBytes = copy.size();
             memcpy(object->asString()->bytes, copy.data(), copy.size());
+            object->asString()->bytes[copy.size()] = '\0';
         }
         return object;
     }
 
     oop::Object* MemoryManager::allocateImmortalString(VM& vm, ULong lengthBytes) {
-        oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + lengthBytes));
+        oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + lengthBytes + 1));
         new(object) oop::StringObject();
         object->asObject()->heapID = IMMORTAL_ID;
         object->lengthBytes = lengthBytes;
+        object->bytes[lengthBytes] = '\0';
         return object->asObject();
     }
 
     oop::Object* MemoryManager::allocateImmortalString(VM& vm, std::string_view copy) {
-        oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + copy.size()));
+        oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + copy.size() + 1));
         new(object) oop::StringObject();
         object->asObject()->heapID = IMMORTAL_ID;
         object->lengthBytes = copy.size();
         memcpy(object->bytes, copy.data(), copy.size());
+        object->bytes[copy.size()] = '\0';
         return object->asObject();
     }
 

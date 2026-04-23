@@ -16,11 +16,8 @@
 
 #include "BibbleVM/api.h"
 
-#include <array>
 #include <chrono>
-#include <optional>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 namespace bibblevm::gc {

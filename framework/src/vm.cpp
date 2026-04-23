@@ -29,6 +29,4 @@ namespace bibblevm {
     void VM::addModule(std::unique_ptr<linker::Module> module) {
         mModules.push_back(std::move(module));
     }
-
-    void VM::populateInterface() {}
 }

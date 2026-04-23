@@ -43,6 +43,7 @@ set(SOURCES
 
     src/native/plugin_manager.cpp
     src/native/interface.cpp
+    src/native/trampoline.cpp
 
     src/util/string_pool.cpp
 
@@ -94,6 +95,7 @@ set(HEADERS
 
     include/BibbleVM/native/interface.h
     include/BibbleVM/native/plugin_manager.h
+    include/BibbleVM/native/trampoline.h
 
     include/BibbleVM/util/safe_math.h
     include/BibbleVM/util/string_pool.h
