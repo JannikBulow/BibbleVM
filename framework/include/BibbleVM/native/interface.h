@@ -3,10 +3,12 @@
 #ifndef BIBBLEVM_NATIVE_INTERFACE_H
 #define BIBBLEVM_NATIVE_INTERFACE_H 1
 
+#include "BibbleVM/api.h"
+
 #include <BibbleInterface.h>
 
 namespace bibblevm::native {
-    void PopulateInterface(BibbleInterface* interface);
+    BIBBLEVM_EXPORT void PopulateInterface(BibbleInterface* interface);
 }
 
 #endif //BIBBLEVM_NATIVE_INTERFACE_H
