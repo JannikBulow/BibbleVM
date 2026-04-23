@@ -5,17 +5,20 @@
 
 #include "BibbleVM/core/oop/type.h"
 
-#include <cstdint>
+#include <BibbleInterface.h>
 
 namespace bibblevm {
-    using Byte = int8_t;
-    using UByte = uint8_t;
-    using Short = int16_t;
-    using UShort = uint16_t;
-    using Int = int32_t;
-    using UInt = uint32_t;
-    using Long = int64_t;
-    using ULong = uint64_t;
+    using Byte = VMByte;
+    using UByte = VMUByte;
+    using Short = VMShort;
+    using UShort = VMUShort;
+    using Int = VMInt;
+    using UInt = VMUInt;
+    using Long = VMLong;
+    using ULong = VMULong;
+    using Float = VMFloat;
+    using Double = VMDouble;
+    using Handle = VMHandle;
 
     namespace executor {
         class Function;
@@ -40,8 +43,9 @@ namespace bibblevm {
             UInt ui;
             Long l;
             ULong ul;
-            float f;
-            double d;
+            Float f;
+            Double d;
+            Handle h;
             oop::Object* obj;
             executor::Module* mi;
             oop::Class* ci;
@@ -49,6 +53,23 @@ namespace bibblevm {
             oop::Method* mei;
             executor::Function* fni;
         };
+
+        ::Value toNative() const {
+            ::Value out{};
+            out.b = b;
+            out.ub = ub;
+            out.s = s;
+            out.us = us;
+            out.i = i;
+            out.ui = ui;
+            out.l = l;
+            out.ul = ul;
+            out.f = f;
+            out.d = d;
+            out.h = h;
+            out.obj = reinterpret_cast<VMObject>(obj);
+            return out;
+        }
     };
 }
 

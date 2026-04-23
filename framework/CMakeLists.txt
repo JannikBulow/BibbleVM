@@ -41,6 +41,9 @@ set(SOURCES
     src/linker/intrinsics.cpp
     src/linker/linker.cpp
 
+    src/native/plugin_manager.cpp
+    src/native/interface.cpp
+
     src/util/string_pool.cpp
 
     src/config.cpp
@@ -89,6 +92,9 @@ set(HEADERS
     include/BibbleVM/linker/linker.h
     include/BibbleVM/linker/module.h
 
+    include/BibbleVM/native/interface.h
+    include/BibbleVM/native/plugin_manager.h
+
     include/BibbleVM/util/safe_math.h
     include/BibbleVM/util/string_pool.h
     include/BibbleVM/util/time_manager.h
@@ -129,5 +135,5 @@ target_include_directories(BibbleVM-framework-static PUBLIC
 target_compile_features(BibbleVM-framework-shared PUBLIC cxx_std_20)
 target_compile_features(BibbleVM-framework-static PUBLIC cxx_std_20)
 
-target_link_libraries(BibbleVM-framework-shared libos-static utf8cpp)
-target_link_libraries(BibbleVM-framework-static libos-static utf8cpp)
+target_link_libraries(BibbleVM-framework-shared BibbleVM-native-interface libos-static utf8cpp)
+target_link_libraries(BibbleVM-framework-static BibbleVM-native-interface libos-static utf8cpp)

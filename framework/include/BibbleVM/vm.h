@@ -14,6 +14,8 @@
 #include "BibbleVM/api.h"
 #include "BibbleVM/config.h"
 
+#include <BibbleInterface.h>
+
 #include <format>
 #include <iostream>
 #include <memory>
@@ -31,7 +33,13 @@ namespace bibblevm {
         VM(VM&&) noexcept = default;
         VM& operator=(VM&&) noexcept = default;
 
+        operator BibbleVM*() {
+            return reinterpret_cast<BibbleVM*>(this);
+        }
+
         const Config& config() const { return mConfig; }
+
+        BibbleInterface& interface() { return mInterface; }
 
         StringPool& stringPool() { return mStringPool; }
         TimeManager<> timeManager() const { return mTimeManager; }
@@ -53,6 +61,8 @@ namespace bibblevm {
 
     private:
         Config mConfig;
+
+        BibbleInterface mInterface;
 
         StringPool mStringPool;
         TimeManager<> mTimeManager;

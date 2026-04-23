@@ -51,6 +51,9 @@ namespace bibblevm::oop {
 
         StringObject* get() const { return mObject; }
 
+        ULong getLengthBytes() const { return mObject->lengthBytes; }
+        const char* getData() const { return mObject->bytes; }
+
         int compareFast(const String& other) const;
         int compareCorrect(const String& other) const;
 
