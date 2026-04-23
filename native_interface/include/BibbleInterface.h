@@ -17,16 +17,16 @@ typedef uint64_t VMULong;
 typedef float VMFloat;
 typedef double VMDouble;
 typedef void* VMHandle;
-typedef struct VMObject__* VMObject;
+typedef struct VMObject_* VMObject;
 typedef VMObject VMArray;
 typedef VMObject VMString;
 typedef VMObject VMFuture;
 
-typedef struct VMModule__* VMModule;
-typedef struct VMClass__* VMClass;
-typedef struct VMField__* VMField;
-typedef struct VMMethod__* VMMethod;
-typedef struct VMFunction__* VMFunction;
+typedef struct VMModule_* VMModule;
+typedef struct VMClass_* VMClass;
+typedef struct VMField_* VMField;
+typedef struct VMMethod_* VMMethod;
+typedef struct VMFunction_* VMFunction;
 
 typedef union VMValue {
     VMByte b;
