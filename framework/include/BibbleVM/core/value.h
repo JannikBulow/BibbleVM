@@ -3,8 +3,6 @@
 #ifndef BIBBLEVM_CORE_VALUE_H
 #define BIBBLEVM_CORE_VALUE_H 1
 
-#include "BibbleVM/core/oop/type.h"
-
 #include <BibbleInterface.h>
 
 namespace bibblevm {
@@ -23,6 +21,10 @@ namespace bibblevm {
     namespace executor {
         class Function;
         class Module;
+    }
+
+    namespace gc {
+        class MemoryManager;
     }
 
     namespace oop {
@@ -54,40 +56,29 @@ namespace bibblevm {
             executor::Function* fni;
         };
 
-        static Value FromNative(VMValue v, VMTypeTag type) {
+        static Value FromNative(VMValue v, bool reference) {
             Value out{};
-            out.isObject = type == VM_TYPE_REFERENCE;
-            out.b = v.b;
-            out.ub = v.ub;
-            out.s = v.s;
-            out.us = v.us;
-            out.i = v.i;
-            out.ui = v.ui;
-            out.l = v.l;
-            out.ul = v.ul;
-            out.f = v.f;
-            out.d = v.d;
-            out.h = v.h;
-            out.obj = reinterpret_cast<oop::Object*>(v.obj);
+            out.isObject = reference;
+            if (reference) {
+                out.obj = *reinterpret_cast<oop::Object**>(v.obj);
+            } else {
+                out.b = v.b;
+                out.ub = v.ub;
+                out.s = v.s;
+                out.us = v.us;
+                out.i = v.i;
+                out.ui = v.ui;
+                out.l = v.l;
+                out.ul = v.ul;
+                out.f = v.f;
+                out.d = v.d;
+                out.h = v.h;
+            }
             return out;
         }
 
-        VMValue toNative() const {
-            VMValue out{};
-            out.b = b;
-            out.ub = ub;
-            out.s = s;
-            out.us = us;
-            out.i = i;
-            out.ui = ui;
-            out.l = l;
-            out.ul = ul;
-            out.f = f;
-            out.d = d;
-            out.h = h;
-            out.obj = reinterpret_cast<VMObject>(obj);
-            return out;
-        }
+        // Only use when your native reference frame it set up.
+        VMValue toNative(gc::MemoryManager& memoryManager) const;
     };
 }
 

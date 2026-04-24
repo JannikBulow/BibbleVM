@@ -3,6 +3,7 @@
 #ifndef BIBBLEVM_BIBBLEINTERFACE_H
 #define BIBBLEVM_BIBBLEINTERFACE_H 1
 
+#include <stdarg.h>
 #include <stdint.h>
 
 #ifdef _WIN32
@@ -21,6 +22,9 @@
 #   define BIBBLE_CALL
 #endif
 
+#define BIBBLE_TRUE 1
+#define BIBBLE_FALSE 0
+
 // Actual data
 typedef int8_t VMByte;
 typedef uint8_t VMUByte;
@@ -38,16 +42,13 @@ typedef VMObject VMArray;
 typedef VMObject VMString;
 typedef VMObject VMFuture;
 
+typedef VMByte VMBool;
+
 typedef struct VMModule_* VMModule;
 typedef struct VMClass_* VMClass;
-typedef struct VMField_* VMField;
-typedef struct VMMethod_* VMMethod;
+typedef const struct VMField_* VMField;
+typedef const struct VMMethod_* VMMethod;
 typedef struct VMFunction_* VMFunction;
-
-typedef enum VMTypeTag {
-    VM_TYPE_PRIMITIVE,
-    VM_TYPE_REFERENCE
-} VMTypeTag;
 
 typedef union VMValue {
     VMByte b;
@@ -62,21 +63,42 @@ typedef union VMValue {
     VMDouble d;
     VMHandle h;
     VMObject obj;
-    VMArray arr;
-    VMString str;
-    VMFuture fut;
 } VMValue;
 
 // Workaround for not having static types at runtime. Trusting the native authors a lot with this one...
 typedef struct VMReturnValue {
-    VMTypeTag tag;
+    bool reference;
     VMValue value;
 } VMReturnValue;
 
 typedef struct BibbleVM BibbleVM;
 
 typedef struct BibbleInterface {
-    void (*Test)(BibbleVM*);
+    VMModule (*GetModule)(BibbleVM*, const char*);
+
+    VMObject (*NewGlobalReference)(BibbleVM*, VMObject);
+    void (*DeleteGlobalReference)(BibbleVM*, VMObject);
+    VMObject (*NewLocalReference)(BibbleVM*, VMObject);
+    void (*PushLocalReferenceFrame)(BibbleVM*, VMUInt);
+    void (*PopLocalReferenceFrame)(BibbleVM*);
+
+    VMClass (*GetClass)(BibbleVM*, VMModule, const char*);
+    VMClass (*GetSuperClass)(BibbleVM*, VMClass);
+    VMBool (*IsAssignableFrom)(BibbleVM*, VMClass, VMClass);
+
+    VMField (*GetField)(BibbleVM*, VMClass, const char*);
+    VMValue (*GetFieldValue)(BibbleVM*, VMObject, VMField);
+    void (*SetFieldValue)(BibbleVM*, VMObject, VMField, VMValue);
+
+    VMMethod (*GetMethod)(BibbleVM*, VMClass, const char*);
+    VMFunction (*DispatchMethod)(BibbleVM*, VMObject, VMMethod);
+    VMFunction (*DispatchMethodNonVirtual)(BibbleVM*, VMClass, VMMethod); // Get the function associated with that exact method without vtable lookup. If the method is abstract, returns NULL
+
+    VMFunction (*GetFunction)(BibbleVM*, VMModule, const char*);
+
+    VMValue (*CallFunction)(BibbleVM*, VMFunction, ...);
+    VMValue (*CallFunctionV)(BibbleVM*, VMFunction, va_list);
+    VMValue (*CallFunctionA)(BibbleVM*, VMFunction, const VMValue* args);
 } BibbleInterface;
 
 #endif //BIBBLEVM_BIBBLEINTERFACE_H

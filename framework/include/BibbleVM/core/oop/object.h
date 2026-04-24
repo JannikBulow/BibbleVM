@@ -52,7 +52,7 @@ namespace bibblevm::oop {
     struct Instance {
         Object header;
         Class* clas;
-        char fieldBytes[];
+        uint8_t fieldBytes[];
 
         Object* asObject() { return &header; }
 

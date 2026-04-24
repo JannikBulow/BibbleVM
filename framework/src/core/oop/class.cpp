@@ -26,8 +26,6 @@ namespace bibblevm::oop {
 
         sortFields(arena);
         createVtable(arena);
-
-        mFinalizer = getMethod(".finalize");
     }
 
     const Field* Class::getField(String name) const {
@@ -56,6 +54,129 @@ namespace bibblevm::oop {
             if (method.name == name) return &method;
         }
         return nullptr;
+    }
+
+    Value Class::readField(Instance* instance, const Field* field) const {
+        const uint8_t* src = instance->fieldBytes + field->memoryOffset;
+        Value value{};
+
+        switch (field->type) {
+            case Type::Byte:
+                std::memcpy(&value.b, src, sizeof(Byte));
+                break;
+            case Type::UByte:
+                std::memcpy(&value.ub, src, sizeof(UByte));
+                break;
+            case Type::Short:
+                std::memcpy(&value.s, src, sizeof(Short));
+                break;
+            case Type::UShort:
+                std::memcpy(&value.us, src, sizeof(UShort));
+                break;
+            case Type::Int:
+                std::memcpy(&value.i, src, sizeof(Int));
+                break;
+            case Type::UInt:
+                std::memcpy(&value.ui, src, sizeof(UInt));
+                break;
+            case Type::Long:
+                std::memcpy(&value.l, src, sizeof(Long));
+                break;
+            case Type::ULong:
+                std::memcpy(&value.ul, src, sizeof(ULong));
+                break;
+            case Type::Float:
+                std::memcpy(&value.f, src, sizeof(Float));
+                break;
+            case Type::Double:
+                std::memcpy(&value.d, src, sizeof(Double));
+                break;
+            case Type::Handle:
+                std::memcpy(&value.h, src, sizeof(Handle));
+                break;
+            case Type::Reference:
+                std::memcpy(&value.obj, src, sizeof(Object*));
+                break;
+            case Type::ModuleRef:
+                std::memcpy(&value.mi, src, sizeof(executor::Module*));
+                break;
+            case Type::ClassRef:
+                std::memcpy(&value.ci, src, sizeof(Class*));
+                break;
+            case Type::FieldRef:
+                std::memcpy(&value.fi, src, sizeof(Field*));
+                break;
+            case Type::MethodRef:
+                std::memcpy(&value.mei, src, sizeof(Method*));
+                break;
+            case Type::FunctionRef:
+                std::memcpy(&value.fni, src, sizeof(executor::Function*));
+                break;
+            case Type::Count: break;
+        }
+
+        return value;
+
+    }
+
+    void Class::writeField(Instance* instance, const Field* field, Value value) {
+        uint8_t* dest = instance->fieldBytes + field->memoryOffset;
+
+        switch (field->type) {
+            case Type::Byte:
+                std::memcpy(dest, &value.b, sizeof(Byte));
+                break;
+            case Type::UByte:
+                std::memcpy(dest, &value.ub, sizeof(UByte));
+                break;
+            case Type::Short:
+                std::memcpy(dest, &value.s, sizeof(Short));
+                break;
+            case Type::UShort:
+                std::memcpy(dest, &value.us, sizeof(UShort));
+                break;
+            case Type::Int:
+                std::memcpy(dest, &value.i, sizeof(Int));
+                break;
+            case Type::UInt:
+                std::memcpy(dest, &value.ui, sizeof(UInt));
+                break;
+            case Type::Long:
+                std::memcpy(dest, &value.l, sizeof(Long));
+                break;
+            case Type::ULong:
+                std::memcpy(dest, &value.ul, sizeof(ULong));
+                break;
+            case Type::Float:
+                std::memcpy(dest, &value.f, sizeof(Float));
+                break;
+            case Type::Double:
+                std::memcpy(dest, &value.d, sizeof(Double));
+                break;
+            case Type::Handle:
+                std::memcpy(dest, &value.h, sizeof(Handle));
+                break;
+            case Type::Reference:
+                std::memcpy(dest, &value.obj, sizeof(Object*));
+                break;
+            case Type::ModuleRef:
+                std::memcpy(dest, &value.mi, sizeof(executor::Module*));
+                break;
+            case Type::ClassRef:
+                std::memcpy(dest, &value.ci, sizeof(Class*));
+                break;
+            case Type::FieldRef:
+                std::memcpy(dest, &value.fi, sizeof(Field*));
+                break;
+            case Type::MethodRef:
+                std::memcpy(dest, &value.mei, sizeof(Method*));
+                break;
+            case Type::FunctionRef:
+                std::memcpy(dest, &value.fni, sizeof(executor::Function*));
+                break;
+            case Type::Count:
+                break;
+        }
     }
 
     executor::Function* Class::dispatchMethod(const Method* method) const {

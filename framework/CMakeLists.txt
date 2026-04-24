@@ -37,6 +37,7 @@ set(SOURCES
     src/core/oop/type.cpp
 
     src/core/opcodes.cpp
+    src/core/value.cpp
 
     src/linker/intrinsics.cpp
     src/linker/linker.cpp

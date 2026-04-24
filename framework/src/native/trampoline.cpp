@@ -19,7 +19,7 @@ namespace bibblevm::native {
 
         void* implementation = frame.getFunction().implementation();
         VMReturnValue ret = reinterpret_cast<Signature>(implementation)(vm, &vm.interface(), arguments);
-        Value value = Value::FromNative(ret.value, ret.tag);
+        Value value = Value::FromNative(ret.value, ret.reference);
 
         return executor::SchedulerMessage::Returned(value);
     }

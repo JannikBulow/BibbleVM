@@ -3,6 +3,7 @@
 #include <BibbleInterface.h>
 
 BIBBLE_EXPORT BIBBLE_CALL VMReturnValue Bibble_Main_test(BibbleVM* vm, BibbleInterface* interface, VMValue* args) {
-    interface->Test(vm);
-    return {VM_TYPE_PRIMITIVE, {.l = 69}};
+    VMModule intrinsics = interface->GetModule(vm, "Intrinsics");
+
+    return {false, {.l = 69}};
 }

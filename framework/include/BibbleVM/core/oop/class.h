@@ -48,6 +48,9 @@ namespace bibblevm::oop {
         const Method* getMethod(String name) const;
         const Method* getMethod(std::string_view name) const;
 
+        Value readField(Instance* instance, const Field* field) const;
+        void writeField(Instance* instance, const Field* field, Value value);
+
         executor::Function* dispatchMethod(const Method* method) const;
 
         bool isAssignableTo(Class* other) const;
