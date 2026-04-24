@@ -80,7 +80,6 @@ namespace bibblevm::gc {
         struct RootsState {
             size_t stackIndex = 0;
             executor::Frame* currentFrame = nullptr;
-            size_t rootIndex = 0;
         };
 
         struct SweepState {

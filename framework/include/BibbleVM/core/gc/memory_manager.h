@@ -18,6 +18,7 @@
 
 #include <chrono>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
 
 namespace bibblevm::gc {
@@ -27,19 +28,6 @@ namespace bibblevm::gc {
     constexpr uint8_t LOH_ID = 4;
 
     constexpr uint8_t NOT_OLD_GEN_ID = 253;
-
-    struct Root {
-        using Iterator = oop::Object**;
-
-        oop::Object** base;
-        size_t count;
-
-        Root(oop::Object** base, size_t count) : base(base), count(count) {}
-        Root(std::vector<oop::Object*>& v) : base(v.data()), count(v.size()) {}
-
-        Iterator begin() const { return base; }
-        Iterator end() const { return base + count; }
-    };
 
     class BIBBLEVM_EXPORT MemoryManager {
     friend class OldGenHeap;
@@ -62,15 +50,23 @@ namespace bibblevm::gc {
 
         void writeBarrier(oop::Object* object, oop::Object* child);
 
-        const std::vector<Root>& roots() const { return mRoots; }
+        const std::unordered_set<oop::Object**>& strongReferences() const { return mStrongReferences; }
 
-        void addRoot(oop::Object** root) { addRoot({root, 1}); }
-        void addRoot(Root root);
+        oop::Object** newGlobalStrongReference(oop::Object* object);
+        void deleteGlobalStrongReference(oop::Object** reference);
+
+        void pushLocalReferenceFrame(size_t initialSize);
+        void popLocalReferenceFrame();
+        oop::Object** newLocalStrongReference(oop::Object* object);
 
         // Call this at every safe point throughout the program and the memory manager will decide if it should use this safe point to run a collection cycle or not.
         void safepoint(VM& vm);
 
     private:
+        struct LocalReferenceFrame {
+            std::vector<oop::Object**> references;
+        };
+
         enum class NurseryCollectPhase {
             Idle,
             Roots,
@@ -86,7 +82,6 @@ namespace bibblevm::gc {
 
             size_t stackIndex = 0;
             executor::Frame* currentFrame = nullptr;
-            size_t rootIndex = 0;
             size_t rememberedIndex = 0;
         };
 
@@ -98,7 +93,8 @@ namespace bibblevm::gc {
 
         std::vector<oop::Object*> mFinalizerQueue;
 
-        std::vector<Root> mRoots;
+        std::unordered_set<oop::Object**> mStrongReferences;
+        std::vector<LocalReferenceFrame> mLocalReferenceStack;
 
         std::vector<oop::Object*> mRememberedSet;
 

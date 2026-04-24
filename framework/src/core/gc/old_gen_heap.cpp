@@ -243,10 +243,9 @@ namespace bibblevm::gc {
         auto& state = mState.roots;
 
         auto& allTasks = vm.scheduler().allTasks();
-        auto& roots = vm.memoryManager().roots();
+        auto& strongReferences = vm.memoryManager().strongReferences();
 
         size_t stackCount = allTasks.size();
-        size_t rootCount = roots.size();
 
         for (; state.stackIndex < stackCount; state.stackIndex++) {
             if (vm.timeManager().now() >= deadline) return true;
@@ -266,12 +265,9 @@ namespace bibblevm::gc {
             }
         }
 
-        for (; state.rootIndex < rootCount; state.rootIndex++) {
-            if (vm.timeManager().now() >= deadline) return true;
 
-            for (oop::Object*& object : roots[state.rootIndex]) {
-                markObject(object);
-            }
+        for (oop::Object** reference : strongReferences) {
+            markObject(*reference);
         }
 
         return false;

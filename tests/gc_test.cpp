@@ -41,11 +41,10 @@ TEST(MemoryManager, NurseryCollectionWithRoots) {
     config.debug.enableDebugLogging = true;
     VM vm(config);
 
-    std::vector<oop::Object*> roots;
+    std::vector<oop::Object**> roots;
     for (int i = 0; i < 100; i++) {
         oop::Object* obj = vm.memoryManager().allocateString(vm , "rooted");
-        roots.push_back(obj);
-        vm.memoryManager().addRoot(&roots.back());
+        roots.push_back(vm.memoryManager().newGlobalStrongReference(obj));
     }
 
     for (int i = 0; i < 1000; i++) {
@@ -66,17 +65,17 @@ TEST(MemoryManager, ForwardingAfterGC) {
     VM vm(config);
 
     oop::Object* obj = vm.memoryManager().allocateString(vm , "forwarding");
-    vm.memoryManager().addRoot(&obj);
+    oop::Object** reference = vm.memoryManager().newGlobalStrongReference(obj);
 
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 10000; i++) {
         vm.memoryManager().allocateString(vm , "dummy");
     }
 
     vm.memoryManager().safepoint(vm);
 
-    ASSERT_NE(obj, nullptr);
-    EXPECT_TRUE(isAligned(obj, 16));
-    oop::StringObject* str = obj->asString();
+    ASSERT_NE(*reference, nullptr);
+    EXPECT_TRUE(isAligned(*reference, 16));
+    oop::StringObject* str = (*reference)->asString();
     EXPECT_EQ(std::string(str->bytes, str->lengthBytes), "forwarding");
 }
 
@@ -85,17 +84,16 @@ TEST(MemoryManager, MultipleRoots) {
     config.debug.enableDebugLogging = true;
     VM vm(config);
 
-    std::vector<oop::Object*> objs;
+    std::vector<oop::Object**> objs;
     for (int i = 0; i < 50; i++) {
-        objs.push_back(vm.memoryManager().allocateString(vm , "multiroot"));
+        objs.push_back(vm.memoryManager().newGlobalStrongReference(vm.memoryManager().allocateString(vm , "multiroot")));
     }
-    vm.memoryManager().addRoot(objs);
 
     vm.memoryManager().safepoint(vm);
 
     for (auto* obj : objs) {
-        EXPECT_NE(obj, nullptr);
-        EXPECT_TRUE(isAligned(obj, 16));
+        EXPECT_NE(*obj, nullptr);
+        EXPECT_TRUE(isAligned(*obj, 16));
     }
 }
 
@@ -104,15 +102,13 @@ TEST(MemoryManager, StressAllocationAndCollection) {
     config.debug.enableDebugLogging = true;
     VM vm(config);
 
-    GrowingArenaAllocator rootAllocator = GrowingArenaAllocator::Create(1600000, 0, true);
     std::vector<oop::Object**> roots;
 
     const int total = 100000000;
     for (int i = 0; i < total; i++) {
         oop::Object* obj = vm.memoryManager().allocateString(vm , "stress"sv);
-        if (i % 512 == 0) {
-            roots.push_back(rootAllocator.allocate<oop::Object*>(1));
-            vm.memoryManager().addRoot(roots.back());
+        if (i % 512 == 0 && obj != nullptr) {
+            roots.push_back(vm.memoryManager().newGlobalStrongReference(obj));
         }
 
         if (obj == nullptr) vm.memoryManager().safepoint(vm);
@@ -121,6 +117,6 @@ TEST(MemoryManager, StressAllocationAndCollection) {
     vm.memoryManager().safepoint(vm);
 
     for (auto r : roots) {
-        EXPECT_NE(r, nullptr);
+        EXPECT_NE(*r, nullptr);
     }
 }

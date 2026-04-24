@@ -109,8 +109,32 @@ namespace bibblevm::gc {
         }
     }
 
-    void MemoryManager::addRoot(Root root) {
-        mRoots.push_back(root);
+    oop::Object** MemoryManager::newGlobalStrongReference(oop::Object* object) {
+        oop::Object** reference = new oop::Object*;
+        *reference = object;
+        mStrongReferences.insert(reference);
+        return reference;
+    }
+
+    void MemoryManager::deleteGlobalStrongReference(oop::Object** reference) {
+        mStrongReferences.erase(reference);
+    }
+
+    void MemoryManager::pushLocalReferenceFrame(size_t initialSize) {
+        mLocalReferenceStack.emplace_back();
+        mLocalReferenceStack.back().references.reserve(initialSize);
+    }
+
+    void MemoryManager::popLocalReferenceFrame() {
+        for (oop::Object** reference : mLocalReferenceStack.back().references) {
+            deleteGlobalStrongReference(reference);
+        }
+    }
+
+    oop::Object** MemoryManager::newLocalStrongReference(oop::Object* object) {
+        oop::Object** reference = newGlobalStrongReference(object);
+        mLocalReferenceStack.back().references.push_back(reference);
+        return reference;
     }
 
     void MemoryManager::safepoint(VM& vm) {
@@ -186,7 +210,6 @@ namespace bibblevm::gc {
         auto& allTasks = vm.scheduler().allTasks();
 
         size_t stackCount = allTasks.size();
-        size_t rootCount = mRoots.size();
 
         while (state.phase != NurseryCollectPhase::Done) {
             // Fallthrough is intentional
@@ -213,13 +236,9 @@ namespace bibblevm::gc {
                         }
                     }
 
-                    // scan the third party root set
-                    for (; state.rootIndex < rootCount; state.rootIndex++) {
-                        if (shouldPause(vm)) return;
-
-                        for (oop::Object*& object : mRoots[state.rootIndex]) {
-                            object = forward(vm, object);
-                        }
+                    // scan the strong references
+                    for (oop::Object** reference : mStrongReferences) {
+                        *reference = forward(vm, *reference);
                     }
 
                     state.phase = NurseryCollectPhase::RememberedSet;
@@ -357,12 +376,10 @@ namespace bibblevm::gc {
             }
         }
 
-        for (auto& root : mRoots) {
-            for (oop::Object*& object : root) {
-                if (mNursery.isInFromSpace(object)) {
-                    logResize(object);
-                    object = reinterpret_cast<oop::Object*>(reinterpret_cast<uint8_t*>(object) + offset);
-                }
+        for (oop::Object** reference : mStrongReferences) {
+            if (mNursery.isInFromSpace(*reference)) {
+                logResize(*reference);
+                *reference = reinterpret_cast<oop::Object*>(reinterpret_cast<uint8_t*>(*reference) + offset);
             }
         }
 
