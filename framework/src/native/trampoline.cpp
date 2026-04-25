@@ -14,11 +14,11 @@ namespace bibblevm::native {
         VMValue* arguments = frame.arena()->allocate<VMValue>(parameterCount);
 
         for (uint16_t i = 0; i < parameterCount; ++i) {
-            arguments[i] = frame[i].toNative();
+            arguments[i] = frame[i].toNative(vm.memoryManager());
         }
 
         void* implementation = frame.getFunction().implementation();
-        VMReturnValue ret = reinterpret_cast<Signature>(implementation)(vm, &vm.interface(), arguments);
+        VMReturnValue ret = reinterpret_cast<Signature>(implementation)(vm, &task->nativeInterface, arguments);
         Value value = Value::FromNative(ret.value, ret.reference);
 
         return executor::SchedulerMessage::Returned(value);

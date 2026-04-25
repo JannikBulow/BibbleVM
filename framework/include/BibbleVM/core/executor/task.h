@@ -7,6 +7,10 @@
 
 #include "BibbleVM/core/oop/object.h"
 
+#include "BibbleVM/native/interface.h"
+
+#include <BibbleInterface.h>
+
 namespace bibblevm::executor {
     class Scheduler;
     struct Task;
@@ -23,6 +27,13 @@ namespace bibblevm::executor {
         Value result;
 
         Scheduler* scheduler;
+
+        BibbleInterface nativeInterface; // Task-local because native functions might want to call something and that something has to be in the same task as the native function
+
+        Task() {
+            nativeInterface.reserved[0] = this;
+            native::PopulateInterface(&nativeInterface);
+        }
     };
 }
 

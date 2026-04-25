@@ -97,11 +97,11 @@ int main(int argc, char** argv) {
     bibblevm::oop::Future* future = task->completionFuture;
 
     bibblevm::oop::Object* futureObject = future->asObject();
-    vm.memoryManager().addRoot(&futureObject);
+    //vm.memoryManager().addRoot(&futureObject);
 
     vm.scheduler().run(vm);
 
     if (!future->ready) return 4;
 
-    return future->value.i;
+    return future->value.l;
 }

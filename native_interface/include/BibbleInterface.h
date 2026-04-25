@@ -25,6 +25,12 @@
 #define BIBBLE_TRUE 1
 #define BIBBLE_FALSE 0
 
+#ifdef __cplusplus
+#define BIBBLE_CLITERAL(T) T
+#else
+#define BIBBLE_CLITERAL(T) (T)
+#endif
+
 // Actual data
 typedef int8_t VMByte;
 typedef uint8_t VMUByte;
@@ -71,9 +77,17 @@ typedef struct VMReturnValue {
     VMValue value;
 } VMReturnValue;
 
-typedef struct BibbleVM BibbleVM;
+typedef struct VMArgument {
+    bool reference;
+    VMValue value;
+} VMArgument;
 
-typedef struct BibbleInterface {
+typedef struct BibbleVM BibbleVM;
+typedef struct BibbleInterface BibbleInterface;
+
+struct BibbleInterface {
+    void* reserved[4];
+
     VMModule (*GetModule)(BibbleVM*, const char*);
 
     VMObject (*NewGlobalReference)(BibbleVM*, VMObject);
@@ -96,9 +110,68 @@ typedef struct BibbleInterface {
 
     VMFunction (*GetFunction)(BibbleVM*, VMModule, const char*);
 
-    VMValue (*CallFunction)(BibbleVM*, VMFunction, ...);
-    VMValue (*CallFunctionV)(BibbleVM*, VMFunction, va_list);
-    VMValue (*CallFunctionA)(BibbleVM*, VMFunction, const VMValue* args);
-} BibbleInterface;
+    VMValue (*CallFunction)(BibbleVM*, BibbleInterface*, VMFunction, ...);
+    VMValue (*CallFunctionV)(BibbleVM*, BibbleInterface*, VMFunction, va_list);
+    VMValue (*CallFunctionA)(BibbleVM*, BibbleInterface*, VMFunction, const VMArgument*);
+};
+
+
+
+#ifdef __cplusplus
+inline VMArgument BIBBLE_ARG_IMPL_(VMObject value) {
+    return VMArgument{true, VMValue{.obj = value}};
+}
+
+inline VMArgument BIBBLE_ARG_IMPL_(VMHandle value) {
+    return VMArgument{false, VMValue{.h = value}};
+}
+
+inline VMArgument BIBBLE_ARG_IMPL_(VMDouble value) {
+    return VMArgument{false, VMValue{.d = value}};
+}
+
+inline VMArgument BIBBLE_ARG_IMPL_(VMFloat value) {
+    return VMArgument{false, VMValue{.d = static_cast<VMDouble>(value)}};
+}
+
+template <typename T>
+inline VMArgument BIBBLE_ARG_IMPL_(T value) {
+    return VMArgument{false, VMValue{.l = static_cast<VMLong>(value)}};
+}
+
+inline VMReturnValue BIBBLE_RETURN_IMPL_(VMObject value) {
+    return VMReturnValue{true, VMValue{.obj = value}};
+}
+
+inline VMReturnValue BIBBLE_RETURN_IMPL_(VMHandle value) {
+    return VMReturnValue{false, VMValue{.h = value}};
+}
+
+inline VMReturnValue BIBBLE_RETURN_IMPL_(VMDouble value) {
+    return VMReturnValue{false, VMValue{.d = value}};
+}
+
+inline VMReturnValue BIBBLE_RETURN_IMPL_(VMFloat value) {
+    return VMReturnValue{false, VMValue{.d = static_cast<VMDouble>(value)}};
+}
+
+template <typename T>
+inline VMReturnValue BIBBLE_RETURN_IMPL_(T value) {
+    return VMReturnValue{false, VMValue{.l = static_cast<VMLong>(value)}};
+}
+
+#define BIBBLE_ARG(T, value) BIBBLE_ARG_IMPL_(static_cast<T>(value))
+#define BIBBLE_RETURN(T, value) BIBBLE_RETURN_IMPL_(static_cast<T>(value))
+#else
+#define BIBBLE_ARG_OR_RETURN(T, R, value) _Generic((T){0}, \
+VMObject: BIBBLE_CLITERAL(R){true, BIBBLE_CLITERAL(VMValue){.obj=(VMObject)(value)}}, \
+VMHandle: BIBBLE_CLITERAL(R){false, BIBBLE_CLITERAL(VMValue){.h=(VMHandle)(value)}}, \
+VMDouble: BIBBLE_CLITERAL(R){false, BIBBLE_CLITERAL(VMValue){.d=(VMDouble)(value)}}, \
+VMFloat: BIBBLE_CLITERAL(R){false, BIBBLE_CLITERAL(VMValue){.d=(VMDouble)(value)}}, \
+default: BIBBLE_CLITERAL(R){false, BIBBLE_CLITERAL(VMValue){.l=(VMLong)(value)}} \
+)
+#define BIBBLE_ARG(T, value) BIBBLE_ARG_OR_RETURN(T, VMArgument, value)
+#define BIBBLE_RETURN(T, value) BIBBLE_ARG_OR_RETURN(T, VMReturnValue, value)
+#endif
 
 #endif //BIBBLEVM_BIBBLEINTERFACE_H

@@ -9,7 +9,6 @@ namespace bibblevm {
         : mConfig(config)
         , mScheduler(*this) {
         mMemoryManager.init(*this); // TODO: check result and throw a tantrum
-        native::PopulateInterface(&mInterface);
     }
 
     linker::Module* VM::getModule(String name) const {

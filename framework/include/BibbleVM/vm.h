@@ -27,7 +27,7 @@ namespace bibblevm {
     // BibbleVM shared state. BibbleVM intentionally doesn't use a global state so you can have more than one VM running in the same process.
     class BIBBLEVM_EXPORT VM {
     public:
-        VM(const Config& config);
+        explicit VM(const Config& config);
 
         VM(const VM&) = delete;
         VM& operator=(const VM&) = delete;
@@ -40,8 +40,6 @@ namespace bibblevm {
         }
 
         const Config& config() const { return mConfig; }
-
-        BibbleInterface& interface() { return mInterface; }
 
         StringPool& stringPool() { return mStringPool; }
         TimeManager<> timeManager() const { return mTimeManager; }
@@ -64,8 +62,6 @@ namespace bibblevm {
 
     private:
         Config mConfig;
-
-        BibbleInterface mInterface;
 
         StringPool mStringPool;
         TimeManager<> mTimeManager;

@@ -33,6 +33,55 @@ namespace bibblevm::native {
         return reinterpret_cast<oop::Object*>(object);
     }
 
+    static executor::Task* ExtractTask(BibbleInterface* interface) {
+        return static_cast<executor::Task*>(interface->reserved[0]);
+    }
+
+    // Shittily execute a function whilst avoiding the scheduler because there's currently no way to do it cleanly.
+    static Value ExecuteFunction(VM& vm, executor::Function* function, executor::Task* task, auto addArgs) {
+        using namespace executor;
+
+        Stack& stack = task->stack;
+        Frame* targetFrame = stack.getTop();
+
+        Value returnValue{};
+
+        Frame& newFrame = stack.pushFrame(*function, &returnValue);
+        addArgs(newFrame);
+
+        while (stack.getTop() != targetFrame) {
+            Frame& frame = *stack.getTop();
+
+            SchedulerMessage message = frame.getFunction().invoke(vm, frame, task);
+            switch (message.type) {
+                case SchedulerMessageType::Errored: return {}; // TODO: do something proper
+                case SchedulerMessageType::Called: {
+                    Frame& newFrame2 = stack.pushFrame(*message.call.function, &(*stack.getTop())[message.call.returnRegister]);
+
+                    for (uint16_t i = 0; i < message.call.function->getParameterCount(); i++) {
+                        newFrame2[i] = frame[message.call.argsBegin + i];
+                    }
+
+                    vm.memoryManager().safepoint(vm);
+
+                    break;
+                }
+                case SchedulerMessageType::Returned: {
+                    Value* returnRegister = stack.getTop()->returnRegister();
+                    stack.popFrame();
+                    *returnRegister = message.returnValue; // returnRegister should never be nullptr as long as dumbasses don't touch it
+                    vm.memoryManager().safepoint(vm);
+                    break;
+                }
+                case SchedulerMessageType::Yielded:
+                case SchedulerMessageType::Awaiting:
+                    break; // genuinely just ignore any attempts at async code when in the native environment
+            }
+        }
+
+        return returnValue;
+    }
+
     VMModule GetModule(BibbleVM* vm_, const char* name) {
         VM& vm = GetVM(vm_);
         linker::Module* module = vm.getModule(name);
@@ -142,6 +191,50 @@ namespace bibblevm::native {
     VMFunction GetFunction(BibbleVM* vm_, VMModule module_, const char* name) {
         VM& vm = GetVM(vm_);
         executor::Module* module = GetModule(module_);
+        if (module == nullptr) return nullptr;
+        return reinterpret_cast<VMFunction>(module->getFunction(name));
+    }
+
+    VMValue CallFunctionV(BibbleVM* vm_, BibbleInterface* interface, VMFunction function_, va_list args);
+
+    VMValue CallFunction(BibbleVM* vm_, BibbleInterface* interface, VMFunction function_, ...) {
+        va_list args;
+        va_start(args, function_);
+        VMValue result = CallFunctionV(vm_, interface, function_, args);
+        va_end(args);
+        return result;
+    }
+
+    VMValue CallFunctionV(BibbleVM* vm_, BibbleInterface* interface, VMFunction function_, va_list args) {
+        VM& vm = GetVM(vm_);
+        executor::Function* function = GetFunction(function_);
+        if (function == nullptr) return {};
+        executor::Task* task = ExtractTask(interface);
+
+        Value returnValue = ExecuteFunction(vm, function, task, [&args, function](executor::Frame& frame) {
+            for (uint16_t i = 0; i < function->getParameterCount(); i++) {
+                VMArgument arg = va_arg(args, VMArgument);
+                frame[i] = Value::FromNative(arg.value, arg.reference);
+            }
+        });
+
+        return returnValue.toNative(vm.memoryManager());
+    }
+
+    VMValue CallFunctionA(BibbleVM* vm_, BibbleInterface* interface, VMFunction function_, const VMArgument* args) {
+        VM& vm = GetVM(vm_);
+        executor::Function* function = GetFunction(function_);
+        if (function == nullptr) return {};
+        executor::Task* task = ExtractTask(interface);
+
+        Value returnValue = ExecuteFunction(vm, function, task, [args, function](executor::Frame& frame) {
+            for (uint16_t i = 0; i < function->getParameterCount(); i++) {
+                const VMArgument& arg = args[i];
+                frame[i] = Value::FromNative(arg.value, arg.reference);
+            }
+        });
+
+        return returnValue.toNative(vm.memoryManager());
     }
 
     void PopulateInterface(BibbleInterface* interface) {
@@ -160,5 +253,9 @@ namespace bibblevm::native {
         interface->GetMethod = GetMethod;
         interface->DispatchMethod = DispatchMethod;
         interface->DispatchMethodNonVirtual = DispatchMethodNonVirtual;
+        interface->GetFunction = GetFunction;
+        interface->CallFunction = CallFunction;
+        interface->CallFunctionV = CallFunctionV;
+        interface->CallFunctionA = CallFunctionA;
     }
 }
