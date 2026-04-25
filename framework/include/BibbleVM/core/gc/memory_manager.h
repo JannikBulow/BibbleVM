@@ -80,12 +80,12 @@ namespace bibblevm::gc {
 
             NurseryCollectPhase phase = NurseryCollectPhase::Idle;
 
-            size_t stackIndex = 0;
+            size_t taskIndex = 0;
             executor::Frame* currentFrame = nullptr;
             size_t rememberedIndex = 0;
         };
 
-        TimeManager<>::TimePoint mSafePointStart;
+        std::optional<TimeManager<>::TimePoint> mSafePointDeadline;
 
         GrowingArenaAllocator mImmortalAllocator;
         Nursery mNursery{};

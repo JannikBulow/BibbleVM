@@ -138,7 +138,8 @@ namespace bibblevm::gc {
     }
 
     void MemoryManager::safepoint(VM& vm) {
-        mSafePointStart = vm.timeManager().now();
+        if (vm.config().gc.pauseBudget == 0ns) mSafePointDeadline = std::nullopt;
+        else mSafePointDeadline = vm.timeManager().now() + vm.config().gc.pauseBudget;
 
         bool didGCWork = false;
 
@@ -178,8 +179,7 @@ namespace bibblevm::gc {
     }
 
     bool MemoryManager::shouldPause(VM& vm) const {
-        if (vm.config().gc.pauseBudget == Nanoseconds::zero()) return false;
-        if (vm.timeManager().hasPassed(mSafePointStart, vm.config().gc.pauseBudget)) {
+        if (mSafePointDeadline && vm.timeManager().now() >= *mSafePointDeadline) {
             vm.debugLog(
                 "GC",
                 "Pause budget exceeded. Yielding"
@@ -209,7 +209,9 @@ namespace bibblevm::gc {
 
         auto& allTasks = vm.scheduler().allTasks();
 
-        size_t stackCount = allTasks.size();
+        size_t taskCount = allTasks.size();
+
+        int i = 0;
 
         while (state.phase != NurseryCollectPhase::Done) {
             // Fallthrough is intentional
@@ -218,22 +220,26 @@ namespace bibblevm::gc {
                     state.phase = NurseryCollectPhase::Roots;
                 case NurseryCollectPhase::Roots: {
                     // scan the stack root set
-                    for (; state.stackIndex < stackCount; state.stackIndex++) {
-                        if (shouldPause(vm)) return;
+                    for (; state.taskIndex < taskCount; state.taskIndex++) {
+                        if ((++i & 255) == 0 && shouldPause(vm)) return;
+
+                        executor::Task* task = allTasks[state.taskIndex];
 
                         //TODO: make this safer since the program could tear itself down and then this would track nonexistent frame pointers
-                        if (state.currentFrame != nullptr) state.currentFrame = allTasks[state.stackIndex]->stack.getTop();
+                        if (state.currentFrame != nullptr) state.currentFrame = task->stack.getTop();
                         for (; state.currentFrame != nullptr; state.currentFrame = state.currentFrame->getPrev()) {
-                            if (shouldPause(vm)) return;
+                            if ((++i & 255) == 0 && shouldPause(vm)) return;
 
                             executor::Frame& frame = *state.currentFrame;
                             uint16_t registerCount = frame.getFunction().getRegisterCount();
-                            for (uint16_t i = 0; i < registerCount; i++) {
-                                if (frame[i].isObject) {
-                                    frame[i].obj = forward(vm, frame[i].obj);
+                            for (uint16_t j = 0; j < registerCount; j++) {
+                                if (frame[j].isObject) {
+                                    frame[j].obj = forward(vm, frame[j].obj);
                                 }
                             }
                         }
+
+                        task->completionFuture = forward(vm, task->completionFuture->asObject())->asFuture();
                     }
 
                     // scan the strong references
@@ -251,7 +257,7 @@ namespace bibblevm::gc {
                 }
                 case NurseryCollectPhase::RememberedSet: {
                     for (; state.rememberedIndex < mRememberedSet.size(); state.rememberedIndex++) {
-                        if (shouldPause(vm)) return;
+                        if ((++i & 255) == 0 && shouldPause(vm)) return;
 
                         oop::Object* object = mRememberedSet[state.rememberedIndex];
                         bool hasYoungChild = false;
@@ -284,7 +290,7 @@ namespace bibblevm::gc {
                 }
                 case NurseryCollectPhase::CheneyScan: {
                     while (state.scan < mNursery.toAllocPointer) {
-                        if (shouldPause(vm)) return;
+                        if ((++i & 255) == 0 && shouldPause(vm)) return;
 
                         oop::Object* object = reinterpret_cast<oop::Object*>(state.scan);
                         object->visitChildren([this, &vm](oop::Object*& child) {
@@ -497,6 +503,6 @@ namespace bibblevm::gc {
 
     void MemoryManager::oldHeapCollect(VM& vm) {
         mOldGenHeap.startCollection(vm); // this function internally checks if it's already active so just remember to update this if that's ever changed
-        mOldGenHeap.stepCollection(vm, mSafePointStart + vm.config().gc.pauseBudget);
+        mOldGenHeap.stepCollection(vm, mSafePointDeadline);
     }
 }
