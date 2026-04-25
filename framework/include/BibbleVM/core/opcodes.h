@@ -2374,7 +2374,7 @@ namespace bibblevm {
         NEWSTRING = 0x62,
 
         /*
-        INSTRUCTION: NEWARRAY
+        INSTRUCTION: NEWFUTURE
 
         PURPOSE:
             Dynamically allocate a new uncompleted future object.
