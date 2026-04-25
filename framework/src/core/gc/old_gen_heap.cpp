@@ -144,7 +144,7 @@ namespace bibblevm::gc {
         mPhase = Phase::Roots;
     }
 
-    void OldGenHeap::stepCollection(VM& vm, TimeManager<>::TimePoint deadline) {
+    void OldGenHeap::stepCollection(VM& vm, std::optional<TimeManager<>::TimePoint> deadline) {
         while (vm.timeManager().now() < deadline) {
             switch (mPhase) {
                 case Phase::Idle:
@@ -239,7 +239,7 @@ namespace bibblevm::gc {
         return true;
     }
 
-    bool OldGenHeap::rootsStep(VM& vm, TimeManager<>::TimePoint deadline) {
+    bool OldGenHeap::rootsStep(VM& vm, std::optional<TimeManager<>::TimePoint> deadline) {
         auto& state = mState.roots;
 
         auto& allTasks = vm.scheduler().allTasks();
@@ -247,13 +247,15 @@ namespace bibblevm::gc {
 
         size_t stackCount = allTasks.size();
 
-        for (; state.stackIndex < stackCount; state.stackIndex++) {
-            if (vm.timeManager().now() >= deadline) return true;
+        for (; state.taskIndex < stackCount; state.taskIndex++) {
+            if (deadline && vm.timeManager().now() >= *deadline) return true;
+
+            executor::Task* task = allTasks[state.taskIndex];
 
             //TODO: make this safer since the program could tear itself down and then this would track nonexistent frame pointers
-            if (state.currentFrame == nullptr) state.currentFrame = allTasks[state.stackIndex]->stack.getTop();
+            if (state.currentFrame == nullptr) state.currentFrame = task->stack.getTop();
             for (; state.currentFrame != nullptr; state.currentFrame = state.currentFrame->getPrev()) {
-                if (vm.timeManager().now() >= deadline) return true;
+                if (deadline && vm.timeManager().now() >= *deadline) return true;
 
                 executor::Frame& frame = *state.currentFrame;
                 uint16_t registerCount = frame.getFunction().getRegisterCount();
@@ -263,6 +265,8 @@ namespace bibblevm::gc {
                     }
                 }
             }
+
+            markObject(task->completionFuture->asObject());
         }
 
 

@@ -9,6 +9,7 @@
 
 #include "BibbleVM/util/time_manager.h"
 
+#include <optional>
 #include <vector>
 
 namespace bibblevm::gc {
@@ -50,7 +51,7 @@ namespace bibblevm::gc {
 
         void startCollection(VM& vm);
 
-        void stepCollection(VM& vm, TimeManager<>::TimePoint deadline);
+        void stepCollection(VM& vm, std::optional<TimeManager<>::TimePoint> deadline);
 
         void markObject(oop::Object* object);
 
@@ -78,7 +79,7 @@ namespace bibblevm::gc {
         };
 
         struct RootsState {
-            size_t stackIndex = 0;
+            size_t taskIndex = 0;
             executor::Frame* currentFrame = nullptr;
         };
 
@@ -113,7 +114,7 @@ namespace bibblevm::gc {
 
         bool grow(size_t regionSize, size_t regionCount);
 
-        bool rootsStep(VM& vm, TimeManager<>::TimePoint deadline);
+        bool rootsStep(VM& vm, std::optional<TimeManager<>::TimePoint> deadline);
         bool markStep(VM& vm);
         bool sweepStep(VM& vm);
         bool shrinkStep(VM& vm);
