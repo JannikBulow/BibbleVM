@@ -94,14 +94,10 @@ int main(int argc, char** argv) {
     if (mainFunction == nullptr) return 3;
 
     bibblevm::executor::Task* task = vm.scheduler().schedule(vm, *mainFunction, 0, nullptr);
-    bibblevm::oop::Future* future = task->completionFuture;
-
-    bibblevm::oop::Object* futureObject = future->asObject();
-    //vm.memoryManager().addRoot(&futureObject);
 
     vm.scheduler().run(vm);
 
-    if (!future->ready) return 4;
+    if (!task->completionFuture->ready) return 4;
 
-    return future->value.l;
+    return task->completionFuture->value.l;
 }
