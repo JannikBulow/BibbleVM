@@ -2272,7 +2272,7 @@ namespace bibblevm {
             Dynamically allocate a new uninitialized instance object with the class specified in the constant pool.
 
         SEMANTICS:
-            REG[DST] = internals.AllocateObject(CONST[IDX].classinfo.size())
+            REG[DST] = internals.AllocateObject(CONST[CLASS].classinfo.size())
 
         OPERANDS:
             DST:
@@ -2281,7 +2281,7 @@ namespace bibblevm {
                     WIDE_OPERAND0: 16 bits
                     DEFAULT: 8 bits
 
-            IDX:
+            CLASS:
                 TYPE: const-pool index
                 SIZE:
                     WIDE_OPERAND1: 16 bits
@@ -2293,7 +2293,7 @@ namespace bibblevm {
                 WIDE_OPERAND1
 
             LAYOUT:
-                [PREFIX*] [NEWINSTANCE] [DST] [IDX]
+                [PREFIX*] [NEWINSTANCE] [DST] [CLASS]
 
         NOTES:
             - Uninitialized can mean the object data is either zeroed out or garbage data.
@@ -2400,6 +2400,294 @@ namespace bibblevm {
             - This is almost never needed as ASYNC/AWAIT type instructions will generate futures automatically.
         */
         NEWFUTURE = 0x63,
+
+        /*
+        INSTRUCTION: OBJKIND
+
+        PURPOSE:
+            Get the object kind for a given reference.
+
+        SEMANTICS:
+            REG[DST] = REG[OBJ].kind
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [OBJKIND] [DST] [OBJ]
+
+        NOTES:
+            - The produced value is either 0 (instance), 1 (array), 2 (string) or 3 (future).
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+        */
+        OBJKIND = 0x64,
+
+        /*
+        INSTRUCTION: ISKIND
+
+        PURPOSE:
+            Check whether the object is of a certain kind.
+
+        SEMANTICS:
+            if REG[OBJ].kind == KIND:
+                REG[DST] = 0
+            else:
+                REG[DST] = NONZERO
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            KIND:
+                TYPE: immediate
+                SIZE: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [ISKIND] [DST] [OBJ] [KIND]
+
+        NOTES:
+            - Produces 0 on truth for easier usage with JEQ.
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+        */
+        ISKIND = 0x65,
+
+        /*
+        INSTRUCTION: INSTANCEOF
+
+        PURPOSE:
+            Check whether an instance is of a given class or subclass thereof.
+
+        SEMANTICS:
+            if REG[OBJ].clas.isAssignableTo(CONST[CLASS].classinfo):
+                REG[DST] = 0
+            else:
+                REG[DST] = NONZERO
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            CLASS:
+                TYPE: const-pool index
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+            LAYOUT:
+                [PREFIX*] [INSTANCEOF] [DST] [OBJ] [CLASS]
+
+        NOTES:
+            - Produces 0 on truth for easier usage with JEQ.
+            - If the object is null, the check fails immediately, resulting in a nonzero value.
+            - If the object kind is not instance, the check fails immediately, resulting in a nonzero value.
+        */
+        INSTANCEOF = 0x66,
+
+        /*
+        INSTRUCTION: GETFIELD
+
+        PURPOSE:
+            Get the value of a field in an instance object.
+
+        SEMANTICS:
+            REG[DST] = REG[OBJ][CONST[FIELD]]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            FIELD:
+                TYPE: const-pool index
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+            LAYOUT:
+                [PREFIX*] [GETFIELD] [DST] [OBJ] [FIELD]
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not instance, an INVALID_OBJECT_KIND error is raised.
+            - If the field does not exist within the object, a FIELD_RESOLUTION error is raised.
+        */
+        GETFIELD = 0x67,
+
+        /*
+        INSTRUCTION: SETFIELD
+
+        PURPOSE:
+            Set the value of a field in an instance object.
+
+        SEMANTICS:
+            REG[OBJ][CONST[FIELD]] = REG[VALUE]
+
+        OPERANDS:
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            FIELD:
+                TYPE: const-pool index
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+            LAYOUT:
+                [PREFIX*] [SETFIELD] [OBJ] [FIELD] [VALUE]
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not instance, an INVALID_OBJECT_KIND error is raised.
+            - If the field does not exist within the object, a FIELD_RESOLUTION error is raised.
+        */
+        SETFIELD = 0x68,
+
+        /*
+        INSTRUCTION: DISPATCHMETHOD
+
+        PURPOSE:
+            Dispatch a method based from an objects vtable, returning its underlying function to be called.
+
+        SEMANTICS:
+            REG[DST] = REG[OBJ].vtable[CONST[METHOD]]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            METHOD:
+                TYPE: const-pool index
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+            LAYOUT:
+                [PREFIX*] [DISPATCHMETHOD] [DST] [OBJ] [FIELD]
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not instance, an INVALID_OBJECT_KIND error is raised.
+            - If the method does not exist within the object, a METHOD_RESOLUTION error is raised.
+        */
+        DISPATCHMETHOD = 0x69,
+
+        /*
+        INSTRUCTION: GETCLASS
+
+        PURPOSE:
+            Get the class for an instance object.
+
+        SEMANTICS:
+            REG[DST] = REG[OBJ].clas
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+            LAYOUT:
+                [PREFIX*] [GETCLASS] [DST] [OBJ]
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not instance, an INVALID_OBJECT_KIND error is raised.
+        */
+        GETCLASS = 0x6A,
 
         /*
         INSTRUCTION: CALL
