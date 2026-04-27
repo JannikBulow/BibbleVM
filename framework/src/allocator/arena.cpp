@@ -104,6 +104,14 @@ namespace bibblevm {
         return this;
     }
 
+    // Still leaves the other in a usable state just without owning its previous memory, but C++ still says that it's dead.
+    GrowingArenaAllocator::GrowingArenaAllocator(GrowingArenaAllocator&& other) noexcept
+        : mMinRegionSize(other.mMinRegionSize)
+        , mPreCommit(other.mPreCommit)
+        , mHead(other.mHead) {
+        other.mHead = nullptr;
+    }
+
     GrowingArenaAllocator::~GrowingArenaAllocator() {
         while (mHead != nullptr) {
             Region* prev = mHead->prev;

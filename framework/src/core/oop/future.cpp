@@ -10,6 +10,7 @@
 namespace bibblevm::oop {
     void Future::addWaiter(VM& vm, executor::Task* waiter) {
         GrowingArrayView<executor::Task*> waitersView(vm.memoryManager(), waiters, waiterCount);
+        waiter->waitingOn = this;
         waitersView.add(vm, waiter);
     }
 
@@ -25,5 +26,17 @@ namespace bibblevm::oop {
         }
 
         waitersView.clear();
+    }
+
+    void Future::cancel(VM& vm, int type, Object* message) {
+        cancelled = true;
+        error.type = type;
+        if (message != nullptr && message->kind == ObjectKind::String) {
+            error.message = message;
+        } else {
+            error.message = nullptr;
+        }
+
+        //TODO: implement error logic
     }
 }

@@ -270,6 +270,77 @@ namespace bibblevm::linker {
             case NEWFUTURE:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
                 break;
+            case OBJKIND:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case ISKIND:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(false), args.c);
+                break;
+            case INSTANCEOF:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand2), args.c);
+                break;
+            case GETFIELD:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand2), args.c);
+                break;
+            case SETFIELD:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
+                break;
+            case DISPATCHMETHOD:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand2), args.c);
+                break;
+            case GETCLASS:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case ARRAYLENGTH:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case ARRAYGET:
+            case ARRAYSET:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
+                break;
+            case STRLENGTH:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case STRGET:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
+                break;
+            case STR2ARRAY:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case RESOLVE:
+            case CANCEL:
+            case ISFUTUREREADY:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
+            case POLL:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
+                break;
+            case AWAIT:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                break;
             case CALL:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
                 OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand1), args.b);
@@ -324,10 +395,6 @@ namespace bibblevm::linker {
                 break;
             case RETURN:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
-                break;
-            case AWAIT:
-                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
-                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
                 break;
             case YIELD:
                 break;

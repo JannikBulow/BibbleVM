@@ -39,6 +39,7 @@ namespace bibblevm::executor {
     class BIBBLEVM_EXPORT Stack {
     public:
         Stack();
+        Stack(Stack&& other) noexcept;
 
         Frame* getTop() const { return mTop; }
 

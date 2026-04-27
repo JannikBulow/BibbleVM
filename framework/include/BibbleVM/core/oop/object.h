@@ -84,7 +84,11 @@ namespace bibblevm::oop {
         Object header;
 
         bool ready = false;
-        Value value;
+        bool cancelled = false;
+        union {
+            Value value;
+            struct { int type; Object* message; } error;
+        };
 
         Object* waiters; // Array with executor::Task* or "Handle" elements
         ULong waiterCount;
@@ -95,6 +99,7 @@ namespace bibblevm::oop {
 
         void addWaiter(VM& vm, executor::Task* waiter);
         void complete(VM& vm, Value value);
+        void cancel(VM& vm, int type, Object* message);
     };
 }
 

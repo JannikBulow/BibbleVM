@@ -19,6 +19,7 @@ namespace bibblevm::executor {
     struct SchedulerMessage {
         SchedulerMessageType type;
         union {
+            struct { Error::Type type; String message; } error;
             struct { Function* function; uint16_t returnRegister; uint16_t argsBegin; } call;
             Value returnValue;
             oop::Future* future;
@@ -26,7 +27,12 @@ namespace bibblevm::executor {
 
         constexpr SchedulerMessage(SchedulerMessageType type) : type(type) {}
 
-        static constexpr SchedulerMessage Errored(std::string_view name = ""sv) { return SchedulerMessageType::Errored; }
+        static inline SchedulerMessage Errored(Error::Type type, String message = nullptr) {
+            SchedulerMessage m = SchedulerMessageType::Errored;
+            m.error.type = type;
+            m.error.message = message;
+            return m;
+        }
         static constexpr SchedulerMessage Called(Function* function, uint16_t returnRegister, uint16_t argsBegin) {
             SchedulerMessage m = SchedulerMessageType::Called;
             m.call.function = function;

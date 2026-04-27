@@ -2307,8 +2307,9 @@ namespace bibblevm {
             Dynamically allocate a new zero-initialized array object with the given type id and length provided.
 
         SEMANTICS:
-            let size = internals.TypeSize(typeid) * REG[LENGTH
+            let size = internals.TypeSize(typeid) * REG[LENGTH]
             let arr = internals.AllocateObject(size)
+            arr.length = REG[LENGTH]
             memset(arr.elements, 0, size)
             REG[DST] = arr
 
@@ -2370,6 +2371,10 @@ namespace bibblevm {
 
             LAYOUT:
                 [PREFIX*] [NEWSTRING] [DST] [DATA]
+
+        ERRORS:
+            - If the data object is null, a NULL_REFERENCE error is raised.
+            - If the data object kind is not array, an INVALID_OBJECT_KIND error is raised.
         */
         NEWSTRING = 0x62,
 
@@ -2416,6 +2421,7 @@ namespace bibblevm {
                 SIZE:
                     WIDE_OPERAND0: 16 bits
                     DEFAULT: 8 bits
+
             OBJ:
                 TYPE: register
                 SIZE:
@@ -2456,6 +2462,7 @@ namespace bibblevm {
                 SIZE:
                     WIDE_OPERAND0: 16 bits
                     DEFAULT: 8 bits
+
             OBJ:
                 TYPE: register
                 SIZE:
@@ -2510,7 +2517,7 @@ namespace bibblevm {
             CLASS:
                 TYPE: const-pool index
                 SIZE:
-                    WIDE_OPERAND1: 16 bits
+                    WIDE_OPERAND2: 16 bits
                     DEFAULT: 8 bits
 
         ENCODING:
@@ -2543,6 +2550,7 @@ namespace bibblevm {
                 SIZE:
                     WIDE_OPERAND0: 16 bits
                     DEFAULT: 8 bits
+
             OBJ:
                 TYPE: register
                 SIZE:
@@ -2589,13 +2597,13 @@ namespace bibblevm {
             FIELD:
                 TYPE: const-pool index
                 SIZE:
-                    WIDE_OPERAND2: 16 bits
+                    WIDE_OPERAND1: 16 bits
                     DEFAULT: 8 bits
 
             VALUE:
                 TYPE: register
                 SIZE:
-                    WIDE_OPERAND1: 16 bits
+                    WIDE_OPERAND2: 16 bits
                     DEFAULT: 8 bits
 
         ENCODING:
@@ -2628,6 +2636,7 @@ namespace bibblevm {
                 SIZE:
                     WIDE_OPERAND0: 16 bits
                     DEFAULT: 8 bits
+
             OBJ:
                 TYPE: register
                 SIZE:
@@ -2670,6 +2679,7 @@ namespace bibblevm {
                 SIZE:
                     WIDE_OPERAND0: 16 bits
                     DEFAULT: 8 bits
+
             OBJ:
                 TYPE: register
                 SIZE:
@@ -2688,6 +2698,468 @@ namespace bibblevm {
             - If the object kind is not instance, an INVALID_OBJECT_KIND error is raised.
         */
         GETCLASS = 0x6A,
+
+        /*
+        INSTRUCTION: ARRAYLENGTH
+
+        PURPOSE:
+            Get the length of an array object.
+
+        SEMANTICS:
+            REG[DST] = REG[OBJ].length
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+            LAYOUT:
+                [PREFIX*] [ARRAYLENGTH] [DST] [OBJ]
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not array, an INVALID_OBJECT_KIND error is raised.
+        */
+        ARRAYLENGTH = 0x6B,
+
+        /*
+        INSTRUCTION: ARRAYGET
+
+        PURPOSE:
+            Get an element from an array object.
+
+        SEMANTICS:
+            REG[DST] = REG[OBJ].data[REG[IDX]]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            IDX:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+            LAYOUT:
+                [PREFIX*] [ARRAYGET] [DST] [OBJ] [IDX]
+
+        NOTES:
+            - The index is treated as an unsigned value.
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not array, an INVALID_OBJECT_KIND error is raised.
+            - If the index is greater than the length of the array, an INDEX_OUT_OF_BOUNDS error is raised.
+        */
+        ARRAYGET = 0x6C,
+
+        /*
+        INSTRUCTION: ARRAYSET
+
+        PURPOSE:
+            Set an element from an array object to a given value.
+
+        SEMANTICS:
+            REG[OBJ].data[REG[IDX]] = REG[VALUE]
+
+        OPERANDS:
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            IDX:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+            LAYOUT:
+                [PREFIX*] [ARRAYSET] [DST] [OBJ] [IDX]
+
+        NOTES:
+            - The index is treated as an unsigned value.
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not array, an INVALID_OBJECT_KIND error is raised.
+            - If the index is greater than the length of the array, an INDEX_OUT_OF_BOUNDS error is raised.
+        */
+        ARRAYSET = 0x6D,
+
+        /*
+        INSTRUCTION: STRLENGTH
+
+        PURPOSE:
+            Get the amount of UTF-8 bytes in a string object.
+
+        SEMANTICS:
+            REG[DST] = REG[OBJ].length
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+            LAYOUT:
+                [PREFIX*] [STRLENGTH] [DST] [OBJ]
+
+        NOTES:
+            - This instruction is operating on UTF-8 bytes, not codepoints which makes it unsafe if used incorrectly.
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not string, an INVALID_OBJECT_KIND error is raised.
+        */
+        STRLENGTH = 0x6E,
+
+        /*
+        INSTRUCTION: STRGET
+
+        PURPOSE:
+            Get a single byte from a string object.
+
+        SEMANTICS:
+            REG[DST] = REG[OBJ].data[REG[IDX]]
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            IDX:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+            LAYOUT:
+                [PREFIX*] [STRGET] [DST] [OBJ] [IDX]
+
+        NOTES:
+            - The index is treated as an unsigned value.
+            - This instruction is operating on UTF-8 bytes, not codepoints which makes it unsafe if used incorrectly.
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not string, an INVALID_OBJECT_KIND error is raised.
+            - If the index is greater than the length of the array, an INDEX_OUT_OF_BOUNDS error is raised.
+        */
+        STRGET = 0x6F,
+
+        /*
+        INSTRUCTION: STR2ARRAY
+
+        PURPOSE:
+            Dynamically allocate a new array of bytes based on the contents of a string object.
+
+        SEMANTICS:
+            let size = REG[OBJ].length
+            let arr = internals.AllocateObject(size)
+            arr.length = size
+            memcpy(arr.elements, size, REG[OBJ].data)
+            REG[DST] = arr
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+            LAYOUT:
+                [PREFIX*] [STR2ARRAY] [DST] [OBJ]
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not string, an INVALID_OBJECT_KIND error is raised.
+        */
+        STR2ARRAY = 0x70,
+
+        /*
+        INSTRUCTION: RESOLVE
+
+        PURPOSE:
+            Manually resolve a future object with a value.
+
+        SEMANTICS:
+            REG[OBJ].value = REG[VALUE]
+            REG[OBJ].ready = true
+
+        OPERANDS:
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [RESOLVE] [OBJ] [VALUE]
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not future, an INVALID_OBJECT_KIND error is raised.
+            - If the future is not pending, an INVALID_STATE error is raised.
+        */
+        RESOLVE = 0x71,
+
+        /*
+        INSTRUCTION: CANCEL
+
+        PURPOSE:
+            Manually cancel a future with an optional message for error propagation.
+
+        SEMANTICS:
+            REG[OBJ].error = USERLAND_ERROR(REG[MSG])
+            REG[OBJ].cancelled = true
+
+        OPERANDS:
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            MSG:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [CANCEL] [OBJ] [MSG]
+
+        NOTES:
+            - If the future is ever awaited, the propagated error will be a USERLAND error with the specified message.
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not future, an INVALID_OBJECT_KIND error is raised.
+            - If the future is not pending, an INVALID_STATE error is raised.
+        */
+        CANCEL = 0x72,
+
+        /*
+        INSTRUCTION: ISFUTUREREADY
+
+        PURPOSE:
+            Check whether a future is ready.
+
+        SEMANTICS:
+            if REG[OBJ].ready():
+                REG[DST] = 0
+            else:
+                REG[DST] = NONZERO
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [ISFUTUREREADY] [DST] [OBJ]
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not future, an INVALID_OBJECT_KIND error is raised.
+        */
+        ISFUTUREREADY = 0x73,
+
+        /*
+        INSTRUCTION: POLL
+
+        PURPOSE:
+            Non-blocking poll of a future to get both its status and its value depending on status.
+
+        SEMANTICS:
+            if REG[OBJ].ready():
+                REG[VALUE_DST] = REG[OBJ].value
+                REG[STATUS_DST] = 0
+            else if REG[OBJ].cancelled():
+                REG[VALUE_DST] = REG[OBJ].error.describe()
+                REG[STATUS_DST] = 1
+            else: // pending
+                REG[STATUS_DST] = -1
+
+        OPERANDS:
+            STATUS_DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            VALUE_DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND2: 16 bits
+                    DEFAULT: 8 bits
+
+        NOTES:
+            - You may notice that the status values are usable with the conditional jump instructions. This is intentional to get rid of an extra comparison.
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+                WIDE_OPERAND2
+
+            LAYOUT:
+                [PREFIX*] [POLL] [STATUS_DST] [VALUE_DST] [OBJ]
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not future, an INVALID_OBJECT_KIND error is raised.
+        */
+        POLL = 0x74,
+
+        /*
+        INSTRUCTION: AWAIT
+
+        PURPOSE:
+            Suspend execution until a future object completes and retrieve its result.
+
+        SEMANTICS:
+            if REG[OBJ].ready():
+                REG[DST] = REG[OBJ].value
+            else:
+                suspend until REG[OBJ].ready()
+
+        OPERANDS:
+            DST:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND0: 16 bits
+                    DEFAULT: 8 bits
+
+            OBJ:
+                TYPE: register
+                SIZE:
+                    WIDE_OPERAND1: 16 bits
+                    DEFAULT: 8 bits
+
+        ENCODING:
+            PREFIXES:
+                WIDE_OPERAND0
+                WIDE_OPERAND1
+
+            LAYOUT:
+                [PREFIX*] [AWAIT] [DST] [OBJ]
+
+        ERRORS:
+            - If the object is null, a NULL_REFERENCE error is raised.
+            - If the object kind is not future, an INVALID_OBJECT_KIND error is raised.
+            - If the future belongs to a failed task, its error is propagated.
+        */
+        AWAIT = 0x75,
 
         /*
         INSTRUCTION: CALL
@@ -3151,39 +3623,6 @@ namespace bibblevm {
         RETURN = 0xCA,
 
         /*
-        INSTRUCTION: AWAIT
-
-        PURPOSE:
-            Return from the current function with a provided value.
-
-        SEMANTICS:
-            if REG[FUTURE].ready():
-                REG[DST] = REG[FUTURE].value
-
-        OPERANDS:
-            DST:
-                TYPE: register
-                SIZE:
-                    WIDE_OPERAND0: 16 bits
-                    DEFAULT: 8 bits
-
-            FUTURE:
-                TYPE: register
-                SIZE:
-                    WIDE_OPERAND1: 16 bits
-                    DEFAULT: 8 bits
-
-        ENCODING:
-            PREFIXES:
-                WIDE_OPERAND0
-                WIDE_OPERAND1
-
-            LAYOUT:
-                [PREFIX*] [AWAIT] [DST] [FUTURE]
-        */
-        AWAIT = 0xCB,
-
-        /*
         INSTRUCTION: YIELD
 
         PURPOSE:
@@ -3205,7 +3644,7 @@ namespace bibblevm {
         NOTES:
             - With how priority is implemented, there's a chance that the task will begin executing immediately again. I do not know yet if that is the case, but I will update this once I figure it out.
         */
-        YIELD = 0xCC,
+        YIELD = 0xCB,
     };
 
     namespace opcodeutils {

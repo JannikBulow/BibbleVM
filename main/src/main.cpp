@@ -95,9 +95,11 @@ int main(int argc, char** argv) {
 
     bibblevm::executor::Task* task = vm.scheduler().schedule(vm, *mainFunction, 0, nullptr);
 
+    bibblevm::oop::Object** mainFutureRef = vm.memoryManager().newGlobalStrongReference(task->completionFuture->asObject());
+
     vm.scheduler().run(vm);
 
-    if (!task->completionFuture->ready) return 4;
+    if (!(*mainFutureRef)->asFuture()->ready) return 4;
 
     return task->completionFuture->value.l;
 }

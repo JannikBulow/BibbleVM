@@ -159,6 +159,77 @@ namespace bibblevm::opcodeutils {
             case NEWFUTURE:
                 size += GetRegisterSize(prefixState.wideOperand0);
                 break;
+            case OBJKIND:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case ISKIND:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += 1;
+                break;
+            case INSTANCEOF:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetConstPoolIndexSize(prefixState.wideOperand2);
+                break;
+            case GETFIELD:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetConstPoolIndexSize(prefixState.wideOperand2);
+                break;
+            case SETFIELD:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetConstPoolIndexSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case DISPATCHMETHOD:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetConstPoolIndexSize(prefixState.wideOperand2);
+                break;
+            case GETCLASS:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case ARRAYLENGTH:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case ARRAYGET:
+            case ARRAYSET:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case STRLENGTH:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case STRGET:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case STR2ARRAY:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case RESOLVE:
+            case CANCEL:
+            case ISFUTUREREADY:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
+            case POLL:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                size += GetRegisterSize(prefixState.wideOperand2);
+                break;
+            case AWAIT:
+                size += GetRegisterSize(prefixState.wideOperand0);
+                size += GetRegisterSize(prefixState.wideOperand1);
+                break;
             case CALL:
                 size += GetRegisterSize(prefixState.wideOperand0);
                 size += GetConstPoolIndexSize(prefixState.wideOperand1);
@@ -213,10 +284,6 @@ namespace bibblevm::opcodeutils {
                 break;
             case RETURN:
                 size += GetRegisterSize(prefixState.wideOperand0);
-                break;
-            case AWAIT:
-                size += GetRegisterSize(prefixState.wideOperand0);
-                size += GetRegisterSize(prefixState.wideOperand1);
                 break;
             case YIELD:
                 break;

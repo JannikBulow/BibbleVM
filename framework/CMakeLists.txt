@@ -36,6 +36,7 @@ set(SOURCES
     src/core/oop/string.cpp
     src/core/oop/type.cpp
 
+    src/core/error.cpp
     src/core/opcodes.cpp
     src/core/value.cpp
 
@@ -87,6 +88,7 @@ set(HEADERS
     include/BibbleVM/core/oop/type.h
     include/BibbleVM/core/oop/visit_children.h
 
+    include/BibbleVM/core/error.h
     include/BibbleVM/core/opcodes.h
     include/BibbleVM/core/value.h
 

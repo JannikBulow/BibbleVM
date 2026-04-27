@@ -68,6 +68,10 @@ namespace bibblevm::oop {
             return compareCorrect(other) == 0;
         }
 
+        bool operator==(std::nullptr_t) const {
+            return mObject == nullptr;
+        }
+
     private:
         StringObject* mObject;
     };

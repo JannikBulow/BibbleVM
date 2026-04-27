@@ -16,6 +16,12 @@ namespace bibblevm::executor {
         : mArena(GrowingArenaAllocator::Create(16 * 1024))
         , mTop(nullptr) {}
 
+    Stack::Stack(Stack&& other) noexcept
+        : mArena(std::move(other.mArena))
+        , mTop(other.mTop) {
+        other.mTop = nullptr;
+    }
+
     Frame& Stack::pushFrame(Function& function, Value* returnRegister) {
         Snapshot snapshot = mArena;
         Frame* newTop = snapshot->allocate<Frame>(1);

@@ -13,6 +13,8 @@
 #define DEFINE_INTERPRETER(opcode) InterpreterMessage Interpret##opcode(VM& vm, Frame& frame, Task* task, const InstructionArguments& args)
 #define REGISTER_INTERPRETER(opcode) table[opcode] = Interpret##opcode
 
+#define NONZERO 69
+
 namespace bibblevm::executor {
     DEFINE_INTERPRETER(NOP) {
         return InterpreterMessage::Continue();
@@ -339,14 +341,257 @@ namespace bibblevm::executor {
         return InterpreterMessage::Continue();
     }
 
-    // oop
+    DEFINE_INTERPRETER(NEWINSTANCE) {
+        frame[args.a].obj = vm.memoryManager().allocateInstance(vm, frame.getFunction().mergedConstPool().get(args.b).ci);
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(NEWARRAY) {
+        frame[args.a].obj = vm.memoryManager().allocateArray(vm, static_cast<oop::Type>(args.c), frame[args.b].ul);
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(NEWSTRING) {
+        oop::Object* data = frame[args.b].obj;
+        if (data == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (data->kind != oop::ObjectKind::Array) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        frame[args.a].obj = vm.memoryManager().allocateString(vm, std::string_view(reinterpret_cast<const char*>(data->asArray()->elementBytes), data->asArray()->length));
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(NEWFUTURE) {
+        frame[args.a].obj = vm.memoryManager().allocateFuture(vm);
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(OBJKIND) {
+        oop::Object* object = frame[args.b].obj;
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+
+        frame[args.a].ul = static_cast<ULong>(object->kind);
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(ISKIND) {
+        oop::Object* object = frame[args.b].obj;
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+
+        if (static_cast<uint8_t>(object->kind) != args.c) {
+            frame[args.a].ul = 0;
+        } else {
+            frame[args.a].ul = NONZERO;
+        }
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(INSTANCEOF) {
+        oop::Object* object = frame[args.b].obj;
+        if (object == nullptr || object->kind != oop::ObjectKind::Instance) {
+            frame[args.a].ul = NONZERO;
+            return InterpreterMessage::Continue();
+        }
+
+        if (object->asInstance()->clas->isAssignableTo(frame.getFunction().mergedConstPool().get(args.c).ci)) {
+            frame[args.a].ul = 0;
+        } else {
+            frame[args.a].ul = NONZERO;
+        }
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(GETFIELD) {
+        oop::Object* object = frame[args.b].obj;
+        oop::Field* field = frame.getFunction().mergedConstPool().get(args.c).fi;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::Instance) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        frame[args.a] = object->asInstance()->clas->readField(object->asInstance(), field);
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(SETFIELD) {
+        oop::Object* object = frame[args.a].obj;
+        oop::Field* field = frame.getFunction().mergedConstPool().get(args.b).fi;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::Instance) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        object->asInstance()->clas->writeField(object->asInstance(), field, frame[args.c]);
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(DISPATCHMETHOD) {
+        oop::Object* object = frame[args.b].obj;
+        oop::Method* method = frame.getFunction().mergedConstPool().get(args.c).mei;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::Instance) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        frame[args.a].fni = object->asInstance()->clas->dispatchMethod(method);
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(GETCLASS) {
+        oop::Object* object = frame[args.b].obj;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::Instance) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        frame[args.a].ci = object->asInstance()->clas;
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(ARRAYLENGTH) {
+        oop::Object* object = frame[args.b].obj;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::Array) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        frame[args.a].ul = object->asArray()->length;
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(ARRAYGET) {
+        return InterpreterMessage::Errored(Error::USERLAND);
+    }
+
+    DEFINE_INTERPRETER(ARRAYSET) {
+        return InterpreterMessage::Errored(Error::USERLAND);
+    }
+
+    DEFINE_INTERPRETER(STRLENGTH) {
+        oop::Object* object = frame[args.b].obj;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::String) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        frame[args.a].ul = object->asString()->lengthBytes;
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(STRGET) {
+        oop::Object* object = frame[args.b].obj;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::String) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        frame[args.a].ul = static_cast<ULong>(object->asString()->bytes[frame[args.c].ul]);
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(STR2ARRAY) {
+        oop::Object* object = frame[args.b].obj;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::String) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        oop::Object* array = vm.memoryManager().allocateArray(vm, oop::Type::UByte, object->asString()->lengthBytes);
+        if (array == nullptr) return InterpreterMessage::Continue(); //TODO: error or try gc
+
+        memcpy(array->asArray()->elementBytes, object->asString()->bytes, object->asString()->lengthBytes);
+
+        frame[args.a].obj = array;
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(RESOLVE) {
+        oop::Object* object = frame[args.a].obj;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::Future) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+        if (object->asFuture()->ready) return InterpreterMessage::Errored(Error::INVALID_STATE);
+
+        object->asFuture()->complete(vm, frame[args.b]);
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(CANCEL) {
+        oop::Object* object = frame[args.a].obj;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::Future) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+        if (object->asFuture()->ready || object->asFuture()->cancelled) return InterpreterMessage::Errored(Error::INVALID_STATE);
+
+        object->asFuture()->cancel(vm, Error::USERLAND, frame[args.b].obj);
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(ISFUTUREREADY) {
+        oop::Object* object = frame[args.b].obj;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::Future) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        if (object->asFuture()->ready) {
+            frame[args.a].ul = 0;
+        } else {
+            frame[args.a].ul = NONZERO;
+        }
+
+        return InterpreterMessage::Continue();
+    }
+
+    DEFINE_INTERPRETER(POLL) {
+        oop::Object* object = frame[args.b].obj;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::Future) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        if (object->asFuture()->ready) {
+            frame[args.b] = object->asFuture()->value;
+            frame[args.a].ul = 0;
+        } else if (object->asFuture()->cancelled) {
+            frame[args.b] = object->asFuture()->value;
+            frame[args.a].ul = 1;
+        } else {
+            frame[args.a].ul = -1;
+        }
+
+        return InterpreterMessage::Continue();
+    }
+
+    // This interpreter gets called again once the future is completed if it wasn't completed before reaching this.
+    // That design is technically a little inefficient, but it's way easier and better looking than the alternatives.
+    DEFINE_INTERPRETER(AWAIT) {
+        oop::Object* object = frame[args.b].obj;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::Future) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        oop::Future* future = object->asFuture();
+        if (future->cancelled) {
+            return InterpreterMessage::Errored(static_cast<Error::Type>(future->error.type), future->error.message->asString());
+        }
+
+        if (future->ready) {
+            frame[args.a] = future->value;
+            return InterpreterMessage::Continue(); // or yield?
+        }
+        return InterpreterMessage::AwaitFuture(future);
+    }
 
     DEFINE_INTERPRETER(CALL) {
         return InterpreterMessage::CallFunction(frame.getFunction().mergedConstPool().get(args.b).fni, args.a, args.c);
     }
 
     DEFINE_INTERPRETER(TAIL_CALL) {
-        return InterpreterMessage::Errored(); // TODO: implement
+        return InterpreterMessage::Errored(Error::USERLAND); // TODO: implement
     }
 
     DEFINE_INTERPRETER(CALLA) {
@@ -375,7 +620,7 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(TAIL_CALL_DYN) {
-        return InterpreterMessage::Errored(); // TODO: implement
+        return InterpreterMessage::Errored(Error::USERLAND); // TODO: implement
     }
 
     DEFINE_INTERPRETER(CALLA_DYN) {
@@ -401,17 +646,6 @@ namespace bibblevm::executor {
 
     DEFINE_INTERPRETER(RETURN) {
         return InterpreterMessage::ReturnFromFunction(args.a);
-    }
-
-    // This interpreter gets called again once the future is completed if it wasn't completed before reaching this.
-    // That design is technically a little inefficient, but it's way easier and better looking than the alternatives.
-    DEFINE_INTERPRETER(AWAIT) {
-        oop::Future* future = frame[args.b].obj->asFuture();
-        if (future->ready) {
-            frame[args.a] = future->value;
-            return InterpreterMessage::Continue();
-        }
-        return InterpreterMessage::AwaitFuture(future);
     }
 
     DEFINE_INTERPRETER(YIELD) {
@@ -482,6 +716,28 @@ namespace bibblevm::executor {
             REGISTER_INTERPRETER(JLE);
             REGISTER_INTERPRETER(JGT);
             REGISTER_INTERPRETER(JGE);
+            REGISTER_INTERPRETER(NEWINSTANCE);
+            REGISTER_INTERPRETER(NEWARRAY);
+            REGISTER_INTERPRETER(NEWSTRING);
+            REGISTER_INTERPRETER(NEWFUTURE);
+            REGISTER_INTERPRETER(OBJKIND);
+            REGISTER_INTERPRETER(ISKIND);
+            REGISTER_INTERPRETER(INSTANCEOF);
+            REGISTER_INTERPRETER(GETFIELD);
+            REGISTER_INTERPRETER(SETFIELD);
+            REGISTER_INTERPRETER(DISPATCHMETHOD);
+            REGISTER_INTERPRETER(GETCLASS);
+            REGISTER_INTERPRETER(ARRAYLENGTH);
+            REGISTER_INTERPRETER(ARRAYGET);
+            REGISTER_INTERPRETER(ARRAYSET);
+            REGISTER_INTERPRETER(STRLENGTH);
+            REGISTER_INTERPRETER(STRGET);
+            REGISTER_INTERPRETER(STR2ARRAY);
+            REGISTER_INTERPRETER(RESOLVE);
+            REGISTER_INTERPRETER(CANCEL);
+            REGISTER_INTERPRETER(ISFUTUREREADY);
+            REGISTER_INTERPRETER(POLL);
+            REGISTER_INTERPRETER(AWAIT);
             REGISTER_INTERPRETER(CALL);
             REGISTER_INTERPRETER(TAIL_CALL);
             REGISTER_INTERPRETER(CALLA);
@@ -493,7 +749,6 @@ namespace bibblevm::executor {
             REGISTER_INTERPRETER(CALLAP_DYN);
             REGISTER_INTERPRETER(CALLARP_DYN);
             REGISTER_INTERPRETER(RETURN);
-            REGISTER_INTERPRETER(AWAIT);
             REGISTER_INTERPRETER(YIELD);
             return table;
         }();
@@ -512,7 +767,7 @@ namespace bibblevm::executor {
                     instruction += message.branch + 1;
                     break;
                 case InterpreterMessageType::Errored:
-                    return SchedulerMessage::Errored();
+                    return SchedulerMessage::Errored(message.error.type, message.error.message);
                 case InterpreterMessageType::CallFunction:
                     instruction++;
                     return SchedulerMessage::Called(message.call.function, message.call.destinationRegister, message.call.argsBegin);
@@ -539,7 +794,7 @@ namespace bibblevm::executor {
                     instruction += message.branch + 1;
                     break;
                 case InterpreterMessageType::Errored:
-                    return SchedulerMessage::Errored();
+                    return SchedulerMessage::Errored(message.error.type, message.error.message);
                 case InterpreterMessageType::CallFunction:
                     instruction++;
                     return SchedulerMessage::Called(message.call.function, message.call.destinationRegister, message.call.argsBegin);

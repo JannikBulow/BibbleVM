@@ -21,6 +21,7 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateInstance(VM& vm, oop::Class* clas) {
         oop::Object* object = allocateRawObject(vm, clas->getTotalSize());
         if (object != nullptr) {
+            object->kind = oop::ObjectKind::Instance;
             object->asInstance()->clas = clas;
         }
         return object;
@@ -31,6 +32,7 @@ namespace bibblevm::gc {
 
         oop::Object* object = allocateRawObject(vm, sizeof(oop::Array) + baseTypeSize * length);
         if (object != nullptr) {
+            object->kind = oop::ObjectKind::Array;
             object->asArray()->baseType = baseType;
             object->asArray()->length = length;
         }
@@ -54,6 +56,7 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateString(VM& vm, ULong lengthBytes) {
         oop::Object* object = allocateRawObject(vm, sizeof(oop::StringObject) + lengthBytes + 1);
         if (object != nullptr) {
+            object->kind = oop::ObjectKind::String;
             object->asString()->lengthBytes = lengthBytes;
             object->asString()->bytes[lengthBytes] = '\0';
         }
@@ -63,6 +66,7 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateString(VM& vm, std::string_view copy) {
         oop::Object* object = allocateRawObject(vm, sizeof(oop::StringObject) + copy.size() + 1);
         if (object != nullptr) {
+            object->kind = oop::ObjectKind::String;
             object->asString()->lengthBytes = copy.size();
             memcpy(object->asString()->bytes, copy.data(), copy.size());
             object->asString()->bytes[copy.size()] = '\0';
@@ -73,6 +77,7 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateImmortalString(VM& vm, ULong lengthBytes) {
         oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + lengthBytes + 1));
         new(object) oop::StringObject();
+        object->asObject()->kind = oop::ObjectKind::String;
         object->asObject()->heapID = IMMORTAL_ID;
         object->lengthBytes = lengthBytes;
         object->bytes[lengthBytes] = '\0';
@@ -82,6 +87,7 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateImmortalString(VM& vm, std::string_view copy) {
         oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + copy.size() + 1));
         new(object) oop::StringObject();
+        object->asObject()->kind = oop::ObjectKind::String;
         object->asObject()->heapID = IMMORTAL_ID;
         object->lengthBytes = copy.size();
         memcpy(object->bytes, copy.data(), copy.size());
@@ -92,8 +98,10 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateFuture(VM& vm) {
         oop::Object* object = allocateRawObject(vm, sizeof(oop::Future));
         if (object != nullptr) {
+            object->kind = oop::ObjectKind::Future;
             object->asFuture()->ready = false;
-            object->asFuture()->waiters = allocateArray(vm, oop::Type::Handle, 0);
+            object->asFuture()->cancelled = false;
+            object->asFuture()->waiters = allocateArray(vm, oop::Type::Handle, 1);
             object->asFuture()->waiterCount = 0;
         }
         return object;

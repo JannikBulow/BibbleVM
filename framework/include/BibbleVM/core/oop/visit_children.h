@@ -43,6 +43,8 @@ namespace bibblevm::oop {
         visitor(waiters);
         if (ready && value.isObject) {
             visitor(value.obj);
+        } else if (cancelled) {
+            visitor(error.message);
         }
     }
 }

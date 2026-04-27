@@ -7,6 +7,7 @@
 
 #include "BibbleVM/core/oop/object.h"
 
+#include "BibbleVM/core/error.h"
 #include "BibbleVM/core/opcodes.h"
 
 #include "BibbleVM/api.h"
@@ -36,6 +37,7 @@ namespace bibblevm::executor {
         InterpreterMessageType type;
         union {
             int32_t branch;
+            struct { Error::Type type; String message; } error;
             struct { Function* function; uint16_t destinationRegister; uint16_t argsBegin; } call;
             uint16_t returnRegister;
             oop::Future* future;
@@ -49,7 +51,12 @@ namespace bibblevm::executor {
             m.branch = branch;
             return m;
         }
-        static constexpr InterpreterMessage Errored() { return InterpreterMessageType::Errored; }
+        static inline InterpreterMessage Errored(Error::Type type, String message = nullptr) {
+            InterpreterMessage m = InterpreterMessageType::Errored;
+            m.error.type = type;
+            m.error.message = message;
+            return m;
+        }
         static constexpr InterpreterMessage CallFunction(Function* function, uint16_t destinationRegister, uint16_t argsBegin) {
             InterpreterMessage m = InterpreterMessageType::CallFunction;
             m.call.function = function;

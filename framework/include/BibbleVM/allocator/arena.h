@@ -77,6 +77,8 @@ namespace bibblevm {
             size_t used;
         };
 
+        GrowingArenaAllocator(GrowingArenaAllocator&& other) noexcept;
+
         ~GrowingArenaAllocator();
 
         static GrowingArenaAllocator Create(size_t minRegionSize, size_t initialSize = 0, bool preCommit = false);
