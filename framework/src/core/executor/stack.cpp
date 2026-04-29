@@ -12,6 +12,10 @@ namespace bibblevm::executor {
         , mRegisters(mArena->allocate<Value>(registerCount))
         , mReturnRegister(returnRegister) {}
 
+    Module& Frame::getModule() const {
+        return mFunction.getModule();
+    }
+
     Stack::Stack()
         : mArena(GrowingArenaAllocator::Create(16 * 1024))
         , mTop(nullptr) {}

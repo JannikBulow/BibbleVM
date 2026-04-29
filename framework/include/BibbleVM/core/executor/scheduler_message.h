@@ -5,6 +5,8 @@
 
 #include "BibbleVM/core/executor/task.h"
 
+#include "BibbleVM/core/error.h"
+
 #include "BibbleVM/util/string_pool.h"
 
 namespace bibblevm::executor {

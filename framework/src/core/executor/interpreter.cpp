@@ -39,7 +39,7 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(LOAD_CONST) {
-        frame[args.a] = frame.getFunction().mergedConstPool().get(args.b);
+        frame[args.a] = frame.getModule().getConstPool().get(args.b);
         return InterpreterMessage::Continue();
     }
 
@@ -342,7 +342,7 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(NEWINSTANCE) {
-        frame[args.a].obj = vm.memoryManager().allocateInstance(vm, frame.getFunction().mergedConstPool().get(args.b).ci);
+        frame[args.a].obj = vm.memoryManager().allocateInstance(vm, frame.getModule().getConstPool().get(args.b).ci);
         return InterpreterMessage::Continue();
     }
 
@@ -395,7 +395,7 @@ namespace bibblevm::executor {
             return InterpreterMessage::Continue();
         }
 
-        if (object->asInstance()->clas->isAssignableTo(frame.getFunction().mergedConstPool().get(args.c).ci)) {
+        if (object->asInstance()->clas->isAssignableTo(frame.getModule().getConstPool().get(args.c).ci)) {
             frame[args.a].ul = 0;
         } else {
             frame[args.a].ul = NONZERO;
@@ -406,7 +406,7 @@ namespace bibblevm::executor {
 
     DEFINE_INTERPRETER(GETFIELD) {
         oop::Object* object = frame[args.b].obj;
-        oop::Field* field = frame.getFunction().mergedConstPool().get(args.c).fi;
+        oop::Field* field = frame.getModule().getConstPool().get(args.c).fi;
 
         if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
         if (object->kind != oop::ObjectKind::Instance) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
@@ -418,7 +418,7 @@ namespace bibblevm::executor {
 
     DEFINE_INTERPRETER(SETFIELD) {
         oop::Object* object = frame[args.a].obj;
-        oop::Field* field = frame.getFunction().mergedConstPool().get(args.b).fi;
+        oop::Field* field = frame.getModule().getConstPool().get(args.b).fi;
 
         if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
         if (object->kind != oop::ObjectKind::Instance) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
@@ -430,7 +430,7 @@ namespace bibblevm::executor {
 
     DEFINE_INTERPRETER(DISPATCHMETHOD) {
         oop::Object* object = frame[args.b].obj;
-        oop::Method* method = frame.getFunction().mergedConstPool().get(args.c).mei;
+        oop::Method* method = frame.getModule().getConstPool().get(args.c).mei;
 
         if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
         if (object->kind != oop::ObjectKind::Instance) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
@@ -587,7 +587,7 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(CALL) {
-        return InterpreterMessage::CallFunction(frame.getFunction().mergedConstPool().get(args.b).fni, args.a, args.c);
+        return InterpreterMessage::CallFunction(frame.getModule().getConstPool().get(args.b).fni, args.a, args.c);
     }
 
     DEFINE_INTERPRETER(TAIL_CALL) {
@@ -595,21 +595,21 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(CALLA) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame.getFunction().mergedConstPool().get(args.b).fni, task->priority, &frame[args.c]);
+        Task* newTask = vm.scheduler().schedule(vm, *frame.getModule().getConstPool().get(args.b).fni, task->priority, &frame[args.c]);
         frame[args.a].obj = newTask->completionFuture->asObject();
         frame[args.a].isObject = true;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(CALLAP) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame.getFunction().mergedConstPool().get(args.c).fni, static_cast<uint8_t>(frame[args.b].ul), &frame[args.d]);
+        Task* newTask = vm.scheduler().schedule(vm, *frame.getModule().getConstPool().get(args.c).fni, static_cast<uint8_t>(frame[args.b].ul), &frame[args.d]);
         frame[args.a].obj = newTask->completionFuture->asObject();
         frame[args.a].isObject = true;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(CALLARP) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame.getFunction().mergedConstPool().get(args.c).fni, task->priority + static_cast<uint8_t>(args.b), &frame[args.d]);
+        Task* newTask = vm.scheduler().schedule(vm, *frame.getModule().getConstPool().get(args.c).fni, task->priority + static_cast<uint8_t>(args.b), &frame[args.d]);
         frame[args.a].obj = newTask->completionFuture->asObject();
         frame[args.a].isObject = true;
         return InterpreterMessage::Continue();

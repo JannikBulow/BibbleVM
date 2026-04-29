@@ -10,23 +10,21 @@ namespace bibblevm::executor {
         return SchedulerMessage::Returned(Value());
     }
 
-    Function::Function(String name)
-        : mName(name)
+    Function::Function(Module& module, String name)
+        : mModule(&module)
+        , mName(name)
         , mKind(FunctionKind::Normal)
         , mRegisterCount(0)
         , mParameterCount(0)
-        , mConstPool()
-        , mMergedConstPool()
         , mInstructions(nullptr)
         , mEntryPoint(SafetyNet) {}
 
-    Function::Function(String name, FunctionKind kind, uint16_t registerCount, uint16_t parameterCount, ConstPool constPool, ConstPool mergedConstPool, Instruction* instructions)
-        : mName(name)
+    Function::Function(Module& module, String name, FunctionKind kind, uint16_t registerCount, uint16_t parameterCount, Instruction* instructions)
+        : mModule(&module)
+        , mName(name)
         , mKind(kind)
         , mRegisterCount(registerCount)
         , mParameterCount(parameterCount)
-        , mConstPool(std::move(constPool))
-        , mMergedConstPool(std::move(mergedConstPool))
         , mInstructions(instructions)
         , mEntryPoint(SafetyNet) {}
 

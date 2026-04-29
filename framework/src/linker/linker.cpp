@@ -461,8 +461,8 @@ namespace bibblevm::linker {
         return instructions;
     }
 
-    bool LinkFunctions(oop::Class* classes, executor::Function* functions, VM& vm, GrowingArenaAllocator& arena, const executor::ConstPool& moduleConstPool, const module::Module& module) {
-        String moduleName = moduleConstPool.get(module.name).obj->asString();
+    bool LinkFunctions(oop::Class* classes, executor::Function* functions, VM& vm, GrowingArenaAllocator& arena, const executor::ConstPool& constPool, const module::Module& module, executor::Module& linkedModule) {
+        String moduleName = constPool.get(module.name).obj->asString();
         const IntrinsicModule* intrinsicModule = GetIntrinsicsModule(moduleName);
 
         for (uint16_t i = 0; i < module.functionCount; i++) {
@@ -476,15 +476,10 @@ namespace bibblevm::linker {
                 kind = executor::FunctionKind::Normal;
             }
 
-            executor::ConstPool functionConstPool = LinkConstPool(vm, arena, function.constPool, module, classes, functions);
-            std::optional<executor::ConstPool> constPoolOpt = moduleConstPool.merge(functionConstPool, arena);
-            if (!constPoolOpt.has_value()) return false;
-            executor::ConstPool& constPool = constPoolOpt.value();
-
             executor::Instruction* instructions = nullptr;
             if (kind != executor::FunctionKind::Native) instructions = DecodeInstructions(vm, arena, function);
 
-            linkedFunction = executor::Function(linkedFunction.getName(), kind, function.registerCount, function.parameterCount, std::move(functionConstPool), std::move(constPool), instructions);
+            linkedFunction = executor::Function(linkedModule, linkedFunction.getName(), kind, function.registerCount, function.parameterCount, instructions);
 
             switch (kind) {
                 case executor::FunctionKind::Normal:
@@ -530,19 +525,14 @@ namespace bibblevm::linker {
         executor::Function* linkedFunctions = module.arena().allocate<executor::Function>(rawModule.functionCount);
         for (uint16_t i = 0; i < rawModule.functionCount; i++) {
             module::Function& function = rawModule.functions[i];
-            String name{};
-            if (function.name >= rawModule.constPool.getEntryCount()) {
-                name = vm.stringPool().intern(vm, function.constPool.getEntries()[function.name - rawModule.constPool.getEntryCount()].u.str);
-            } else {
-                name = vm.stringPool().intern(vm, rawModule.constPool.getEntries()[function.name].u.str);
-            }
-            linkedFunctions[i] = executor::Function(name); // holy fuck this is ugly
+            String name = vm.stringPool().intern(vm, rawModule.constPool.getEntries()[function.name].u.str);
+            linkedFunctions[i] = executor::Function(linkedModule, name); // holy fuck this is ugly
         }
 
         executor::ConstPool linkedConstPool = LinkConstPool(vm, module.arena(), rawModule.constPool, rawModule, linkedClasses, linkedFunctions);
 
         if (!LinkClasses(linkedClasses, vm, module.arena(), linkedConstPool, rawModule)) return false;
-        if (!LinkFunctions(linkedClasses, linkedFunctions, vm, module.arena(), linkedConstPool, rawModule)) return false;
+        if (!LinkFunctions(linkedClasses, linkedFunctions, vm, module.arena(), linkedConstPool, rawModule, linkedModule)) return false;
 
         linkedModule = executor::Module(linkedConstPool.get(rawModule.name).obj->asString(), std::move(linkedConstPool), rawModule.classCount, linkedClasses, rawModule.functionCount, linkedFunctions);
 

@@ -25,7 +25,7 @@ void DefineIntrinsicsModule(bibblevm::linker::Module& linkerModule) {
     bibblevm::module::ConstPool moduleConstPool(3, moduleConstEntries);
 
     auto* functions = linkerModule.arena().allocate<bibblevm::module::Function>(1);
-    functions[0] = {2, bibblevm::module::FUNC_NATIVE, 1, 1, {}, 0, nullptr};
+    functions[0] = {2, bibblevm::module::FUNC_NATIVE, 1, 1, 0, nullptr};
 
     bibblevm::module::Module module(bibblevm::module::MAGIC, 0, 1, moduleConstPool, 0, 1, nullptr, functions);
 
@@ -56,8 +56,8 @@ void DefineMainModule(bibblevm::linker::Module& linkerModule) {
     bibblevm::module::ConstPool moduleConstPool(10, moduleConstEntries);
 
     auto* functions = linkerModule.arena().allocate<bibblevm::module::Function>(2);
-    functions[0] = {2, 0, 4, 0, {}, mainFunctionCodeLength, mainFunctionCode};
-    functions[1] = {3, bibblevm::module::FUNC_NATIVE, 0, 0, {}, 0, nullptr};
+    functions[0] = {2, 0, 4, 0, mainFunctionCodeLength, mainFunctionCode};
+    functions[1] = {3, bibblevm::module::FUNC_NATIVE, 0, 0, 0, nullptr};
 
     bibblevm::module::Module module(bibblevm::module::MAGIC, 0, 1, moduleConstPool, 0, 2, nullptr, functions);
 

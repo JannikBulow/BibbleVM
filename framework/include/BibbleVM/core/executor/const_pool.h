@@ -5,7 +5,7 @@
 
 #include "BibbleVM/allocator/arena.h"
 
-#include "BibbleVM/core/module/const_pool.h"
+#include "BibbleVM/core/module/module.h"
 
 #include "BibbleVM/util/string_pool.h"
 

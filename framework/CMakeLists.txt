@@ -3,6 +3,12 @@ cmake_minimum_required(VERSION 3.26)
 include(FetchContent)
 include(GenerateExportHeader)
 
+FetchContent_Declare(BibbleBytecode
+    GIT_REPOSITORY https://github.com/JannikBulow/BibbleBytecode
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(BibbleBytecode)
+
 FetchContent_Declare(libos
     GIT_REPOSITORY https://github.com/JannikBulow/libos
     GIT_TAG master
@@ -71,12 +77,7 @@ set(HEADERS
     include/BibbleVM/core/gc/nursery.h
     include/BibbleVM/core/gc/old_gen_heap.h
 
-    include/BibbleVM/core/module/class.h
-    include/BibbleVM/core/module/const_pool.h
-    include/BibbleVM/core/module/field.h
-    include/BibbleVM/core/module/function.h
     include/BibbleVM/core/module/instruction.h
-    include/BibbleVM/core/module/method.h
     include/BibbleVM/core/module/module.h
 
     include/BibbleVM/core/oop/array_view.h
@@ -140,5 +141,5 @@ target_include_directories(BibbleVM-framework-static PUBLIC
 target_compile_features(BibbleVM-framework-shared PUBLIC cxx_std_20)
 target_compile_features(BibbleVM-framework-static PUBLIC cxx_std_20)
 
-target_link_libraries(BibbleVM-framework-shared BibbleVM-native-interface libos-static utf8cpp)
-target_link_libraries(BibbleVM-framework-static BibbleVM-native-interface libos-static utf8cpp)
+target_link_libraries(BibbleVM-framework-shared BibbleVM-native-interface BibbleBytecode-shared libos-static utf8cpp)
+target_link_libraries(BibbleVM-framework-static BibbleVM-native-interface BibbleBytecode-static libos-static utf8cpp)

@@ -19,6 +19,7 @@ namespace bibblevm::executor {
 
         Snapshot<GrowingArenaAllocator>& arena() { return mArena; }
         Frame* getPrev() const { return mPrev; }
+        Module& getModule() const;
         Function& getFunction() const { return mFunction; }
         Instruction*& ip() { return mIP; }
         Value* returnRegister() const { return mReturnRegister; }

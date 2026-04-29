@@ -26,15 +26,14 @@ namespace bibblevm::executor {
 
     class BIBBLEVM_EXPORT Function {
     public:
-        explicit Function(String name); // partial initializing for linker shit
-        Function(String name, FunctionKind kind, uint16_t registerCount, uint16_t parameterCount, ConstPool constPool, ConstPool mergedConstPool, Instruction* instructions);
+        Function(Module& module, String name); // partial initializing for linker shit
+        Function(Module& module, String name, FunctionKind kind, uint16_t registerCount, uint16_t parameterCount, Instruction* instructions);
 
+        Module& getModule() const { return *mModule; }
         String getName() const { return mName; }
         FunctionKind getKind() const { return mKind; }
         uint16_t getRegisterCount() const { return mRegisterCount; }
         uint16_t getParameterCount() const { return mParameterCount; }
-        const ConstPool& constPool() const { return mConstPool; }
-        const ConstPool& mergedConstPool() const { return mMergedConstPool; }
         Instruction* getInstructions() const { return mInstructions; }
         void*& implementation() { return mImplementation; }
         EntryPoint& entryPoint() { return mEntryPoint; }
@@ -42,14 +41,13 @@ namespace bibblevm::executor {
         SchedulerMessage invoke(VM& vm, Frame& frame, Task* task) const;
 
     private:
+        Module* mModule;
+
         String mName;
         FunctionKind mKind;
 
         uint16_t mRegisterCount;
         uint16_t mParameterCount;
-
-        ConstPool mConstPool; // for viewing the function const pool. never really used for reals
-        ConstPool mMergedConstPool;
 
         union {
             Instruction* mInstructions; // No size needed here as the verifier will ensure us that all paths terminate appropriately
