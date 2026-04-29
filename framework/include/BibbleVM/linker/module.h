@@ -9,6 +9,8 @@
 
 #include "BibbleVM/core/module/module.h"
 
+#include <BibbleBytecode/buffer.h>
+
 #include <condition_variable>
 #include <mutex>
 
@@ -26,6 +28,7 @@ namespace bibblevm::linker {
     class Module {
     public:
         GrowingArenaAllocator& arena() { return mArena; }
+        bibblebytecode::ByteBuffer& file() { return mFile; }
         module::Module& rawModule() { return mRawModule; }
         executor::Module& linkedModule() { return mLinkedModule; }
 
@@ -50,6 +53,8 @@ namespace bibblevm::linker {
         GrowingArenaAllocator mArena = GrowingArenaAllocator::Create(64 * 1024);
 
         Stage mStage = Stage::None;
+
+        bibblebytecode::ByteBuffer mFile{};
 
         module::Module mRawModule{};
         executor::Module mLinkedModule{};
