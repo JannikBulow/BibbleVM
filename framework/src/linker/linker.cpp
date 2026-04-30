@@ -13,6 +13,8 @@
 
 #include <unordered_map>
 
+#include "BibbleBytecode/reader.h"
+
 namespace bibblevm::linker {
     struct ArgReader {
         module::BytecodeStream current;
@@ -509,6 +511,52 @@ namespace bibblevm::linker {
         return true;
     }
 
+    bool ReadModule(VM& vm, Module& module, const char* filePath) {
+        if (module.getStage() != Stage::None) return false;
+
+        module.file() = bibblebytecode::Open(filePath);
+        if (module.file().fail()) return false;
+
+        module.setStage(Stage::FileLoaded);
+        return true;
+    }
+
+    bool ReadModuleFromMemory(VM& vm, Module& module, bibblebytecode::ByteBuffer buffer) {
+        if (module.getStage() != Stage::None) return false;
+
+        module.file() = std::move(buffer);
+        if (module.file().fail()) return false;
+
+        module.setStage(Stage::FileLoaded);
+        return true;
+    }
+
+    bool ParseModule(VM& vm, Module& module) {
+        if (module.getStage() != Stage::FileLoaded) return false;
+
+        bibblebytecode::AllocatorView allocator;
+        allocator.allocateFn = [](void* ctx, size_t size) -> void* {
+            GrowingArenaAllocator& arena = *static_cast<GrowingArenaAllocator*>(ctx);
+            return arena.allocate(size);
+        };
+        allocator.deallocateFn = [](void* ctx, void* ptr) -> void {};
+        allocator.ctx = &module.arena();
+
+        std::optional<module::Module> moduleOpt = bibblebytecode::reader::ReadModule(module.file(), allocator);
+        if (!moduleOpt.has_value()) return false;
+
+        module.rawModule() = moduleOpt.value();
+
+        module.setStage(Stage::Parsed);
+        return true;
+    }
+
+    bool PreverifyModule(VM& vm, Module& module) {
+        if (module.getStage() != Stage::Parsed) return false;
+        module.setStage(Stage::Preverified);
+        return true;
+    }
+
     bool LinkModule(VM& vm, Module& module) {
         if (module.getStage() != Stage::Preverified) return false;
 
@@ -539,5 +587,25 @@ namespace bibblevm::linker {
         module.setStage(Stage::Linked);
 
         return true;
+    }
+
+    bool VerifyModule(VM& vm, Module& module) {
+        if (module.getStage() != Stage::Linked) return false;
+        module.setStage(Stage::Verified);
+        return true;
+    }
+
+    bool LoadModule(VM& vm, Module& module, const char* filePath) {
+        switch (module.getStage()) {
+            case Stage::None: if (!ReadModule(vm, module, filePath)) return false;
+            case Stage::FileLoaded: if (!ParseModule(vm, module)) return false;
+            case Stage::Parsed: if (!PreverifyModule(vm, module)) return false;
+            case Stage::Preverified: if (!LinkModule(vm, module)) return false;
+            case Stage::Linked: if (!VerifyModule(vm, module)) return false;
+            case Stage::Verified: if (module.getStage() == Stage::Verified) module.setStage(Stage::Ready);
+            case Stage::Ready: break;
+        }
+
+        return module.getStage() == Stage::Ready;
     }
 }

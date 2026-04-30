@@ -7,63 +7,125 @@
 #include <BibbleVM/init.h>
 #include <BibbleVM/vm.h>
 
-static uint8_t mainFunctionCode[] = {
+#include "../../cmake-build-release-mingw/_deps/bibblebytecode-src/include/BibbleBytecode/module/const_pool.h"
+
+static uint8_t intrinsicsModule[] = {
+    0x67, 0x67, 0xAC, 0xFA, // magic
+    0, 0, // format version
+    1, 0, // name
+
+
+    // const pool
+    3, 0, // entry count
+
+    // #1
+    bibblevm::module::ConstPool::Tag::STRING, // tag
+    10, 0, 0, 0, // string length
+    'I', 'n', 't', 'r', 'i', 'n', 's', 'i', 'c', 's', // string data
+
+    // #2
+    bibblevm::module::ConstPool::Tag::STRING, // tag
+    5, 0, 0, 0, // string length
+    'p', 'r', 'i', 'n', 't', // string data
+
+
+    0, 0, // class count
+    1, 0, // function count
+
+
+    // classes
+
+    // functions
+    // print
+    2, 0, // name
+    1, 0, // flags - native
+    1, 0, // register count
+    1, 0, // parameter count
+    0, 0, 0, 0 // bytecode size - 0 because native
+};
+static constexpr size_t intrinsicsModuleLength = sizeof(intrinsicsModule);
+
+static uint8_t mainModule[] = {
+    0x67, 0x67, 0xAC, 0xFA, // magic
+    0, 0, // format version
+    1, 0, // name
+
+
+    // const pool
+    10, 0, // entry count
+
+    // #1
+    bibblevm::module::ConstPool::Tag::STRING, // tag
+    4, 0, 0, 0, // string length
+    'M', 'a', 'i', 'n', // string data
+
+    // #2
+    bibblevm::module::ConstPool::Tag::STRING, // tag
+    4, 0, 0, 0, // string length
+    'm', 'a', 'i', 'n', // string data
+
+    // #3
+    bibblevm::module::ConstPool::Tag::STRING, // tag
+    4, 0, 0, 0, // string length
+    't', 'e', 's', 't', // string data
+
+    // #4
+    bibblevm::module::ConstPool::Tag::STRING, // tag
+    10, 0, 0, 0, // string length
+    'I', 'n', 't', 'r', 'i', 'n', 's', 'i', 'c', 's', // string data
+
+    // #5
+    bibblevm::module::ConstPool::Tag::STRING, // tag
+    5, 0, 0, 0, // string length
+    'p', 'r', 'i', 'n', 't', // string data
+
+    // #6
+    bibblevm::module::ConstPool::Tag::MODULE_INFO, // tag
+    1, 0, // module name
+
+    // #7
+    bibblevm::module::ConstPool::Tag::FUNCTION_INFO, // tag
+    6, 0, // module
+    3, 0, // function name
+
+    // #8
+    bibblevm::module::ConstPool::Tag::MODULE_INFO, // tag
+    4, 0, // module name
+
+    // #9
+    bibblevm::module::ConstPool::Tag::FUNCTION_INFO, // tag
+    8, 0, // module
+    5, 0, // function name
+
+
+    0, 0, // class count
+    2, 0, // function count
+
+
+    // classes
+
+    // functions
+    // main
+    2, 0, // name
+    0, 0, // flags
+    4, 0, // register count
+    0, 0, // parameter count
+    16, 0, 0, 0, // bytecode size
+    // bytecode
     bibblevm::CALLA, 0, 7, 0,
     bibblevm::LOAD_CONST, 1, 2,
     bibblevm::CALL, 1, 9, 1,
     bibblevm::AWAIT, 1, 0,
-    bibblevm::RETURN, 1
+    bibblevm::RETURN, 1,
+
+    // test
+    3, 0, // name
+    1, 0, // flags - native
+    0, 0, // register count
+    0, 0, // parameter count
+    0, 0, 0, 0 // bytecode size - 0 because native
 };
-static constexpr uint32_t mainFunctionCodeLength = sizeof(mainFunctionCode);
-
-void DefineIntrinsicsModule(bibblevm::linker::Module& linkerModule) {
-    auto* moduleConstEntries = linkerModule.arena().allocate<bibblevm::module::ConstPool::Entry>(3);
-    moduleConstEntries[1].tag = bibblevm::module::ConstPool::Tag::STRING;
-    moduleConstEntries[1].u.str = "Intrinsics";
-    moduleConstEntries[2].tag = bibblevm::module::ConstPool::Tag::STRING;
-    moduleConstEntries[2].u.str = "print";
-    bibblevm::module::ConstPool moduleConstPool(3, moduleConstEntries);
-
-    auto* functions = linkerModule.arena().allocate<bibblevm::module::Function>(1);
-    functions[0] = {2, bibblevm::module::FUNC_NATIVE, 1, 1, 0, nullptr};
-
-    bibblevm::module::Module module(bibblevm::module::MAGIC, 0, 1, moduleConstPool, 0, 1, nullptr, functions);
-
-    linkerModule.rawModule() = module;
-    linkerModule.setStage(bibblevm::linker::Stage::PreVerified);
-}
-
-void DefineMainModule(bibblevm::linker::Module& linkerModule) {
-    auto* moduleConstEntries = linkerModule.arena().allocate<bibblevm::module::ConstPool::Entry>(10);
-    moduleConstEntries[1].tag = bibblevm::module::ConstPool::STRING;
-    moduleConstEntries[1].u.str = "Main";
-    moduleConstEntries[2].tag = bibblevm::module::ConstPool::STRING;
-    moduleConstEntries[2].u.str = "main";
-    moduleConstEntries[3].tag = bibblevm::module::ConstPool::STRING;
-    moduleConstEntries[3].u.str = "test";
-    moduleConstEntries[4].tag = bibblevm::module::ConstPool::STRING;
-    moduleConstEntries[4].u.str = "Intrinsics";
-    moduleConstEntries[5].tag = bibblevm::module::ConstPool::STRING;
-    moduleConstEntries[5].u.str = "print";
-    moduleConstEntries[6].tag = bibblevm::module::ConstPool::MODULE_INFO;
-    moduleConstEntries[6].u.mi = {1};
-    moduleConstEntries[7].tag = bibblevm::module::ConstPool::FUNCTION_INFO;
-    moduleConstEntries[7].u.fni = {6, 3};
-    moduleConstEntries[8].tag = bibblevm::module::ConstPool::MODULE_INFO;
-    moduleConstEntries[8].u.mi = {4};
-    moduleConstEntries[9].tag = bibblevm::module::ConstPool::FUNCTION_INFO;
-    moduleConstEntries[9].u.fni = {8, 5};
-    bibblevm::module::ConstPool moduleConstPool(10, moduleConstEntries);
-
-    auto* functions = linkerModule.arena().allocate<bibblevm::module::Function>(2);
-    functions[0] = {2, 0, 4, 0, mainFunctionCodeLength, mainFunctionCode};
-    functions[1] = {3, bibblevm::module::FUNC_NATIVE, 0, 0, 0, nullptr};
-
-    bibblevm::module::Module module(bibblevm::module::MAGIC, 0, 1, moduleConstPool, 0, 2, nullptr, functions);
-
-    linkerModule.rawModule() = module;
-    linkerModule.setStage(bibblevm::linker::Stage::PreVerified);
-}
+static constexpr size_t mainModuleLength = sizeof(mainModule);
 
 int main(int argc, char** argv) {
     bibblevm::InitDependencies();
@@ -76,14 +138,14 @@ int main(int argc, char** argv) {
     if (!vm.pluginManager().load("libBibbleVM-testplugin")) return 1;
 
     std::unique_ptr<bibblevm::linker::Module> module = std::make_unique<bibblevm::linker::Module>();
-    DefineIntrinsicsModule(*module);
-    if (!bibblevm::linker::LinkModule(vm, *module)) return 1;
+    if (!bibblevm::linker::ReadModuleFromMemory(vm, *module, {intrinsicsModule, intrinsicsModuleLength})) return 1;
+    if (!bibblevm::linker::LoadModule(vm, *module, nullptr)) return 1;
     module->setStage(bibblevm::linker::Stage::Ready);
     vm.addModule(std::move(module));
 
     module = std::make_unique<bibblevm::linker::Module>();
-    DefineMainModule(*module);
-    if (!bibblevm::linker::LinkModule(vm, *module)) return 1;
+    if (!bibblevm::linker::ReadModuleFromMemory(vm, *module, {mainModule, mainModuleLength})) return 1;
+    if (!bibblevm::linker::LoadModule(vm, *module, nullptr)) return 1;
     module->setStage(bibblevm::linker::Stage::Ready);
     vm.addModule(std::move(module));
 
@@ -100,6 +162,5 @@ int main(int argc, char** argv) {
     vm.scheduler().run(vm);
 
     if (!(*mainFutureRef)->asFuture()->ready) return 4;
-
-    return task->completionFuture->value.l;
+    return (*mainFutureRef)->asFuture()->value.l;
 }
