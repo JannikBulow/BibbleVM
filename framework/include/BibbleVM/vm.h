@@ -49,7 +49,7 @@ namespace bibblevm {
 
         template<class... Args>
         constexpr void debugLog(std::string_view system, std::format_string<Args...> fmt, Args&&... args) {
-            if (!mConfig.debug.enableDebugLogging) return;
+            if (!mConfig.debug.enableDebugLogging) [[likely]] return;
 
             // TODO: write logs in a file to not mess with the programs stdio
             std::cout << '[' << system << "] " << std::format(fmt, std::forward<Args>(args)...) << std::endl;
