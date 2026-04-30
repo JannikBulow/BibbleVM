@@ -54,6 +54,8 @@ namespace bibblevm::oop {
         ULong getLengthBytes() const { return mObject->lengthBytes; }
         const char* getData() const { return mObject->bytes; }
 
+        const char* cString() const { return mObject->bytes; } // memory manager automatically allocates with null terminator
+
         int compareFast(const String& other) const;
         int compareCorrect(const String& other) const;
 
