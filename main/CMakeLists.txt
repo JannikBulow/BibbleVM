@@ -27,10 +27,22 @@ add_custom_command(TARGET BibbleVM-main PRE_BUILD
     $<TARGET_FILE_DIR:BibbleVM-main>
 )
 
+add_custom_command(TARGET BibbleVM-main PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:BibbleBytecode-shared>
+    $<TARGET_FILE_DIR:BibbleVM-main>
+)
+
 if (MSVC)
     add_custom_command(TARGET BibbleVM-main PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_PDB_FILE:BibbleVM-framework-shared>
+        $<TARGET_FILE_DIR:BibbleVM-main>
+    )
+
+    add_custom_command(TARGET BibbleVM-main PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_PDB_FILE:BibbleBytecode-shared>
         $<TARGET_FILE_DIR:BibbleVM-main>
     )
 endif()
