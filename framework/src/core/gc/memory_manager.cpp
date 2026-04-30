@@ -125,7 +125,9 @@ namespace bibblevm::gc {
     }
 
     void MemoryManager::deleteGlobalStrongReference(oop::Object** reference) {
-        mStrongReferences.erase(reference);
+        if (mStrongReferences.erase(reference) != 0) {
+            delete reference;
+        }
     }
 
     void MemoryManager::pushLocalReferenceFrame(size_t initialSize) {
@@ -137,6 +139,7 @@ namespace bibblevm::gc {
         for (oop::Object** reference : mLocalReferenceStack.back().references) {
             deleteGlobalStrongReference(reference);
         }
+        mLocalReferenceStack.pop_back();
     }
 
     oop::Object** MemoryManager::newLocalStrongReference(oop::Object* object) {
