@@ -510,7 +510,7 @@ namespace bibblevm::linker {
     }
 
     bool LinkModule(VM& vm, Module& module) {
-        if (module.getStage() != Stage::PreVerified) return false;
+        if (module.getStage() != Stage::Preverified) return false;
 
         module::Module& rawModule = module.rawModule();
         executor::Module& linkedModule = module.linkedModule();

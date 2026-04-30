@@ -19,7 +19,7 @@ namespace bibblevm::linker {
         None = 0,
         FileLoaded = 1,
         Parsed = 2,
-        PreVerified = 3,
+        Preverified = 3,
         Linked = 4,
         Verified = 5,
         Ready = 6
