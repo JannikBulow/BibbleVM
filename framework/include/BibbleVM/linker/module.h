@@ -28,7 +28,7 @@ namespace bibblevm::linker {
     class Module {
     public:
         GrowingArenaAllocator& arena() { return mArena; }
-        bibblebytecode::ByteBuffer& file() { return mFile; }
+        bibblebytecode::ReadableByteBuffer& file() { return mFile; }
         module::Module& rawModule() { return mRawModule; }
         executor::Module& linkedModule() { return mLinkedModule; }
 
@@ -54,7 +54,7 @@ namespace bibblevm::linker {
 
         Stage mStage = Stage::None;
 
-        bibblebytecode::ByteBuffer mFile{};
+        bibblebytecode::ReadableByteBuffer mFile{};
 
         module::Module mRawModule{};
         executor::Module mLinkedModule{};

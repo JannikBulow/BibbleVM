@@ -521,7 +521,7 @@ namespace bibblevm::linker {
         return true;
     }
 
-    bool ReadModuleFromMemory(VM& vm, Module& module, bibblebytecode::ByteBuffer buffer) {
+    bool ReadModuleFromMemory(VM& vm, Module& module, bibblebytecode::ReadableByteBuffer buffer) {
         if (module.getStage() != Stage::None) return false;
 
         module.file() = std::move(buffer);

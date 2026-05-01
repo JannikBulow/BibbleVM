@@ -7,7 +7,7 @@
 
 namespace bibblevm::linker {
     BIBBLEVM_EXPORT bool ReadModule(VM& vm, Module& module, const char* filePath);
-    BIBBLEVM_EXPORT bool ReadModuleFromMemory(VM& vm, Module& module, bibblebytecode::ByteBuffer buffer);
+    BIBBLEVM_EXPORT bool ReadModuleFromMemory(VM& vm, Module& module, bibblebytecode::ReadableByteBuffer buffer);
     BIBBLEVM_EXPORT bool ParseModule(VM& vm, Module& module);
     BIBBLEVM_EXPORT bool PreverifyModule(VM& vm, Module& module);
     BIBBLEVM_EXPORT bool LinkModule(VM& vm, Module& module);
