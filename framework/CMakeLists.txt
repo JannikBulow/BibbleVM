@@ -9,6 +9,12 @@ FetchContent_Declare(BibbleBytecode
 )
 FetchContent_MakeAvailable(BibbleBytecode)
 
+FetchContent_Declare(BibbleOpcodes
+    GIT_REPOSITORY https://github.com/JannikBulow/BibbleOpcodes
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(BibbleOpcodes)
+
 FetchContent_Declare(libos
     GIT_REPOSITORY https://github.com/JannikBulow/libos
     GIT_TAG master
@@ -43,7 +49,6 @@ set(SOURCES
     src/core/oop/type.cpp
 
     src/core/error.cpp
-    src/core/opcodes.cpp
     src/core/value.cpp
 
     src/linker/intrinsics.cpp
@@ -141,5 +146,5 @@ target_include_directories(BibbleVM-framework-static PUBLIC
 target_compile_features(BibbleVM-framework-shared PUBLIC cxx_std_20)
 target_compile_features(BibbleVM-framework-static PUBLIC cxx_std_20)
 
-target_link_libraries(BibbleVM-framework-shared BibbleVM-native-interface BibbleBytecode-shared libos-static utf8cpp)
-target_link_libraries(BibbleVM-framework-static BibbleVM-native-interface BibbleBytecode-static libos-static utf8cpp)
+target_link_libraries(BibbleVM-framework-shared BibbleVM-native-interface BibbleBytecode-shared BibbleOpcodes libos-static utf8cpp)
+target_link_libraries(BibbleVM-framework-static BibbleVM-native-interface BibbleBytecode-static BibbleOpcodes libos-static utf8cpp)
