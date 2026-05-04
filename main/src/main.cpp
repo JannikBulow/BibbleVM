@@ -7,8 +7,6 @@
 #include <BibbleVM/init.h>
 #include <BibbleVM/vm.h>
 
-#include "../../cmake-build-release-mingw/_deps/bibblebytecode-src/include/BibbleBytecode/module/const_pool.h"
-
 static uint8_t intrinsicsModule[] = {
     0x67, 0x67, 0xAC, 0xFA, // magic
     0, 0, // format version
