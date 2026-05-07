@@ -26,6 +26,8 @@ namespace bibblevm::oop {
 
         sortFields(arena);
         createVtable(arena);
+
+        mFinalizer = getMethod(".finalize");
     }
 
     Field* Class::getField(String name) const {
@@ -116,7 +118,6 @@ namespace bibblevm::oop {
         }
 
         return value;
-
     }
 
     void Class::writeField(Instance* instance, const Field* field, Value value) {
