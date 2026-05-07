@@ -52,8 +52,8 @@ typedef VMByte VMBool;
 
 typedef struct VMModule_* VMModule;
 typedef struct VMClass_* VMClass;
-typedef const struct VMField_* VMField;
-typedef const struct VMMethod_* VMMethod;
+typedef struct VMField_* VMField;
+typedef struct VMMethod_* VMMethod;
 typedef struct VMFunction_* VMFunction;
 
 typedef union VMValue {

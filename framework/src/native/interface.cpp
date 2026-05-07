@@ -17,12 +17,12 @@ namespace bibblevm::native {
         return reinterpret_cast<oop::Class*>(clas);
     }
 
-    static const oop::Field* GetField(VMField field) {
-        return reinterpret_cast<const oop::Field*>(field);
+    static oop::Field* GetField(VMField field) {
+        return reinterpret_cast<oop::Field*>(field);
     }
 
-    static const oop::Method* GetMethod(VMMethod method) {
-        return reinterpret_cast<const oop::Method*>(method);
+    static oop::Method* GetMethod(VMMethod method) {
+        return reinterpret_cast<oop::Method*>(method);
     }
 
     static executor::Function* GetFunction(VMFunction function) {

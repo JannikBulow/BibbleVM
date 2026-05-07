@@ -31,7 +31,7 @@ namespace bibblevm::oop {
 
         String getName() const { return mName; }
         Class* getSuperClass() const { return mSuperClass; }
-        const Method* getFinalizer() const { return mFinalizer; }
+        Method* getFinalizer() const { return mFinalizer; }
         bool hasFinalizer() const { return mFinalizer != nullptr; }
         uint64_t getMemorySize() const { return mMemorySize; }
         uint64_t getTotalSize() const { return sizeof(Instance) + mMemorySize; }
@@ -42,11 +42,11 @@ namespace bibblevm::oop {
             }
         }
 
-        const Field* getField(String name) const;
-        const Field* getField(std::string_view name) const;
+        Field* getField(String name) const;
+        Field* getField(std::string_view name) const;
 
-        const Method* getMethod(String name) const;
-        const Method* getMethod(std::string_view name) const;
+        Method* getMethod(String name) const;
+        Method* getMethod(std::string_view name) const;
 
         Value readField(Instance* instance, const Field* field) const;
         void writeField(Instance* instance, const Field* field, Value value);
@@ -66,7 +66,7 @@ namespace bibblevm::oop {
         std::span<Method> mMethods;
         std::span<Method*> mVtable;
 
-        const Method* mFinalizer;
+        Method* mFinalizer;
 
         uint64_t mMemorySize;
 

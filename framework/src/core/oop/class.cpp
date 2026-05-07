@@ -28,30 +28,30 @@ namespace bibblevm::oop {
         createVtable(arena);
     }
 
-    const Field* Class::getField(String name) const {
+    Field* Class::getField(String name) const {
         for (const auto& field : mFields) {
-            if (field.name == name) return &field;
+            if (field.name == name) return const_cast<Field*>(&field);
         }
         return nullptr;
     }
 
-    const Field* Class::getField(std::string_view name) const {
+    Field* Class::getField(std::string_view name) const {
         for (const auto& field : mFields) {
-            if (field.name == name) return &field;
+            if (field.name == name) return const_cast<Field*>(&field);
         }
         return nullptr;
     }
 
-    const Method* Class::getMethod(String name) const {
+    Method* Class::getMethod(String name) const {
         for (const auto& method : mMethods) {
-            if (method.name == name) return &method;
+            if (method.name == name) return const_cast<Method*>(&method);
         }
         return nullptr;
     }
 
-    const Method* Class::getMethod(std::string_view name) const {
+    Method* Class::getMethod(std::string_view name) const {
         for (const auto& method : mMethods) {
-            if (method.name == name) return &method;
+            if (method.name == name) return const_cast<Method*>(&method);
         }
         return nullptr;
     }
