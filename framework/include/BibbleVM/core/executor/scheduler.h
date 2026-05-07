@@ -10,6 +10,7 @@
 #include <vector>
 
 namespace bibblevm::executor {
+    //NOTE: idk where else to put this. low priority number is a higher priority task
     class BIBBLEVM_EXPORT Scheduler {
     public:
         explicit Scheduler(VM& vm);

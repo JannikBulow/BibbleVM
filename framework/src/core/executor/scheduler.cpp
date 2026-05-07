@@ -27,9 +27,15 @@ namespace bibblevm::executor {
         std::vector<uint32_t> weights(levels);
         uint8_t maxLevel = levels - 1;
 
-        for (uint8_t level = 0; level < levels; level++) {
-            uint8_t distanceFromTop = maxLevel - level;
-            weights[level] = PowI(vm.config().scheduler.priority.boost, distanceFromTop);
+        if (vm.config().scheduler.priority.exponentialWeights) {
+            for (uint8_t level = 0; level < levels; level++) {
+                uint8_t distanceFromTop = maxLevel - level;
+                weights[level] = PowI(vm.config().scheduler.priority.boost, distanceFromTop);
+            }
+        } else {
+            for (uint8_t level = 0; level < levels; level++) {
+                weights[level] = levels - level;
+            }
         }
 
         for (uint8_t level = 0; level < levels; level++) {

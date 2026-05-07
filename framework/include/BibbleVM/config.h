@@ -64,8 +64,9 @@ namespace bibblevm {
         } autoYielding;
 
         struct {
+            bool exponentialWeights = false;
             uint8_t levels = 1;
-            uint8_t boost = 1;
+            uint8_t boost = 1; // only used if exponentialWeights == true
         } priority;
     };
 
