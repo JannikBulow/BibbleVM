@@ -81,9 +81,7 @@ namespace bibblevm::gc {
     }
 
     void OldGenHeap::deallocate(VM& vm, oop::Object* object) {
-        if (object->kind == oop::ObjectKind::Instance && object->asInstance()->clas->hasFinalizer()) {
-            vm.memoryManager().queueFinalizer(vm, object);
-        }
+        vm.memoryManager().queueFinalizer(vm, object);
 
         Region* region = getObjectRegion(vm, object);
         region->liveBytes -= object->allocatedSize;

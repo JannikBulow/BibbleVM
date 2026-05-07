@@ -177,11 +177,25 @@ namespace bibblevm::gc {
         if (!vm.scheduler().isGCRunning()) {
             vm.scheduler().safeDeleteExpiredTasks();
         }
+
+        //TODO: add a finalizer thread and make the finalizer queue concurrency safe, then remove the below step
+        for (oop::Object* deadObject : mFinalizerQueue) {
+            oop::Class* clas = deadObject->asInstance()->clas;
+            executor::Function* function = clas->dispatchMethod(clas->getFinalizer());
+            if (function != nullptr) {
+                Value argument{};
+                argument.isObject = true;
+                argument.obj = deadObject;
+                vm.scheduler().schedule(vm, *function, 255, &argument);
+            }
+        }
     }
 
     void MemoryManager::queueFinalizer(VM& vm, oop::Object* object) {
         if (vm.config().gc.disableFinalizers) return;
-        mFinalizerQueue.push_back(object);
+        if (object->kind == oop::ObjectKind::Instance && object->asInstance()->clas->hasFinalizer()) {
+            mFinalizerQueue.push_back(object);
+        }
     }
 
     oop::Object* MemoryManager::allocateRawObject(VM& vm, size_t size) {
