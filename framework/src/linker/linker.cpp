@@ -566,7 +566,7 @@ namespace bibblevm::linker {
         oop::Class* linkedClasses = module.arena().allocate<oop::Class>(rawModule.classCount);
         for (uint16_t i = 0; i < rawModule.classCount; i++) {
             module::Class& clas = rawModule.classes[i];
-            String name = vm.stringPool().intern(vm, rawModule.constPool.getEntries()[clas.name - rawModule.constPool.getEntryCount()].u.str);
+            String name = vm.stringPool().intern(vm, rawModule.constPool.getEntries()[clas.name].u.str);
             linkedClasses[i] = oop::Class(name);
         }
 
