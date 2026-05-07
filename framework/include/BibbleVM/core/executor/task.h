@@ -15,6 +15,15 @@ namespace bibblevm::executor {
     class Scheduler;
     struct Task;
 
+    // Enum to help calculate priority levels for different tasks
+    enum class TaskPriority {
+        Critical,
+        Normal,
+        Low,
+        Background,
+        System,
+    };
+
     struct Task {
         Stack stack;
 
@@ -35,6 +44,8 @@ namespace bibblevm::executor {
             native::PopulateInterface(&nativeInterface);
         }
     };
+
+    BIBBLEVM_EXPORT uint8_t MapPriorityToLevel(VM& vm, TaskPriority priority);
 }
 
 #endif // BIBBLEVM_CORE_EXECUTOR_TASK_H

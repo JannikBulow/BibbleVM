@@ -36,6 +36,7 @@ set(SOURCES
     src/core/executor/module.cpp
     src/core/executor/scheduler.cpp
     src/core/executor/stack.cpp
+    src/core/executor/task.cpp
 
     src/core/gc/memory_manager.cpp
     src/core/gc/nursery.cpp

@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     bibblevm::executor::Function* mainFunction = mainModule->linkedModule().getFunction("main");
     if (mainFunction == nullptr) return 3;
 
-    bibblevm::executor::Task* task = vm.scheduler().schedule(vm, *mainFunction, 0, nullptr);
+    bibblevm::executor::Task* task = vm.scheduler().schedule(vm, *mainFunction, bibblevm::executor::MapPriorityToLevel(vm, bibblevm::executor::TaskPriority::Critical), nullptr);
 
     bibblevm::oop::Object** mainFutureRef = vm.memoryManager().newGlobalStrongReference(task->completionFuture->asObject());
 

@@ -186,7 +186,7 @@ namespace bibblevm::gc {
                 Value argument{};
                 argument.isObject = true;
                 argument.obj = deadObject;
-                vm.scheduler().schedule(vm, *function, 255, &argument);
+                vm.scheduler().schedule(vm, *function, executor::MapPriorityToLevel(vm, executor::TaskPriority::System), &argument);
             }
         }
     }
