@@ -29,9 +29,7 @@ namespace bibblevm::executor {
         ConstPool& operator=(const ConstPool&) = delete;
         ConstPool& operator=(ConstPool&&) = default;
 
-        // Constructs a new ConstPool with `this` as the first elements and `other` after
-        std::optional<ConstPool> merge(const ConstPool& other, GrowingArenaAllocator& allocator) const; // TODO: generic allocator solution maybe
-
+        uint16_t getEntryCount() const;
         Value& get(ConstantIndex index) const;
 
     private:
