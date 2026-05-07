@@ -90,23 +90,35 @@ namespace bibblevm::linker {
                 }
                 case module::ConstPool::CLASS_INFO: {
                     module::ConstPool::ClassInfo ci = entry.u.ci;
-                    
+                    if (entries[ci.module].u.mi.name == module.name) {
+                        for (uint16_t j = 0; j < module.classCount; j++) {
+                            if (classes[j].getName() == entries[ci.name].u.str) {
+                                linkedEntry.ci = &classes[j];
+                                break;
+                            }
+                        }
+                    } else {
+                        Module* m = vm.getModule(entries[entries[ci.module].u.mi.name].u.str);
+                        m->waitForStage(Stage::Ready);
+                        linkedEntry.ci = m->linkedModule().getClass(entries[ci.name].u.str);
+                    }
                     break;
                 }
-                case module::ConstPool::FIELD_INFO:
-                    break;
-                case module::ConstPool::METHOD_INFO:
-                    break;
+                case module::ConstPool::FIELD_INFO: break;
+                case bibblebytecode::ConstPool::METHOD_INFO: break;
                 case module::ConstPool::FUNCTION_INFO: {
                     module::ConstPool::FunctionInfo fni = entry.u.fni;
                     if (entries[fni.module].u.mi.name == module.name) { // loading a function from its own module would lead to a permanent stall, so we use a list of partially initialized functions (just names) to link the pointers
                         for (uint16_t j = 0; j < module.functionCount; j++) {
-                            if (functions[j].getName() == entries[fni.name].u.str) linkedEntry.fni = &functions[j];
+                            if (functions[j].getName() == entries[fni.name].u.str) {
+                                linkedEntry.fni = &functions[j];
+                                break;
+                            }
                         }
                     } else {
                         Module* m = vm.getModule(entries[entries[fni.module].u.mi.name].u.str); // PreVerifier has ensured this exists, but not that it's fully loaded
-                        m->waitForStage(Stage::Linked);
-                        linkedEntry.fni = m->linkedModule().getFunction(entries[entry.u.fi.name].u.str);
+                        m->waitForStage(Stage::Ready);
+                        linkedEntry.fni = m->linkedModule().getFunction(entries[fni.name].u.str);
                     }
                     break;
                 }
@@ -114,6 +126,68 @@ namespace bibblevm::linker {
         }
 
         return { entryCount, linkedEntries };
+    }
+
+    void PostLinkConstPool(VM& vm, executor::ConstPool& constPool, const module::Module& module, oop::Class* classes) {
+        module::ConstPool::Entry* entries = module.constPool.getEntries();
+
+        for (uint16_t i = 1; i < constPool.getEntryCount(); i++) {
+            auto& entry = entries[i];
+            auto& linkedEntry = constPool.get(i);
+
+            switch (entry.tag) {
+                case bibblebytecode::ConstPool::BYTE: break;
+                case bibblebytecode::ConstPool::SHORT: break;
+                case bibblebytecode::ConstPool::INT: break;
+                case bibblebytecode::ConstPool::LONG: break;
+                case bibblebytecode::ConstPool::STRING: break;
+                case bibblebytecode::ConstPool::MODULE_INFO: break;
+                case bibblebytecode::ConstPool::CLASS_INFO: break;
+                case module::ConstPool::FIELD_INFO: {
+                    module::ConstPool::FieldInfo fi = entry.u.fi;
+                    module::ConstPool::ClassInfo ci = entries[fi.clas].u.ci;
+
+                    if (entries[ci.module].u.mi.name == module.name) {
+                        for (uint16_t j = 0; j < module.classCount; j++) {
+                            if (classes[j].getName() == entries[ci.name].u.str) {
+                                linkedEntry.fi = classes[j].getField(entries[fi.name].u.str);
+                                break;
+                            }
+                        }
+                    } else {
+                        Module* m = vm.getModule(entries[entries[ci.module].u.mi.name].u.str);
+                        m->waitForStage(Stage::Ready);
+
+                        oop::Class* cls = m->linkedModule().getClass(entries[ci.name].u.str);
+                        linkedEntry.fi = cls->getField(entries[fi.name].u.str);
+                    }
+
+                    break;
+                }
+                case module::ConstPool::METHOD_INFO: {
+                    module::ConstPool::MethodInfo mei = entry.u.mei;
+                    module::ConstPool::ClassInfo ci = entries[mei.clas].u.ci;
+
+                    if (entries[ci.module].u.mi.name == module.name) {
+                        for (uint16_t j = 0; j < module.classCount; j++) {
+                            if (classes[j].getName() == entries[ci.name].u.str) {
+                                linkedEntry.mei = classes[j].getMethod(entries[mei.name].u.str);
+                                break;
+                            }
+                        }
+                    } else {
+                        Module* m = vm.getModule(entries[entries[ci.module].u.mi.name].u.str);
+                        m->waitForStage(Stage::Ready);
+
+                        oop::Class* cls = m->linkedModule().getClass(entries[ci.name].u.str);
+                        linkedEntry.mei = cls->getMethod(entries[mei.name].u.str);
+                    }
+
+                    break;
+                }
+                case bibblebytecode::ConstPool::FUNCTION_INFO: break;
+            }
+        }
     }
 
     bool LinkClasses(oop::Class* classes, VM& vm, GrowingArenaAllocator& arena, const executor::ConstPool& moduleConstPool, const module::Module& module) {
@@ -581,6 +655,8 @@ namespace bibblevm::linker {
 
         if (!LinkClasses(linkedClasses, vm, module.arena(), linkedConstPool, rawModule)) return false;
         if (!LinkFunctions(linkedClasses, linkedFunctions, vm, module.arena(), linkedConstPool, rawModule, linkedModule)) return false;
+
+        PostLinkConstPool(vm, linkedConstPool, rawModule, linkedClasses);
 
         linkedModule = executor::Module(linkedConstPool.get(rawModule.name).obj->asString(), std::move(linkedConstPool), rawModule.classCount, linkedClasses, rawModule.functionCount, linkedFunctions);
 
