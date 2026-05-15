@@ -68,6 +68,8 @@ namespace bibblevm::oop {
         Object* asObject() { return &header; }
 
         constexpr void visitChildren(auto visitor);
+
+
     };
 
     struct StringObject {

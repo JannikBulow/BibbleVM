@@ -4,6 +4,8 @@
 
 #include <algorithm>
 
+#include "BibbleVM/vm.h"
+
 namespace bibblevm::oop {
     constexpr size_t AlignUp(size_t value, size_t alignment) {
         return (value + (alignment - 1)) & ~(alignment - 1);
@@ -120,7 +122,7 @@ namespace bibblevm::oop {
         return value;
     }
 
-    void Class::writeField(Instance* instance, const Field* field, Value value) {
+    void Class::writeField(VM& vm, Instance* instance, const Field* field, Value value) {
         uint8_t* dest = instance->fieldBytes + field->memoryOffset;
 
         switch (field->type) {
@@ -158,6 +160,7 @@ namespace bibblevm::oop {
                 std::memcpy(dest, &value.h, sizeof(Handle));
                 break;
             case Type::Reference:
+                vm.memoryManager().writeBarrier(instance->asObject(), value.obj);
                 std::memcpy(dest, &value.obj, sizeof(Object*));
                 break;
             case Type::ModuleRef:

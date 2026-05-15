@@ -161,7 +161,7 @@ namespace bibblevm::native {
         if (object == nullptr || field == nullptr) return;
         if (object->kind != oop::ObjectKind::Instance) return;
         Value usableValue = Value::FromNative(value, field->type == oop::Type::Reference);
-        object->asInstance()->clas->writeField(object->asInstance(), field, usableValue);
+        object->asInstance()->clas->writeField(vm, object->asInstance(), field, usableValue);
     }
 
     VMMethod GetMethod(BibbleVM* vm_, VMClass clas_, const char* name) {

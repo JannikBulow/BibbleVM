@@ -423,7 +423,7 @@ namespace bibblevm::executor {
         if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
         if (object->kind != oop::ObjectKind::Instance) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
 
-        object->asInstance()->clas->writeField(object->asInstance(), field, frame[args.c]);
+        object->asInstance()->clas->writeField(vm, object->asInstance(), field, frame[args.c]);
 
         return InterpreterMessage::Continue();
     }

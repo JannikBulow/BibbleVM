@@ -22,9 +22,7 @@ namespace bibblevm {
         size_t oldGenHeapRegionSize = 4 * 1024 * 1024;
         double oldGenHeapGrowthFactor = 2.0;
 
-        size_t largeObjectThreshold = 256 * 1024; // When is an object considered too big to be copied or moved during gc? Large objects are never moved due to efficiency loss
-
-        uint8_t promotionAge = 3;
+        size_t largeObjectThreshold = 128 * 1024; // When is an object considered too big to be copied or moved during gc? Large objects are never moved due to efficiency loss
 
         bool implicitInternStrings = false; // all string allocations are implicitly interned in the string pool. very inefficient speed wise but less memory consumption
 
@@ -64,9 +62,9 @@ namespace bibblevm {
         } autoYielding;
 
         struct {
-            bool exponentialWeights = false;
+            bool useExponentialWeights = false;
             uint8_t levels = 1;
-            uint8_t boost = 1; // only used if exponentialWeights == true
+            uint8_t boost = 1; // only used if useExponentialWeights == true
         } priority;
     };
 
@@ -75,10 +73,8 @@ namespace bibblevm {
 
         bool verifyHeapAfterGC = false;
         bool poisonFreedMemory = false;
-        bool trackAllocations = false;
         bool logPromotions = false;
         bool logSafepoints = false;
-        bool stressGC = false;
 
         bool verboseSchedulerLogging = false;
     };

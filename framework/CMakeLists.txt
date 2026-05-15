@@ -79,6 +79,7 @@ set(HEADERS
     include/BibbleVM/core/executor/stack.h
     include/BibbleVM/core/executor/task.h
 
+    include/BibbleVM/core/gc/large_object_heap.h
     include/BibbleVM/core/gc/memory_manager.h
     include/BibbleVM/core/gc/nursery.h
     include/BibbleVM/core/gc/old_gen_heap.h

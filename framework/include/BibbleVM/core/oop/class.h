@@ -49,7 +49,7 @@ namespace bibblevm::oop {
         Method* getMethod(std::string_view name) const;
 
         Value readField(Instance* instance, const Field* field) const;
-        void writeField(Instance* instance, const Field* field, Value value);
+        void writeField(VM& vm, Instance* instance, const Field* field, Value value);
 
         executor::Function* dispatchMethod(const Method* method) const;
 
