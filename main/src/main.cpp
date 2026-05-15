@@ -705,7 +705,7 @@ static void PrintHelpMessage(const std::vector<ConfigOption>& configOptions) {
 }
 
 static void PrintVersion() {
-
+    std::cout << "BibbleVM version 0.1.0" << std::endl;
 }
 
 int main(int argc, char** argv) {
