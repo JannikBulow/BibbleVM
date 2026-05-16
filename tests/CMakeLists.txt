@@ -22,20 +22,6 @@ target_include_directories(BibbleVM-tests PUBLIC include)
 
 target_compile_features(BibbleVM-tests PUBLIC cxx_std_20)
 
-target_link_libraries(BibbleVM-tests PRIVATE BibbleVM-framework-shared gtest_main)
-
-add_custom_command(TARGET BibbleVM-tests PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:BibbleVM-framework-shared>
-    $<TARGET_FILE_DIR:BibbleVM-tests>
-)
-
-if (MSVC)
-    add_custom_command(TARGET BibbleVM-tests PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_PDB_FILE:BibbleVM-framework-shared>
-        $<TARGET_FILE_DIR:BibbleVM-tests>
-    )
-endif()
+target_link_libraries(BibbleVM-tests PRIVATE BibbleVM-framework-static gtest_main)
 
 add_test(NAME BibbleVM-tests COMMAND BibbleVM-tests)
