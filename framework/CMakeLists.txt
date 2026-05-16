@@ -151,3 +151,6 @@ target_compile_features(BibbleVM-framework-static PUBLIC cxx_std_20)
 
 target_link_libraries(BibbleVM-framework-shared BibbleVM-native-interface BibbleBytecode-shared BibbleOpcodes libos-static utf8cpp)
 target_link_libraries(BibbleVM-framework-static BibbleVM-native-interface BibbleBytecode-static BibbleOpcodes libos-static utf8cpp)
+
+set_target_properties(BibbleVM-framework-shared PROPERTIES OUTPUT_NAME "bibblevm")
+set_target_properties(BibbleVM-framework-static PROPERTIES OUTPUT_NAME "bibblevm-aio")

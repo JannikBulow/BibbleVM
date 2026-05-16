@@ -48,3 +48,5 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
         )
     endif()
 endif()
+
+set_target_properties(BibbleVM-main PROPERTIES OUTPUT_NAME "bibble")
