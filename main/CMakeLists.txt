@@ -10,16 +10,13 @@ set(HEADERS
 source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS})
 
 add_executable(BibbleVM-main ${SOURCES} ${HEADERS})
-add_library(BibbleVM-testplugin SHARED src/plugin.cpp)
 
 target_include_directories(BibbleVM-main PUBLIC include)
 
 target_compile_features(BibbleVM-main PUBLIC cxx_std_20)
 
 target_link_libraries(BibbleVM-main PRIVATE BibbleVM-framework-shared)
-target_link_libraries(BibbleVM-testplugin BibbleVM-native-interface)
 
-add_dependencies(BibbleVM-main BibbleVM-testplugin)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     add_custom_command(TARGET BibbleVM-main PRE_BUILD
