@@ -21,28 +21,30 @@ target_link_libraries(BibbleVM-testplugin BibbleVM-native-interface)
 
 add_dependencies(BibbleVM-main BibbleVM-testplugin)
 
-add_custom_command(TARGET BibbleVM-main PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:BibbleVM-framework-shared>
-    $<TARGET_FILE_DIR:BibbleVM-main>
-)
-
-add_custom_command(TARGET BibbleVM-main PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:BibbleBytecode-shared>
-    $<TARGET_FILE_DIR:BibbleVM-main>
-)
-
-if (MSVC)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
     add_custom_command(TARGET BibbleVM-main PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_PDB_FILE:BibbleVM-framework-shared>
+        $<TARGET_FILE:BibbleVM-framework-shared>
         $<TARGET_FILE_DIR:BibbleVM-main>
     )
 
     add_custom_command(TARGET BibbleVM-main PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_PDB_FILE:BibbleBytecode-shared>
+        $<TARGET_FILE:BibbleBytecode-shared>
         $<TARGET_FILE_DIR:BibbleVM-main>
     )
+
+    if (MSVC)
+        add_custom_command(TARGET BibbleVM-main PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_PDB_FILE:BibbleVM-framework-shared>
+            $<TARGET_FILE_DIR:BibbleVM-main>
+        )
+
+        add_custom_command(TARGET BibbleVM-main PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_PDB_FILE:BibbleBytecode-shared>
+            $<TARGET_FILE_DIR:BibbleVM-main>
+        )
+    endif()
 endif()
