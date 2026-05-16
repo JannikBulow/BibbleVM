@@ -120,7 +120,8 @@ set(HEADERS
 
 source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS})
 
-add_library(BibbleVM-framework-shared SHARED ${SOURCES} ${HEADERS})
+add_library(BibbleVM-framework-shared SHARED ${SOURCES} ${HEADERS}
+    include/BibbleVM/_compatibility.h)
 add_library(BibbleVM-framework-static STATIC ${SOURCES} ${HEADERS})
 
 generate_export_header(BibbleVM-framework-shared

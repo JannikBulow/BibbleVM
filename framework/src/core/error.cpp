@@ -2,6 +2,7 @@
 
 #include "BibbleVM/core/error.h"
 
+#include "BibbleVM/_compatibility.h"
 #include "BibbleVM/vm.h"
 
 namespace bibblevm {
@@ -16,7 +17,7 @@ namespace bibblevm {
             case INVALID_OBJECT_KIND: return "INVALID_OBJECT_KIND"sv;
         }
 
-        __builtin_unreachable(); // TODO: macro this
+        BIBBLEVM_UNREACHABLE();
     }
 
     String Error::describe(VM& vm) const {

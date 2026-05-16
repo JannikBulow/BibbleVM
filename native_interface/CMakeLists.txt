@@ -11,3 +11,5 @@ add_library(BibbleVM-native-interface INTERFACE ${HEADERS})
 target_include_directories(BibbleVM-native-interface INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+target_compile_features(BibbleVM-native-interface INTERFACE cxx_std_20)

@@ -757,7 +757,7 @@ int main(int argc, char** argv) {
     if (!linker::LoadModule(vm, *module, options.moduleOrExecutable->c_str())) return 1;
     vm.addModule(std::move(module));
 
-    linker::Module* mainModule = vm.getModule(options.moduleOrExecutable.value());
+    linker::Module* mainModule = vm.getModule("Main"); // TODO: use options.moduleOrExecutable
     if (mainModule == nullptr) return 2;
 
     executor::Function* mainFunction = mainModule->linkedModule().getFunction(".main");

@@ -2,6 +2,7 @@
 
 #include "BibbleVM/core/executor/task.h"
 
+#include "BibbleVM/_compatibility.h"
 #include "BibbleVM/vm.h"
 
 namespace bibblevm {
@@ -15,6 +16,6 @@ namespace bibblevm {
             case TaskPriority::System: return levels - 1;
         }
 
-        __builtin_unreachable(); //TODO: macro this
+        BIBBLEVM_UNREACHABLE();
     }
 }
