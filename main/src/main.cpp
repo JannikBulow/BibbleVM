@@ -54,6 +54,7 @@ struct Options {
     void clear() {
         configProfile.reset();
         moduleOrExecutable.reset();
+        modulePath.clear();
         programArgs = std::vector<std::string>();
         redirectStdIn.reset();
         redirectStdOut.reset();
