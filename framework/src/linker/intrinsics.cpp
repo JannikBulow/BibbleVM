@@ -10,10 +10,24 @@ namespace bibblevm::linker {
             std::cout << frame[0].l << std::endl;
             return executor::SchedulerMessage::Returned(Value(0));
         }
+
+        static executor::SchedulerMessage printString(VM& vm, executor::Frame& frame, executor::Task* task) {
+            oop::Object* object = frame[0].obj;
+
+            if (object == nullptr) return executor::SchedulerMessage::Errored(Error::NULL_REFERENCE);
+            if (object->kind != oop::ObjectKind::String) return executor::SchedulerMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+            oop::StringObject* string = object->asString();
+
+            std::cout << std::string_view(string->bytes, string->lengthBytes) << std::endl;
+
+            return executor::SchedulerMessage::Returned(Value(0));
+        }
     }
 
     static constexpr IntrinsicFunction Intrinsics_functions[] = {
         {"print", Intrinsics::print},
+        {"printString", Intrinsics::printString},
     };
     static constexpr IntrinsicModule intrinsicModules[] = {
         {"Intrinsics", Intrinsics_functions, std::size(Intrinsics_functions)},
