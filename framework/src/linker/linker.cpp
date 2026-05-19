@@ -595,7 +595,7 @@ namespace bibblevm::linker {
         return true;
     }
 
-    bool ReadModuleFromMemory(VM& vm, Module& module, bibblebytecode::ReadableByteBuffer buffer) {
+    bool ReadModuleFromMemory(VM& vm, Module& module, bibblebytecode::ReadableByteBuffer& buffer) {
         if (module.getStage() != Stage::None) return false;
 
         module.file() = std::move(buffer);
@@ -671,17 +671,77 @@ namespace bibblevm::linker {
         return true;
     }
 
-    bool LoadModule(VM& vm, Module& module, const char* filePath) {
-        switch (module.getStage()) {
-            case Stage::None: if (!ReadModule(vm, module, filePath)) return false;
-            case Stage::FileLoaded: if (!ParseModule(vm, module)) return false;
-            case Stage::Parsed: if (!PreverifyModule(vm, module)) return false;
-            case Stage::Preverified: if (!LinkModule(vm, module)) return false;
-            case Stage::Linked: if (!VerifyModule(vm, module)) return false;
-            case Stage::Verified: if (module.getStage() == Stage::Verified) module.setStage(Stage::Ready);
-            case Stage::Ready: break;
+    void Linker::addModulePath(std::string path) {
+        mModulePath.push_back(std::move(path));
+    }
+
+    Module* Linker::loadModule(VM& vm, String name) {
+        return loadModule(vm, static_cast<std::string_view>(name)); // We keep this specialization in case this could be optimized in future
+    }
+
+    Module* Linker::loadModule(VM& vm, std::string_view name) {
+        std::unique_ptr<Module> module = std::make_unique<Module>();
+
+        bool success = false;
+        for (const auto& path : mModulePath) {
+            if ((success = readModuleFromPath(vm, *module, path, name))) break;
         }
 
-        return module.getStage() == Stage::Ready;
+        if (!success) return nullptr;
+
+        if (!parseModule(vm, *module)) return nullptr;
+        if (!preverifyModule(vm, *module)) return nullptr;
+        if (!linkModule(vm, *module)) return nullptr;
+        if (!verifyModule(vm, *module)) return nullptr;
+
+        module->setStage(Stage::Ready);
+
+        mModules.push_back(std::move(module));
+        return mModules.back().get();
+    }
+
+    Module* Linker::loadModule(VM& vm, bibblebytecode::ReadableByteBuffer memory) {
+        std::unique_ptr<Module> module = std::make_unique<Module>();
+
+        if (!readModuleFromMemory(vm, *module, memory)) return nullptr;
+        if (!parseModule(vm, *module)) return nullptr;
+        if (!preverifyModule(vm, *module)) return nullptr;
+        if (!linkModule(vm, *module)) return nullptr;
+        if (!verifyModule(vm, *module)) return nullptr;
+
+        if (module->getStage() != Stage::Verified) return nullptr;
+        module->setStage(Stage::Ready);
+
+        mModules.push_back(std::move(module));
+        return mModules.back().get();
+    }
+
+    bool Linker::readModuleFromPath(VM& vm, Module& module, std::string_view path, std::string_view name) {
+        std::string fullPath(path);
+        fullPath += '/';
+        fullPath += name;
+        fullPath += ".bmod";
+
+        return ReadModule(vm, module, fullPath.c_str());
+    }
+
+    bool Linker::readModuleFromMemory(VM& vm, Module& module, bibblebytecode::ReadableByteBuffer& memory) {
+        return ReadModuleFromMemory(vm, module, memory);
+    }
+
+    bool Linker::parseModule(VM& vm, Module& module) {
+        return ParseModule(vm, module);
+    }
+
+    bool Linker::preverifyModule(VM& vm, Module& module) {
+        return PreverifyModule(vm, module);
+    }
+
+    bool Linker::linkModule(VM& vm, Module& module) {
+        return LinkModule(vm, module);
+    }
+
+    bool Linker::verifyModule(VM& vm, Module& module) {
+        return VerifyModule(vm, module);
     }
 }

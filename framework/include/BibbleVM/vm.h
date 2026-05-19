@@ -7,7 +7,7 @@
 
 #include "BibbleVM/core/gc/memory_manager.h"
 
-#include "BibbleVM/linker/module.h"
+#include "BibbleVM/linker/linker.h"
 
 #include "BibbleVM/native/plugin_manager.h"
 
@@ -46,6 +46,7 @@ namespace bibblevm {
         native::PluginManager& pluginManager() { return mPluginManager; }
         gc::MemoryManager& memoryManager() { return mMemoryManager; }
         executor::Scheduler& scheduler() { return mScheduler; }
+        linker::Linker& linker() { return mLinker; }
 
         template<class... Args>
         constexpr void debugLog(std::string_view system, std::format_string<Args...> fmt, Args&&... args) {
@@ -55,10 +56,8 @@ namespace bibblevm {
             std::cout << '[' << system << "] " << std::format(fmt, std::forward<Args>(args)...) << std::endl;
         }
 
-        linker::Module* getModule(String name) const;
-        linker::Module* getModule(std::string_view name) const;
-
-        void addModule(std::unique_ptr<linker::Module> module);
+        linker::Module* getModule(String name);
+        linker::Module* getModule(std::string_view name);
 
     private:
         Config mConfig;
@@ -68,8 +67,7 @@ namespace bibblevm {
         native::PluginManager mPluginManager;
         gc::MemoryManager mMemoryManager;
         executor::Scheduler mScheduler;
-
-        std::vector<std::unique_ptr<linker::Module>> mModules; // TODO: make a better solution for the memory shit here
+        linker::Linker mLinker;
     };
 }
 

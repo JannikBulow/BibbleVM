@@ -50,7 +50,7 @@ namespace bibblevm::linker {
         }
 
     private:
-        GrowingArenaAllocator mArena = GrowingArenaAllocator::Create(64 * 1024);
+        GrowingArenaAllocator mArena = GrowingArenaAllocator::Create(16 * 1024);
 
         Stage mStage = Stage::None;
 

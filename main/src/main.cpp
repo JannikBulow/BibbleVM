@@ -38,6 +38,7 @@ struct Options {
     std::optional<std::string> configProfile;
 
     std::optional<std::string> moduleOrExecutable;
+    std::vector<std::string> modulePath;
 
     std::vector<std::string> programArgs; // args for bytecode program. whatever comes after -- in cli
 
@@ -581,6 +582,16 @@ static std::optional<Options> ParseCommandLine(const std::unordered_map<std::str
             continue;
         }
 
+        if (arg == "-mp" || arg == "--modulepath") {
+            if (i + 1 >= argc) {
+                std::cerr << "bibble: missing module path" << std::endl;
+                return std::nullopt;
+            }
+
+            options.modulePath.emplace_back(argv[++i]);
+            continue;
+        }
+
         if (arg == "--redirect-stdin") {
             if (i + 1 >= argc) {
                 std::cerr << "bibble: missing stdin redirect file" << std::endl;
@@ -753,11 +764,8 @@ int main(int argc, char** argv) {
 
     // TODO: executable support
 
-    std::unique_ptr<linker::Module> module = std::make_unique<linker::Module>();
-    if (!linker::LoadModule(vm, *module, options.moduleOrExecutable->c_str())) return 1;
-    vm.addModule(std::move(module));
-
-    linker::Module* mainModule = vm.getModule("Main"); // TODO: use options.moduleOrExecutable
+    vm.linker().addModulePath(".");
+    linker::Module* mainModule = vm.getModule(options.moduleOrExecutable.value_or("Main"));
     if (mainModule == nullptr) return 2;
 
     executor::Function* mainFunction = mainModule->linkedModule().getFunction(".main");

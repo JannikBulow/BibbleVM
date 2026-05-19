@@ -5,16 +5,31 @@
 
 #include "BibbleVM/linker/module.h"
 
-namespace bibblevm::linker {
-    BIBBLEVM_EXPORT bool ReadModule(VM& vm, Module& module, const char* filePath);
-    BIBBLEVM_EXPORT bool ReadModuleFromMemory(VM& vm, Module& module, bibblebytecode::ReadableByteBuffer buffer);
-    BIBBLEVM_EXPORT bool ParseModule(VM& vm, Module& module);
-    BIBBLEVM_EXPORT bool PreverifyModule(VM& vm, Module& module);
-    BIBBLEVM_EXPORT bool LinkModule(VM& vm, Module& module);
-    BIBBLEVM_EXPORT bool VerifyModule(VM& vm, Module& module);
+#include "BibbleVM/util/string_pool.h"
 
-    // Full AIO load
-    BIBBLEVM_EXPORT bool LoadModule(VM& vm, Module& module, const char* filePath);
+#include <memory>
+#include <vector>
+
+namespace bibblevm::linker {
+    class BIBBLEVM_EXPORT Linker {
+    public:
+        void addModulePath(std::string path);
+
+        Module* loadModule(VM& vm, String name);
+        Module* loadModule(VM& vm, std::string_view name);
+        Module* loadModule(VM& vm, bibblebytecode::ReadableByteBuffer memory);
+
+    private:
+        std::vector<std::string> mModulePath;
+        std::vector<std::unique_ptr<Module>> mModules;
+
+        bool readModuleFromPath(VM& vm, Module& module, std::string_view path, std::string_view name);
+        bool readModuleFromMemory(VM& vm, Module& module, bibblebytecode::ReadableByteBuffer& memory);
+        bool parseModule(VM& vm, Module& module);
+        bool preverifyModule(VM& vm, Module& module);
+        bool linkModule(VM& vm, Module& module);
+        bool verifyModule(VM& vm, Module& module);
+    };
 }
 
 #endif // BIBBLEVM_LINKER_LINKER_H
