@@ -57,6 +57,13 @@ namespace bibblevm::linker {
             if (wide) return readLE<uint16_t>();
             return readLE<uint8_t>();
         }
+
+        std::optional<int64_t> readSignedImmediate(bool wide, bool huge = false, bool gigantic = false) {
+            if (gigantic) return readLE<int64_t>();
+            if (huge) return readLE<int32_t>();
+            if (wide) return readLE<int16_t>();
+            return readLE<int8_t>();
+        }
     };
 
     executor::ConstPool LinkConstPool(VM& vm, GrowingArenaAllocator& arena, const module::ConstPool& constPool, const module::Module& module, oop::Class* classes, executor::Function* functions) {
@@ -313,10 +320,10 @@ namespace bibblevm::linker {
             case INC:
             case DEC:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
-                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
                 break;
             case JMP:
-                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(p.wideOperand0, p.hugeImmediate, p.giganticImmediate), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(p.wideOperand0, p.hugeImmediate, p.giganticImmediate), args.a);
                 break;
             case JEQ:
             case JNE:
@@ -325,7 +332,7 @@ namespace bibblevm::linker {
             case JGT:
             case JGE:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
-                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
                 break;
             case RESERVED_FOR_SWITCH_0:
             case RESERVED_FOR_SWITCH_1:
@@ -441,7 +448,7 @@ namespace bibblevm::linker {
                 break;
             case CALLARP:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
-                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(false), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(false), args.b);
                 OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand1), args.c);
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.d);
                 break;
@@ -467,7 +474,7 @@ namespace bibblevm::linker {
                 break;
             case CALLARP_DYN:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
-                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(false), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(false), args.b);
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.c);
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.d);
                 break;
