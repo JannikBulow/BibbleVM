@@ -70,7 +70,7 @@ namespace bibblevm::executor {
         task->scheduler = this;
 
         Frame& frame = task->stack.pushFrame(function, &task->result);
-        memcpy(&frame[0], arguments, function.getParameterCount() * sizeof(Value));
+        std::memcpy(&frame[0], arguments, function.getParameterCount() * sizeof(Value));
 
         oop::Object* futureObject = vm.memoryManager().allocateFuture(vm);
         task->completionFuture = futureObject->asFuture();
