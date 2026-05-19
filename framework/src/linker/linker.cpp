@@ -134,7 +134,7 @@ namespace bibblevm::linker {
             }
         }
 
-        return { entryCount, linkedEntries };
+        return {entryCount, linkedEntries};
     }
 
     void PostLinkConstPool(VM& vm, executor::ConstPool& constPool, const module::Module& module, oop::Class* classes) {
