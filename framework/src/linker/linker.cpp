@@ -29,7 +29,7 @@ namespace bibblevm::linker {
         }
 
         template<class T>
-        std::optional<uint64_t> readLE() {
+        std::optional<T> readLE() {
             if (!has(sizeof(T))) return std::nullopt;
 
             uint64_t value = 0;
@@ -38,15 +38,17 @@ namespace bibblevm::linker {
             }
 
             current += sizeof(T);
-            return value;
+            return static_cast<T>(value);
         }
 
         std::optional<uint64_t> readRegister(bool wide) {
-            return wide ? readLE<uint16_t>() : readLE<uint8_t>();
+            if (wide) return readLE<uint16_t>();
+            else return readLE<uint8_t>();
         }
 
         std::optional<uint64_t> readConstPoolIndex(bool wide) {
-            return wide ? readLE<uint16_t>() : readLE<uint8_t>();
+            if (wide) return readLE<uint16_t>();
+            else return readLE<uint8_t>();
         }
 
         std::optional<uint64_t> readImmediate(bool wide, bool huge = false, bool gigantic = false) {
