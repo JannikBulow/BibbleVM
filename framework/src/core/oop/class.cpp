@@ -100,6 +100,7 @@ namespace bibblevm::oop {
                 break;
             case Type::Reference:
                 std::memcpy(&value.obj, src, sizeof(Object*));
+                value.isObject = true;
                 break;
             case Type::ModuleRef:
                 std::memcpy(&value.mi, src, sizeof(executor::Module*));
