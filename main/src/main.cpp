@@ -766,6 +766,8 @@ int main(int argc, char** argv) {
     // TODO: executable support
 
     vm.linker().addModulePath(".");
+    vm.linker().addModulePath(std::move(options.modulePath));
+
     linker::Module* mainModule = vm.getModule(options.moduleOrExecutable.value_or("Main"));
     if (mainModule == nullptr) return 2;
 
