@@ -308,36 +308,36 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(JMP) {
-        return InterpreterMessage::Branch(args.a);
+        return InterpreterMessage::Branch(static_cast<int64_t>(args.a));
     }
 
     DEFINE_INTERPRETER(JEQ) {
-        if (frame[args.a].l == 0) return InterpreterMessage::Branch(static_cast<int32_t>(args.b));
+        if (frame[args.a].l == 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.b));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JNE) {
-        if (frame[args.a].l != 0) return InterpreterMessage::Branch(static_cast<int32_t>(args.b));
+        if (frame[args.a].l != 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.b));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JLT) {
-        if (frame[args.a].l < 0) return InterpreterMessage::Branch(static_cast<int32_t>(args.b));
+        if (frame[args.a].l < 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.b));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JLE) {
-        if (frame[args.a].l <= 0) return InterpreterMessage::Branch(static_cast<int32_t>(args.b));
+        if (frame[args.a].l <= 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.b));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JGT) {
-        if (frame[args.a].l > 0) return InterpreterMessage::Branch(static_cast<int32_t>(args.b));
+        if (frame[args.a].l > 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.b));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JGE) {
-        if (frame[args.a].l >= 0) return InterpreterMessage::Branch(static_cast<int32_t>(args.b));
+        if (frame[args.a].l >= 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.b));
         return InterpreterMessage::Continue();
     }
 

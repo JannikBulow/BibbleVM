@@ -36,7 +36,7 @@ namespace bibblevm::executor {
     struct InterpreterMessage {
         InterpreterMessageType type;
         union {
-            int32_t branch;
+            int64_t branch;
             struct { Error::Type type; String message; } error;
             struct { Function* function; uint16_t destinationRegister; uint16_t argsBegin; } call;
             uint16_t returnRegister;
@@ -46,7 +46,7 @@ namespace bibblevm::executor {
         constexpr InterpreterMessage(InterpreterMessageType type) : type(type) {}
 
         static constexpr InterpreterMessage Continue() { return InterpreterMessageType::Continue; }
-        static constexpr InterpreterMessage Branch(int32_t branch) {
+        static constexpr InterpreterMessage Branch(int64_t branch) {
             InterpreterMessage m = InterpreterMessageType::Branch;
             m.branch = branch;
             return m;
