@@ -509,6 +509,7 @@ namespace bibblevm::executor {
                 break;
             case oop::Type::Reference:
                 std::memcpy(&value.obj, src, sizeof(oop::Object*));
+                value.isObject = true;
                 break;
             case oop::Type::ModuleRef:
                 std::memcpy(&value.mi, src, sizeof(Module*));
