@@ -260,7 +260,7 @@ namespace bibblevm::executor {
         Long rhs = frame[args.c].l;
 
         if (lhs < rhs) dst = -1;
-        if (lhs > rhs) dst = 1;
+        else if (lhs > rhs) dst = 1;
         else dst = 0;
 
         return InterpreterMessage::Continue();
@@ -272,7 +272,7 @@ namespace bibblevm::executor {
         ULong rhs = frame[args.c].ul;
 
         if (lhs < rhs) dst = -1;
-        if (lhs > rhs) dst = 1;
+        else if (lhs > rhs) dst = 1;
         else dst = 0;
 
         return InterpreterMessage::Continue();
@@ -284,7 +284,7 @@ namespace bibblevm::executor {
         float rhs = frame[args.c].f;
 
         if (lhs < rhs) dst = -1;
-        if (lhs > rhs) dst = 1;
+        else if (lhs > rhs) dst = 1;
         else dst = 0;
 
         return InterpreterMessage::Continue();
