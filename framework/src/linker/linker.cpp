@@ -51,7 +51,7 @@ namespace bibblevm::linker {
             else return readLE<uint8_t>();
         }
 
-        std::optional<uint64_t> readImmediate(bool wide, bool huge = false, bool gigantic = false) {
+        std::optional<uint64_t> readUnsignedImmediate(bool wide, bool huge = false, bool gigantic = false) {
             if (gigantic) return readLE<uint64_t>();
             if (huge) return readLE<uint32_t>();
             if (wide) return readLE<uint16_t>();
@@ -233,7 +233,7 @@ namespace bibblevm::linker {
             case MOV_RANGE:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
-                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(p.wideOperand2), args.c);
+                OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(p.wideOperand2), args.c);
                 break;
             case SWAP:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
@@ -245,7 +245,7 @@ namespace bibblevm::linker {
                 break;
             case LOAD_IMM:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
-                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
                 break;
             case ADD:
             case SUB:
@@ -339,7 +339,7 @@ namespace bibblevm::linker {
             case NEWARRAY:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
-                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(false), args.c);
+                OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(false), args.c);
                 break;
             case NEWSTRING:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
@@ -355,7 +355,7 @@ namespace bibblevm::linker {
             case ISKIND:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
-                OPT_ASSIGN_OR_RETURN(argReader.readImmediate(false), args.c);
+                OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(false), args.c);
                 break;
             case INSTANCEOF:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
