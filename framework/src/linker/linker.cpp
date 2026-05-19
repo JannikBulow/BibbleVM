@@ -671,12 +671,41 @@ namespace bibblevm::linker {
         return true;
     }
 
-    void Linker::addModulePath(std::string path) {
-        mModulePath.push_back(std::move(path));
+    void Linker::addModulePath(std::string _path) {
+        namespace fs = std::filesystem;
+
+        std::string_view path = _path;
+        while (!path.empty()) {
+            auto pos = path.find(':');
+
+            std::string_view currentpath = path.substr(0, pos);
+
+            std::error_code ec;
+            fs::file_status stat = fs::status(currentpath, ec);
+
+            if (!ec && fs::exists(stat)) {
+                if (fs::is_directory(stat)) {
+                    mModulePath.emplace_back(currentpath);
+                } // else warn?
+            } // warn?
+
+            if (pos != std::string_view::npos) {
+                path.remove_prefix(pos + 1);
+            } else {
+                break;
+            }
+        }
+    }
+
+    void Linker::addModulePath(std::vector<std::string> path) {
+        for (const auto& p : path) {
+            addModulePath(std::move(p));
+        }
     }
 
     Module* Linker::loadModule(VM& vm, String name) {
-        return loadModule(vm, static_cast<std::string_view>(name)); // We keep this specialization in case this could be optimized in future
+        return loadModule(vm, static_cast<std::string_view>(name));
+        // We keep this specialization in case this could be optimized in future
     }
 
     Module* Linker::loadModule(VM& vm, std::string_view name) {

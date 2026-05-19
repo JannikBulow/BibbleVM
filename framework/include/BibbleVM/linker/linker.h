@@ -7,13 +7,16 @@
 
 #include "BibbleVM/util/string_pool.h"
 
+#include <filesystem>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace bibblevm::linker {
     class BIBBLEVM_EXPORT Linker {
     public:
         void addModulePath(std::string path);
+        void addModulePath(std::vector<std::string> path);
 
         Module* loadModule(VM& vm, String name);
         Module* loadModule(VM& vm, std::string_view name);
