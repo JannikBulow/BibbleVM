@@ -926,7 +926,7 @@ namespace bibblevm::executor {
                     instruction++;
                     break;
                 case InterpreterMessageType::Branch:
-                    instruction += message.branch + 1;
+                    instruction += message.branch;
                     break;
                 case InterpreterMessageType::Errored:
                     return SchedulerMessage::Errored(message.error.type, message.error.message);
