@@ -463,11 +463,145 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(ARRAYGET) {
-        return InterpreterMessage::Errored(Error::USERLAND);
+        oop::Object* object = frame[args.b].obj;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::Array) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        oop::Array* array = object->asArray();
+        const uint8_t* src = array->elementBytes + frame[args.c].ul * oop::GetPrimitiveSizeForType(array->baseType);
+
+        Value value{};
+
+        switch (array->baseType) {
+            case oop::Type::Byte:
+                std::memcpy(&value.b, src, sizeof(Byte));
+                break;
+            case oop::Type::UByte:
+                std::memcpy(&value.ub, src, sizeof(UByte));
+                break;
+            case oop::Type::Short:
+                std::memcpy(&value.s, src, sizeof(Short));
+                break;
+            case oop::Type::UShort:
+                std::memcpy(&value.us, src, sizeof(UShort));
+                break;
+            case oop::Type::Int:
+                std::memcpy(&value.i, src, sizeof(Int));
+                break;
+            case oop::Type::UInt:
+                std::memcpy(&value.ui, src, sizeof(UInt));
+                break;
+            case oop::Type::Long:
+                std::memcpy(&value.l, src, sizeof(Long));
+                break;
+            case oop::Type::ULong:
+                std::memcpy(&value.ul, src, sizeof(ULong));
+                break;
+            case oop::Type::Float:
+                std::memcpy(&value.f, src, sizeof(Float));
+                break;
+            case oop::Type::Double:
+                std::memcpy(&value.d, src, sizeof(Double));
+                break;
+            case oop::Type::Handle:
+                std::memcpy(&value.h, src, sizeof(Handle));
+                break;
+            case oop::Type::Reference:
+                std::memcpy(&value.obj, src, sizeof(oop::Object*));
+                break;
+            case oop::Type::ModuleRef:
+                std::memcpy(&value.mi, src, sizeof(Module*));
+                break;
+            case oop::Type::ClassRef:
+                std::memcpy(&value.ci, src, sizeof(oop::Class*));
+                break;
+            case oop::Type::FieldRef:
+                std::memcpy(&value.fi, src, sizeof(oop::Field*));
+                break;
+            case oop::Type::MethodRef:
+                std::memcpy(&value.mei, src, sizeof(oop::Method*));
+                break;
+            case oop::Type::FunctionRef:
+                std::memcpy(&value.fni, src, sizeof(Function*));
+                break;
+            case oop::Type::Count: break;
+        }
+
+        frame[args.a] = value;
+
+        return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(ARRAYSET) {
-        return InterpreterMessage::Errored(Error::USERLAND);
+        oop::Object* object = frame[args.a].obj;
+
+        if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
+        if (object->kind != oop::ObjectKind::Array) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+        oop::Array* array = object->asArray();
+        uint8_t* dest = array->elementBytes + frame[args.b].ul * oop::GetPrimitiveSizeForType(array->baseType);
+
+        Value& value = frame[args.c];
+
+        switch (array->baseType) {
+            case oop::Type::Byte:
+                std::memcpy(dest, &value.b, sizeof(Byte));
+                break;
+            case oop::Type::UByte:
+                std::memcpy(dest, &value.ub, sizeof(UByte));
+                break;
+            case oop::Type::Short:
+                std::memcpy(dest, &value.s, sizeof(Short));
+                break;
+            case oop::Type::UShort:
+                std::memcpy(dest, &value.us, sizeof(UShort));
+                break;
+            case oop::Type::Int:
+                std::memcpy(dest, &value.i, sizeof(Int));
+                break;
+            case oop::Type::UInt:
+                std::memcpy(dest, &value.ui, sizeof(UInt));
+                break;
+            case oop::Type::Long:
+                std::memcpy(dest, &value.l, sizeof(Long));
+                break;
+            case oop::Type::ULong:
+                std::memcpy(dest, &value.ul, sizeof(ULong));
+                break;
+            case oop::Type::Float:
+                std::memcpy(dest, &value.f, sizeof(Float));
+                break;
+            case oop::Type::Double:
+                std::memcpy(dest, &value.d, sizeof(Double));
+                break;
+            case oop::Type::Handle:
+                std::memcpy(dest, &value.h, sizeof(Handle));
+                break;
+            case oop::Type::Reference:
+                vm.memoryManager().writeBarrier(object, value.obj);
+                std::memcpy(dest, &value.obj, sizeof(oop::Object*));
+                break;
+            case oop::Type::ModuleRef:
+                std::memcpy(dest, &value.mi, sizeof(Module*));
+                break;
+            case oop::Type::ClassRef:
+                std::memcpy(dest, &value.ci, sizeof(oop::Class*));
+                break;
+            case oop::Type::FieldRef:
+                std::memcpy(dest, &value.fi, sizeof(oop::Field*));
+                break;
+            case oop::Type::MethodRef:
+                std::memcpy(dest, &value.mei, sizeof(oop::Method*));
+                break;
+            case oop::Type::FunctionRef:
+                std::memcpy(dest, &value.fni, sizeof(Function*));
+                break;
+            case oop::Type::Count:
+                break;
+        }
+
+        return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(STRLENGTH) {
