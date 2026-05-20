@@ -254,6 +254,9 @@ namespace bibblevm::linker {
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
                 OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
                 break;
+            case LOAD_NULL:
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
+                break;
             case ADD:
             case SUB:
             case MUL:

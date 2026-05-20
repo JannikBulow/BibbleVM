@@ -48,6 +48,12 @@ namespace bibblevm::executor {
         return InterpreterMessage::Continue();
     }
 
+    DEFINE_INTERPRETER(LOAD_NULL) {
+        frame[args.a].obj = nullptr;
+        frame[args.a].isObject = true;
+        return InterpreterMessage::Continue();
+    }
+
     DEFINE_INTERPRETER(ADD) {
         frame[args.a].l = frame[args.b].l + frame[args.c].l;
         return InterpreterMessage::Continue();
@@ -797,6 +803,7 @@ namespace bibblevm::executor {
             REGISTER_INTERPRETER(SWAP);
             REGISTER_INTERPRETER(LOAD_CONST);
             REGISTER_INTERPRETER(LOAD_IMM);
+            REGISTER_INTERPRETER(LOAD_NULL);
             REGISTER_INTERPRETER(ADD);
             REGISTER_INTERPRETER(SUB);
             REGISTER_INTERPRETER(MUL);
