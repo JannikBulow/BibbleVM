@@ -557,8 +557,12 @@ namespace bibblevm::linker {
             const module::Function& function = module.functions[i];
             executor::Function& linkedFunction = functions[i];
 
+            const IntrinsicFunction* intrinsicFunction = GetIntrinsicsFunction(intrinsicModule, linkedFunction.getName());
+
             executor::FunctionKind kind;
-            if (function.flags & module::FUNC_NATIVE) {
+            if (intrinsicFunction != nullptr) {
+                kind = executor::FunctionKind::Intrinsic;
+            } else if (function.flags & module::FUNC_NATIVE) {
                 kind = executor::FunctionKind::Native;
             } else {
                 kind = executor::FunctionKind::Normal;
@@ -574,14 +578,6 @@ namespace bibblevm::linker {
                     linkedFunction.entryPoint() = vm.config().scheduler.autoYielding.enabled ? executor::AutoYieldingBytecodeInterpreter : executor::BytecodeInterpreter; // TODO: cache?
                     break;
                 case executor::FunctionKind::Native: {
-                    if (intrinsicModule != nullptr) {
-                        const IntrinsicFunction* intrinsic = GetIntrinsicsFunction(intrinsicModule, linkedFunction.getName());
-                        if (intrinsic != nullptr) {
-                            linkedFunction.entryPoint() = intrinsic->entryPoint;
-                            break;
-                        }
-                    }
-
                     void* implementation = vm.pluginManager().getNativeFunction<void*>(moduleName, linkedFunction.getName());
 
                     if (implementation != nullptr) {
@@ -589,6 +585,10 @@ namespace bibblevm::linker {
                         linkedFunction.implementation() = implementation;
                     } //TODO: else error
 
+                    break;
+                }
+                case executor::FunctionKind::Intrinsic: {
+                    linkedFunction.entryPoint() = intrinsicFunction->entryPoint;
                     break;
                 }
             }
