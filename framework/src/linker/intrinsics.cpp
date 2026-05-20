@@ -41,6 +41,8 @@ namespace bibblevm::linker {
     }
 
     const IntrinsicFunction* GetIntrinsicsFunction(const IntrinsicModule* module, std::string_view name) {
+        if (module == nullptr) return nullptr;
+
         for (size_t i = 0; i < module->functionCount; i++) {
             const IntrinsicFunction& function = module->functions[i];
             if (function.name == name) return &function;
