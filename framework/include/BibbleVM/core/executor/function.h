@@ -22,6 +22,7 @@ namespace bibblevm::executor {
     enum class FunctionKind : uint8_t {
         Normal,
         Native,
+        Intrinsic,
     };
 
     class BIBBLEVM_EXPORT Function {
