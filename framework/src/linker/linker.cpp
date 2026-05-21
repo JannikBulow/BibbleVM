@@ -16,6 +16,11 @@
 #include "BibbleBytecode/reader.h"
 
 namespace bibblevm::linker {
+    struct InstructionArguments {
+        uint16_t a, b, c;
+        uint64_t imm;
+    };
+
     struct ArgReader {
         module::BytecodeStream current;
         const module::BytecodeStream end;
@@ -41,12 +46,12 @@ namespace bibblevm::linker {
             return static_cast<T>(value);
         }
 
-        std::optional<uint64_t> readRegister(bool wide) {
+        std::optional<uint16_t> readRegister(bool wide) {
             if (wide) return readLE<uint16_t>();
             else return readLE<uint8_t>();
         }
 
-        std::optional<uint64_t> readConstPoolIndex(bool wide) {
+        std::optional<uint16_t> readConstPoolIndex(bool wide) {
             if (wide) return readLE<uint16_t>();
             else return readLE<uint8_t>();
         }
@@ -224,8 +229,8 @@ namespace bibblevm::linker {
         return true;
     }
 
-    std::optional<executor::InstructionArguments> DecodeArgs(module::Instruction instruction, ArgReader& argReader) {
-        executor::InstructionArguments args{};
+    std::optional<InstructionArguments> DecodeArgs(module::Instruction instruction, ArgReader& argReader) {
+        InstructionArguments args{};
 
         opcodeutils::PrefixState p = instruction.prefixState;
 
@@ -240,7 +245,7 @@ namespace bibblevm::linker {
             case MOV_RANGE:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
-                OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(p.wideOperand2), args.c);
+                OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(p.wideOperand2), args.imm);
                 break;
             case SWAP:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
@@ -252,7 +257,7 @@ namespace bibblevm::linker {
                 break;
             case LOAD_IMM:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
-                OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.imm);
                 break;
             case LOAD_NULL:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
@@ -323,10 +328,10 @@ namespace bibblevm::linker {
             case INC:
             case DEC:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
-                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.imm);
                 break;
             case JMP:
-                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(p.wideOperand0, p.hugeImmediate, p.giganticImmediate), args.a);
+                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(p.wideOperand0, p.hugeImmediate, p.giganticImmediate), args.imm);
                 break;
             case JEQ:
             case JNE:
@@ -335,7 +340,7 @@ namespace bibblevm::linker {
             case JGT:
             case JGE:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
-                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(p.wideOperand1, p.hugeImmediate, p.giganticImmediate), args.imm);
                 break;
             case RESERVED_FOR_SWITCH_0:
             case RESERVED_FOR_SWITCH_1:
@@ -349,7 +354,7 @@ namespace bibblevm::linker {
             case NEWARRAY:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
-                OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(false), args.c);
+                OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(false), args.imm);
                 break;
             case NEWSTRING:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
@@ -365,7 +370,7 @@ namespace bibblevm::linker {
             case ISKIND:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
-                OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(false), args.c);
+                OPT_ASSIGN_OR_RETURN(argReader.readUnsignedImmediate(false), args.imm);
                 break;
             case INSTANCEOF:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
@@ -447,13 +452,13 @@ namespace bibblevm::linker {
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
                 OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand2), args.c);
-                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand3), args.d);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand3), args.imm);
                 break;
             case CALLARP:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
-                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(false), args.b);
-                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand1), args.c);
-                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.d);
+                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(false), args.imm);
+                OPT_ASSIGN_OR_RETURN(argReader.readConstPoolIndex(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
                 break;
             case CALL_DYN:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
@@ -473,13 +478,13 @@ namespace bibblevm::linker {
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
-                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand3), args.d);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand3), args.imm);
                 break;
             case CALLARP_DYN:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
-                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(false), args.b);
-                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.c);
-                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.d);
+                OPT_ASSIGN_OR_RETURN(argReader.readSignedImmediate(false), args.imm);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand1), args.b);
+                OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand2), args.c);
                 break;
             case RETURN:
                 OPT_ASSIGN_OR_RETURN(argReader.readRegister(p.wideOperand0), args.a);
@@ -521,18 +526,19 @@ namespace bibblevm::linker {
             if (interpreter == nullptr) return nullptr;
 
             ArgReader argReader(instruction.argsBegin, instruction.argsEnd);
-            std::optional<executor::InstructionArguments> decodedArgsOpt = DecodeArgs(instruction, argReader);
+            std::optional<InstructionArguments> decodedArgsOpt = DecodeArgs(instruction, argReader);
             if (!decodedArgsOpt.has_value()) return nullptr;
 
-            instructions[i] = executor::Instruction(instruction.opcode, interpreter, decodedArgsOpt.value());
+            instructions[i] = executor::Instruction(interpreter, 0, decodedArgsOpt->a, decodedArgsOpt->b, decodedArgsOpt->c, decodedArgsOpt->imm);
         }
 
         // Patch branch instructions
         for (size_t i = 0; i < instructionCount; i++) {
             executor::Instruction& instruction = instructions[i];
-            if (!opcodeutils::IsBranch(instruction.opcode)) continue;
+            Opcode opcode = executor::GetOpcodeForInterpreter(vm, instruction.interpreter);
+            if (!opcodeutils::IsBranch(opcode)) continue;
 
-            int64_t offset = static_cast<int64_t>((instruction.opcode == JMP) ? instruction.args.a : instruction.args.b);
+            int64_t offset = static_cast<int64_t>(instruction.imm);
 
             module::BytecodeStream target = instEnd[i] + offset;
             auto it = byteToIndex.find(target);
@@ -542,8 +548,7 @@ namespace bibblevm::linker {
 
             size_t targetIndex = it->second;
 
-            if (instruction.opcode == JMP) instruction.args.a = targetIndex - i;
-            else instruction.args.b = targetIndex - i;
+            instruction.imm = targetIndex - i;
         }
 
         return instructions;

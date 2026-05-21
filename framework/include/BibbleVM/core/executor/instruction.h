@@ -10,19 +10,14 @@
 #include <cstdint>
 
 namespace bibblevm::executor {
-    //TODO: optimize size later
-    struct InstructionArguments {
-        uint64_t a;
-        uint64_t b;
-        uint64_t c;
-        uint64_t d;
-    };
-
     // Pre-decoded instruction. Trade memory for 0.0002% faster dispatch
     struct Instruction {
-        Opcode opcode;
         Interpreter interpreter;
-        InstructionArguments args;
+        uint16_t metaIndex;
+        uint16_t a;
+        uint16_t b;
+        uint16_t c;
+        uint64_t imm; // imm can also act as a d arg for an instruction that's 4 args
     };
 }
 

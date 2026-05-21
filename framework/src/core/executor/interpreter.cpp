@@ -10,7 +10,7 @@
 
 #include "BibbleVM/vm.h"
 
-#define DEFINE_INTERPRETER(opcode) InterpreterMessage Interpret##opcode(VM& vm, Frame& frame, Task* task, const InstructionArguments& args)
+#define DEFINE_INTERPRETER(opcode) InterpreterMessage Interpret##opcode(VM& vm, Frame& frame, Task* task, const Instruction& args)
 #define REGISTER_INTERPRETER(opcode) table[opcode] = Interpret##opcode
 
 #define NONZERO 69
@@ -27,7 +27,7 @@ namespace bibblevm::executor {
 
 
     DEFINE_INTERPRETER(MOV_RANGE) {
-        memmove(&frame[args.a], &frame[args.b], args.c * sizeof(Value));
+        memmove(&frame[args.a], &frame[args.b], args.imm * sizeof(Value));
         return InterpreterMessage::Continue();
     }
 
@@ -44,7 +44,7 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(LOAD_IMM) {
-        frame[args.a].ul = args.b;
+        frame[args.a].ul = args.imm;
         return InterpreterMessage::Continue();
     }
 
@@ -304,46 +304,46 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(INC) {
-        frame[args.a].l += static_cast<Long>(args.b);
+        frame[args.a].l += static_cast<Long>(args.imm);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(DEC) {
-        frame[args.a].l -= static_cast<Long>(args.b);
+        frame[args.a].l -= static_cast<Long>(args.imm);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JMP) {
-        return InterpreterMessage::Branch(static_cast<int64_t>(args.a));
+        return InterpreterMessage::Branch(static_cast<int64_t>(args.imm));
     }
 
     DEFINE_INTERPRETER(JEQ) {
-        if (frame[args.a].l == 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.b));
+        if (frame[args.a].l == 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.imm));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JNE) {
-        if (frame[args.a].l != 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.b));
+        if (frame[args.a].l != 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.imm));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JLT) {
-        if (frame[args.a].l < 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.b));
+        if (frame[args.a].l < 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.imm));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JLE) {
-        if (frame[args.a].l <= 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.b));
+        if (frame[args.a].l <= 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.imm));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JGT) {
-        if (frame[args.a].l > 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.b));
+        if (frame[args.a].l > 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.imm));
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(JGE) {
-        if (frame[args.a].l >= 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.b));
+        if (frame[args.a].l >= 0) return InterpreterMessage::Branch(static_cast<int64_t>(args.imm));
         return InterpreterMessage::Continue();
     }
 
@@ -353,7 +353,7 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(NEWARRAY) {
-        frame[args.a].obj = vm.memoryManager().allocateArray(vm, static_cast<oop::Type>(args.c), frame[args.b].ul);
+        frame[args.a].obj = vm.memoryManager().allocateArray(vm, static_cast<oop::Type>(args.imm), frame[args.b].ul);
         return InterpreterMessage::Continue();
     }
 
@@ -385,7 +385,7 @@ namespace bibblevm::executor {
         oop::Object* object = frame[args.b].obj;
         if (object == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
 
-        if (static_cast<uint8_t>(object->kind) != args.c) {
+        if (static_cast<uint8_t>(object->kind) != args.imm) {
             frame[args.a].ul = 0;
         } else {
             frame[args.a].ul = NONZERO;
@@ -743,14 +743,14 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(CALLAP) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame.getModule().getConstPool().get(args.c).fni, static_cast<uint8_t>(frame[args.b].ul), &frame[args.d]);
+        Task* newTask = vm.scheduler().schedule(vm, *frame.getModule().getConstPool().get(args.c).fni, static_cast<uint8_t>(frame[args.b].ul), &frame[args.imm]);
         frame[args.a].obj = newTask->completionFuture->asObject();
         frame[args.a].isObject = true;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(CALLARP) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame.getModule().getConstPool().get(args.c).fni, task->priority + static_cast<uint8_t>(args.b), &frame[args.d]);
+        Task* newTask = vm.scheduler().schedule(vm, *frame.getModule().getConstPool().get(args.b).fni, task->priority + static_cast<uint8_t>(args.imm), &frame[args.c]);
         frame[args.a].obj = newTask->completionFuture->asObject();
         frame[args.a].isObject = true;
         return InterpreterMessage::Continue();
@@ -772,14 +772,14 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(CALLAP_DYN) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame[args.b].fni, static_cast<uint8_t>(frame[args.b].ul), &frame[args.d]);
+        Task* newTask = vm.scheduler().schedule(vm, *frame[args.b].fni, static_cast<uint8_t>(frame[args.b].ul), &frame[args.imm]);
         frame[args.a].obj = newTask->completionFuture->asObject();
         frame[args.a].isObject = true;
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(CALLARP_DYN) {
-        Task* newTask = vm.scheduler().schedule(vm, *frame[args.b].fni, task->priority + static_cast<uint8_t>(args.b), &frame[args.d]);
+        Task* newTask = vm.scheduler().schedule(vm, *frame[args.b].fni, task->priority + static_cast<uint8_t>(args.imm), &frame[args.c]);
         frame[args.a].obj = newTask->completionFuture->asObject();
         frame[args.a].isObject = true;
         return InterpreterMessage::Continue();
@@ -793,9 +793,7 @@ namespace bibblevm::executor {
         frame.ip()++;
         return InterpreterMessageType::YieldExecution;
     }
-
-    Interpreter GetInterpreter(VM& vm, Opcode opcode) {
-        static const std::array<Interpreter, 256> table = [] {
+    static const std::array<Interpreter, 256> interpreterTable = [] {
             std::array<Interpreter, 256> table{};
             REGISTER_INTERPRETER(NOP);
             REGISTER_INTERPRETER(MOV);
@@ -894,13 +892,22 @@ namespace bibblevm::executor {
             REGISTER_INTERPRETER(YIELD);
             return table;
         }();
-        return table[opcode];
+
+    Interpreter GetInterpreter(VM& vm, Opcode opcode) {
+        return interpreterTable[opcode];
+    }
+
+    Opcode GetOpcodeForInterpreter(VM& vm, Interpreter interpreter) {
+        for (int i = 0; i < interpreterTable.size(); i++) {
+            if (interpreterTable[i] == interpreter) return i;
+        }
+        return NOP;
     }
 
     SchedulerMessage BytecodeInterpreter(VM& vm, Frame& frame, Task* task) {
         Instruction*& instruction = frame.ip();
         while (true) {
-            InterpreterMessage message = instruction->interpreter(vm, frame, task, instruction->args);
+            InterpreterMessage message = instruction->interpreter(vm, frame, task, *instruction);
             switch (message.type) {
                 case InterpreterMessageType::Continue:
                     instruction++;
@@ -927,7 +934,7 @@ namespace bibblevm::executor {
         Instruction*& instruction = frame.ip();
         size_t executedInstructions = 0;
         while (true) {
-            InterpreterMessage message = instruction->interpreter(vm, frame, task, instruction->args);
+            InterpreterMessage message = instruction->interpreter(vm, frame, task, *instruction);
             switch (message.type) {
                 case InterpreterMessageType::Continue:
                     instruction++;

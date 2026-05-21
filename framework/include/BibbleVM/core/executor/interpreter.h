@@ -20,8 +20,8 @@ namespace bibblevm {
 
 namespace bibblevm::executor {
     class Function;
+    struct Instruction;
     struct SchedulerMessage;
-    struct InstructionArguments;
 
     enum class InterpreterMessageType {
         Continue,
@@ -77,9 +77,10 @@ namespace bibblevm::executor {
         }
     };
 
-    using Interpreter = InterpreterMessage(*)(VM& vm, Frame& frame, Task* task, const InstructionArguments& args);
+    using Interpreter = InterpreterMessage(*)(VM& vm, Frame& frame, Task* task, const Instruction& instruction);
 
     BIBBLEVM_EXPORT Interpreter GetInterpreter(VM& vm, Opcode opcode);
+    BIBBLEVM_EXPORT Opcode GetOpcodeForInterpreter(VM& vm, Interpreter interpreter);
 
     BIBBLEVM_EXPORT SchedulerMessage BytecodeInterpreter(VM& vm, Frame& frame, Task* task);
     BIBBLEVM_EXPORT SchedulerMessage AutoYieldingBytecodeInterpreter(VM& vm, Frame& frame, Task* task);
