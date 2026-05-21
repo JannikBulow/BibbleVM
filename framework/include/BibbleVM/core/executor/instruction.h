@@ -13,7 +13,7 @@ namespace bibblevm::executor {
     // Pre-decoded instruction. Trade memory for 0.0002% faster dispatch
     struct Instruction {
         Interpreter interpreter;
-        uint16_t metaIndex;
+        Opcode opcode;
         uint16_t a;
         uint16_t b;
         uint16_t c;

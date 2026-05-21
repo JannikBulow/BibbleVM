@@ -897,13 +897,6 @@ namespace bibblevm::executor {
         return interpreterTable[opcode];
     }
 
-    Opcode GetOpcodeForInterpreter(VM& vm, Interpreter interpreter) {
-        for (int i = 0; i < interpreterTable.size(); i++) {
-            if (interpreterTable[i] == interpreter) return i;
-        }
-        return NOP;
-    }
-
     SchedulerMessage BytecodeInterpreter(VM& vm, Frame& frame, Task* task) {
         Instruction*& instruction = frame.ip();
         while (true) {

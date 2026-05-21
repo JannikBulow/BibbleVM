@@ -529,14 +529,13 @@ namespace bibblevm::linker {
             std::optional<InstructionArguments> decodedArgsOpt = DecodeArgs(instruction, argReader);
             if (!decodedArgsOpt.has_value()) return nullptr;
 
-            instructions[i] = executor::Instruction(interpreter, 0, decodedArgsOpt->a, decodedArgsOpt->b, decodedArgsOpt->c, decodedArgsOpt->imm);
+            instructions[i] = executor::Instruction(interpreter, instruction.opcode, decodedArgsOpt->a, decodedArgsOpt->b, decodedArgsOpt->c, decodedArgsOpt->imm);
         }
 
         // Patch branch instructions
         for (size_t i = 0; i < instructionCount; i++) {
             executor::Instruction& instruction = instructions[i];
-            Opcode opcode = executor::GetOpcodeForInterpreter(vm, instruction.interpreter);
-            if (!opcodeutils::IsBranch(opcode)) continue;
+            if (!opcodeutils::IsBranch(instruction.opcode)) continue;
 
             int64_t offset = static_cast<int64_t>(instruction.imm);
 
