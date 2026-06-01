@@ -7,6 +7,8 @@
 #include <BibbleVM/init.h>
 #include <BibbleVM/vm.h>
 
+#include <libos/file.h>
+
 #include <fstream>
 #include <functional>
 #include <optional>
@@ -760,6 +762,51 @@ int main(int argc, char** argv) {
     }
 
     //TODO: redirect stdio using libos when that feature is added to libos
+
+    if (options.redirectStdIn.has_value()) {
+        os_file* file = nullptr;
+        os_result res = os_file_open(&file, options.redirectStdIn->c_str(), OS_FILE_READ | OS_FILE_SEQUENTIAL);
+        if (res != OS_OK) {
+            std::cerr << "bibble: could not open file '" << options.redirectStdIn.value() << "'" << std::endl;
+            return 1;
+        }
+
+        res = os_file_set_stdfile(OS_STDIN, file);
+        if (res != OS_OK) {
+            std::cerr << "bibble: could not set stdin file to '" << options.redirectStdIn.value() << "'" << std::endl;
+            return 1;
+        }
+    }
+
+    if (options.redirectStdOut.has_value()) {
+        os_file* file = nullptr;
+        os_result res = os_file_open(&file, options.redirectStdOut->c_str(), OS_FILE_WRITE | OS_FILE_CREATE | OS_FILE_TRUNCATE | OS_FILE_SEQUENTIAL);
+        if (res != OS_OK) {
+            std::cerr << "bibble: could not open file '" << options.redirectStdOut.value() << "'" << std::endl;
+            return 1;
+        }
+
+        res = os_file_set_stdfile(OS_STDOUT, file);
+        if (res != OS_OK) {
+            std::cerr << "bibble: could not set stdout file to '" << options.redirectStdOut.value() << "'" << std::endl;
+            return 1;
+        }
+    }
+
+    if (options.redirectStdErr.has_value()) {
+        os_file* file = nullptr;
+        os_result res = os_file_open(&file, options.redirectStdErr->c_str(), OS_FILE_WRITE | OS_FILE_CREATE | OS_FILE_TRUNCATE | OS_FILE_SEQUENTIAL);
+        if (res != OS_OK) {
+            std::cerr << "bibble: could not open file '" << options.redirectStdErr.value() << "'" << std::endl;
+            return 1;
+        }
+
+        res = os_file_set_stdfile(OS_STDERR, file);
+        if (res != OS_OK) {
+            std::cerr << "bibble: could not set stderr file to '" << options.redirectStdErr.value() << "'" << std::endl;
+            return 1;
+        }
+    }
 
     VM vm(options.config);
 
