@@ -2,13 +2,41 @@
 
 #include "BibbleVM/linker/intrinsics.h"
 
+#include <libos/file.h>
+
 #include <iostream>
+
+#include "BibbleVM/vm.h"
 
 namespace bibblevm::linker {
     namespace Intrinsics {
+        static executor::SchedulerMessage printHelper(VM& vm, std::string_view value) {
+            os_file* out;
+            os_result res = os_file_get_stdfile(&out, OS_STDOUT);
+            if (res != OS_OK) {
+                return executor::SchedulerMessage::Errored(Error::USERLAND, vm.describeOSResult(res));
+            }
+
+            os_size written = 0;
+            res = os_file_write(out, value.data(), value.length(), &written);
+            if (res != OS_OK) {
+                return executor::SchedulerMessage::Errored(Error::USERLAND, vm.describeOSResult(res));
+            }
+
+            res = os_file_write(out, "\n", 1, nullptr);
+            if (res != OS_OK) {
+                return executor::SchedulerMessage::Errored(Error::USERLAND, vm.describeOSResult(res));
+            }
+
+            Value returnValue;
+            returnValue.isObject = false;
+            returnValue.ul = written;
+
+            return executor::SchedulerMessage::Returned(returnValue);
+        }
+
         static executor::SchedulerMessage print(VM& vm, executor::Frame& frame, executor::Task* task) {
-            std::cout << frame[0].l << std::endl;
-            return executor::SchedulerMessage::Returned(Value(0));
+            return printHelper(vm, std::to_string(frame[0].l));
         }
 
         static executor::SchedulerMessage printString(VM& vm, executor::Frame& frame, executor::Task* task) {
@@ -19,9 +47,7 @@ namespace bibblevm::linker {
 
             oop::StringObject* string = object->asString();
 
-            std::cout << std::string_view(string->bytes, string->lengthBytes) << std::endl;
-
-            return executor::SchedulerMessage::Returned(Value(0));
+            return printHelper(vm, std::string_view(string->bytes, string->lengthBytes));
         }
     }
 
