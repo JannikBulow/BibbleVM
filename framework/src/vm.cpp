@@ -11,6 +11,13 @@ namespace bibblevm {
         mMemoryManager.init(*this); // TODO: check result and throw a tantrum
     }
 
+    String VM::describeOSResult(os_result res) {
+        os_string description = os_result_describe(res);
+        String string = mMemoryManager.allocateString(*this, description)->asString();
+        os_free_message(description);
+        return string;
+    }
+
     linker::Module* VM::getModule(String name) {
         return mLinker.loadModule(*this, name);
     }

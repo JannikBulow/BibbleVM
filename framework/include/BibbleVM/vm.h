@@ -48,6 +48,8 @@ namespace bibblevm {
         executor::Scheduler& scheduler() { return mScheduler; }
         linker::Linker& linker() { return mLinker; }
 
+        String describeOSResult(os_result res);
+
         template<class... Args>
         constexpr void debugLog(std::string_view system, std::format_string<Args...> fmt, Args&&... args) {
             if (!mConfig.debug.enableDebugLogging) [[likely]] return;
