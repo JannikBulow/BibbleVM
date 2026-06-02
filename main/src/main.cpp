@@ -606,7 +606,7 @@ static std::optional<Options> ParseCommandLine(const std::unordered_map<std::str
         }
 
         if (arg == "--redirect-stdout") {
-            if (i + 1 < argc) {
+            if (i + 1 >= argc) {
                 std::cerr << "bibble: missing stdout redirect file" << std::endl;
                 return std::nullopt;
             }
@@ -616,7 +616,7 @@ static std::optional<Options> ParseCommandLine(const std::unordered_map<std::str
         }
 
         if (arg == "--redirect-stderr") {
-            if (i + 1 < argc) {
+            if (i + 1 >= argc) {
                 std::cerr << "bibble: missing stderr redirect file" << std::endl;
                 return std::nullopt;
             }
@@ -626,7 +626,7 @@ static std::optional<Options> ParseCommandLine(const std::unordered_map<std::str
         }
 
         if (arg == "--config-profile") {
-            if (i + 1 < argc) {
+            if (i + 1 >= argc) {
                 std::cerr << "bibble: missing config profile name" << std::endl;
                 return std::nullopt;
             }
