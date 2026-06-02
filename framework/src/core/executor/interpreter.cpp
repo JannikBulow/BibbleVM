@@ -10,7 +10,7 @@
 
 #include "BibbleVM/vm.h"
 
-#define DEFINE_INTERPRETER(opcode) InterpreterMessage Interpret##opcode(VM& vm, Frame& frame, Task* task, const Instruction& args)
+#define DEFINE_INTERPRETER(opcode) InterpreterMessage Interpret##opcode(VM& vm, Frame& frame, Task* task, Instruction& args)
 #define REGISTER_INTERPRETER(opcode) table[opcode] = Interpret##opcode
 
 #define NONZERO 69

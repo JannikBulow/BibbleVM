@@ -77,7 +77,7 @@ namespace bibblevm::executor {
         }
     };
 
-    using Interpreter = InterpreterMessage(*)(VM& vm, Frame& frame, Task* task, const Instruction& instruction);
+    using Interpreter = InterpreterMessage(*)(VM& vm, Frame& frame, Task* task, Instruction& instruction);
 
     BIBBLEVM_EXPORT Interpreter GetInterpreter(VM& vm, Opcode opcode);
 
