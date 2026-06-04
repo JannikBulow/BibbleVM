@@ -10,7 +10,7 @@ namespace bibblevm::native {
     }
 
     bool PluginManager::load(String path) {
-        return load(path.getData());
+        return load(path.cString());
     }
 
     bool PluginManager::load(const char* path) {
