@@ -7,14 +7,10 @@
 
 namespace bibblevm::linker {
     struct IntrinsicFunction {
-        std::string_view name;
         executor::EntryPoint entryPoint;
     };
 
     struct IntrinsicModule {
-        std::string_view name;
-        const IntrinsicFunction* functions;
-        size_t functionCount;
     };
 
     const IntrinsicModule* GetIntrinsicsModule(std::string_view name);

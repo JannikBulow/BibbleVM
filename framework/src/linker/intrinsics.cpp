@@ -2,14 +2,26 @@
 
 #include "BibbleVM/linker/intrinsics.h"
 
-#include <libos/file.h>
-
-#include <iostream>
-
 #include "BibbleVM/vm.h"
 
+#include <libos/file.h>
+
+#include <frozen/string.h>
+#include <frozen/unordered_map.h>
+
 namespace bibblevm::linker {
-    namespace Intrinsics {
+    struct IntrinsicFunctionImpl {
+        IntrinsicFunction publicView;
+
+        constexpr IntrinsicFunctionImpl(executor::EntryPoint entryPoint) : publicView(entryPoint) {}
+    };
+
+    struct IntrinsicModuleImpl {
+        const IntrinsicFunctionImpl* (*lookup)(std::string_view);
+    };
+
+    class IntrinsicsImpl {
+    private:
         static executor::SchedulerMessage printHelper(VM& vm, std::string_view value) {
             os_file* out;
             os_result res = os_file_get_stdfile(&out, OS_STDOUT);
@@ -35,11 +47,11 @@ namespace bibblevm::linker {
             return executor::SchedulerMessage::Returned(returnValue);
         }
 
-        static executor::SchedulerMessage print(VM& vm, executor::Frame& frame, executor::Task* task) {
+        static constexpr IntrinsicFunctionImpl print = +[](VM& vm, executor::Frame& frame, executor::Task* task) -> executor::SchedulerMessage {
             return printHelper(vm, std::to_string(frame[0].l));
-        }
+        };
 
-        static executor::SchedulerMessage printString(VM& vm, executor::Frame& frame, executor::Task* task) {
+        static constexpr IntrinsicFunctionImpl printString = +[](VM& vm, executor::Frame& frame, executor::Task* task) -> executor::SchedulerMessage {
             oop::Object* object = frame[0].obj;
 
             if (object == nullptr) return executor::SchedulerMessage::Errored(Error::NULL_REFERENCE);
@@ -48,31 +60,36 @@ namespace bibblevm::linker {
             oop::StringObject* string = object->asString();
 
             return printHelper(vm, std::string_view(string->bytes, string->lengthBytes));
-        }
-    }
+        };
 
-    static constexpr IntrinsicFunction Intrinsics_functions[] = {
-        {"print", Intrinsics::print},
-        {"printString", Intrinsics::printString},
+        static constexpr frozen::unordered_map<frozen::string, IntrinsicFunctionImpl, 2> functions = {
+            {"print", print},
+            {"printString", printString},
+        };
+
+    public:
+        static const IntrinsicFunctionImpl* LookupFunction(std::string_view name) {
+            auto it = functions.find(name);
+            if (it == functions.end()) return nullptr;
+            return &it->second;
+        }
+
+        static constexpr IntrinsicModuleImpl Module = {LookupFunction};
     };
-    static constexpr IntrinsicModule intrinsicModules[] = {
-        {"Intrinsics", Intrinsics_functions, std::size(Intrinsics_functions)},
+
+    constexpr frozen::unordered_map<frozen::string, const IntrinsicModuleImpl*, 1> modules = {
+        {"Intrinsics", &IntrinsicsImpl::Module}
     };
 
     const IntrinsicModule* GetIntrinsicsModule(std::string_view name) {
-        for (const auto& intrinsicModule : intrinsicModules) {
-            if (intrinsicModule.name == name) return &intrinsicModule;
-        }
-        return nullptr;
+        auto it = modules.find(name);
+        if (it == modules.end()) return nullptr;
+        return reinterpret_cast<const IntrinsicModule*>(it->second);
     }
 
     const IntrinsicFunction* GetIntrinsicsFunction(const IntrinsicModule* module, std::string_view name) {
         if (module == nullptr) return nullptr;
-
-        for (size_t i = 0; i < module->functionCount; i++) {
-            const IntrinsicFunction& function = module->functions[i];
-            if (function.name == name) return &function;
-        }
-        return nullptr;
+        const IntrinsicModuleImpl* moduleImpl = reinterpret_cast<const IntrinsicModuleImpl*>(module);
+        return &moduleImpl->lookup(name)->publicView;
     }
 }
