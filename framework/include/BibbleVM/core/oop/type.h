@@ -5,6 +5,7 @@
 
 #include "BibbleVM/api.h"
 
+#include <cstddef>
 #include <cstdint>
 
 namespace bibblevm::gc {
