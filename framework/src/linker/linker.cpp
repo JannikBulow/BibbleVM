@@ -581,20 +581,20 @@ namespace bibblevm::linker {
 
             switch (kind) {
                 case executor::FunctionKind::Normal:
-                    linkedFunction.entryPoint() = vm.config().scheduler.autoYielding.enabled ? executor::AutoYieldingBytecodeInterpreter : executor::BytecodeInterpreter; // TODO: cache?
+                    linkedFunction.setEntryPoint(vm.config().scheduler.autoYielding.enabled ? executor::AutoYieldingBytecodeInterpreter : executor::BytecodeInterpreter); // TODO: cache?
                     break;
                 case executor::FunctionKind::Native: {
                     void* implementation = vm.pluginManager().getNativeFunction<void*>(moduleName, linkedFunction.getName());
 
                     if (implementation != nullptr) {
-                        linkedFunction.entryPoint() = native::FunctionTrampoline;
+                        linkedFunction.setEntryPoint(native::FunctionTrampoline);
                         linkedFunction.implementation() = implementation;
                     } //TODO: else error
 
                     break;
                 }
                 case executor::FunctionKind::Intrinsic: {
-                    linkedFunction.entryPoint() = intrinsicFunction->entryPoint;
+                    linkedFunction.setEntryPoint(intrinsicFunction->entryPoint);
                     break;
                 }
             }

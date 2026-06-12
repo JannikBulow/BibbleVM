@@ -8,7 +8,11 @@
 #include "BibbleVM/core/executor/scheduler_message.h"
 #include "BibbleVM/core/executor/task.h"
 
+#include "BibbleVM/jit/context.h"
+
 #include "BibbleVM/util/string_pool.h"
+
+#include <atomic>
 
 namespace bibblevm {
     class VM;
@@ -30,6 +34,8 @@ namespace bibblevm::executor {
         Function(Module& module, String name); // partial initializing for linker shit
         Function(Module& module, String name, FunctionKind kind, uint16_t registerCount, uint16_t parameterCount, Instruction* instructions, uint32_t instructionCount);
 
+        Function& operator=(const Function& other);
+
         Module& getModule() const { return *mModule; }
         String getName() const { return mName; }
         FunctionKind getKind() const { return mKind; }
@@ -37,7 +43,12 @@ namespace bibblevm::executor {
         uint16_t getParameterCount() const { return mParameterCount; }
         Instruction* getInstructions() const { return mInstructions; }
         void*& implementation() { return mImplementation; }
-        EntryPoint& entryPoint() { return mEntryPoint; }
+
+        EntryPoint getEntryPoint() const { return mEntryPoint; }
+        void setEntryPoint(EntryPoint entryPoint) { mEntryPoint = entryPoint; }
+
+        jit::Context* getJitContext() const { return mJitContext; }
+        void setJitContext(jit::Context* context) { mJitContext = context; }
 
         SchedulerMessage invoke(VM& vm, Frame& frame, Task* task) const;
 
@@ -50,6 +61,8 @@ namespace bibblevm::executor {
         uint16_t mRegisterCount;
         uint16_t mParameterCount;
 
+        std::atomic<uint16_t> mInvocationCount = 0;
+
         uint32_t mInstructionCount; // used by jit compiler or reflection. not checked in interpreter mode
 
         union {
@@ -57,7 +70,9 @@ namespace bibblevm::executor {
             void* mImplementation; // native functions
         };
 
-        EntryPoint mEntryPoint;
+        std::atomic<EntryPoint> mEntryPoint;
+
+        std::atomic<jit::Context*> mJitContext;
     };
 }
 
