@@ -41,6 +41,7 @@ namespace bibblevm::executor {
         FunctionKind getKind() const { return mKind; }
         uint16_t getRegisterCount() const { return mRegisterCount; }
         uint16_t getParameterCount() const { return mParameterCount; }
+        uint32_t getInstructionCount() const { return mInstructionCount; }
         Instruction* getInstructions() const { return mInstructions; }
         void*& implementation() { return mImplementation; }
 
