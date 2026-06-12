@@ -9,7 +9,7 @@ namespace bibblevm::compat {
 #elif defined(_MSC_VER)
 #   define BIBBLEVM_UNREACHABLE() __assume(false)
 #else
-    #   define BIBBLEVM_UNREACHABLE() std::exit(34)
+#   define BIBBLEVM_UNREACHABLE() std::exit(34)
 #endif
 }
 
