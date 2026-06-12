@@ -106,6 +106,9 @@ set(HEADERS
     include/BibbleVM/core/opcodes.h
     include/BibbleVM/core/value.h
 
+    include/BibbleVM/jit/code.h
+    include/BibbleVM/jit/context.h
+
     include/BibbleVM/linker/intrinsics.h
     include/BibbleVM/linker/linker.h
     include/BibbleVM/linker/module.h
