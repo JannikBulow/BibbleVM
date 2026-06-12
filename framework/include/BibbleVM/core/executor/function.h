@@ -28,7 +28,7 @@ namespace bibblevm::executor {
     class BIBBLEVM_EXPORT Function {
     public:
         Function(Module& module, String name); // partial initializing for linker shit
-        Function(Module& module, String name, FunctionKind kind, uint16_t registerCount, uint16_t parameterCount, Instruction* instructions);
+        Function(Module& module, String name, FunctionKind kind, uint16_t registerCount, uint16_t parameterCount, Instruction* instructions, uint32_t instructionCount);
 
         Module& getModule() const { return *mModule; }
         String getName() const { return mName; }
@@ -49,6 +49,8 @@ namespace bibblevm::executor {
 
         uint16_t mRegisterCount;
         uint16_t mParameterCount;
+
+        uint32_t mInstructionCount; // used by jit compiler or reflection. not checked in interpreter mode
 
         union {
             Instruction* mInstructions; // No size needed here as the verifier will ensure us that all paths terminate appropriately

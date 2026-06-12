@@ -497,7 +497,7 @@ namespace bibblevm::linker {
         return args;
     }
 
-    executor::Instruction* DecodeInstructions(VM& vm, GrowingArenaAllocator& arena, const module::Function& function) {
+    executor::Instruction* DecodeInstructions(VM& vm, GrowingArenaAllocator& arena, const module::Function& function, uint32_t& instructionCountOut) {
         module::BytecodeStream current = function.bytecode;
         module::BytecodeStream end = function.bytecode + function.bytecodeSize;
 
@@ -550,6 +550,7 @@ namespace bibblevm::linker {
             instruction.imm = targetIndex - i;
         }
 
+        instructionCountOut = static_cast<uint32_t>(instructionCount);
         return instructions;
     }
 
@@ -573,9 +574,10 @@ namespace bibblevm::linker {
             }
 
             executor::Instruction* instructions = nullptr;
-            if (kind != executor::FunctionKind::Native) instructions = DecodeInstructions(vm, arena, function);
+            uint32_t instructionCount = 0;
+            if (kind != executor::FunctionKind::Native) instructions = DecodeInstructions(vm, arena, function, instructionCount);
 
-            linkedFunction = executor::Function(linkedModule, linkedFunction.getName(), kind, function.registerCount, function.parameterCount, instructions);
+            linkedFunction = executor::Function(linkedModule, linkedFunction.getName(), kind, function.registerCount, function.parameterCount, instructions, instructionCount);
 
             switch (kind) {
                 case executor::FunctionKind::Normal:

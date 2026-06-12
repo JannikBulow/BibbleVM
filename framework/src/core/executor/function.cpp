@@ -19,12 +19,13 @@ namespace bibblevm::executor {
         , mInstructions(nullptr)
         , mEntryPoint(SafetyNet) {}
 
-    Function::Function(Module& module, String name, FunctionKind kind, uint16_t registerCount, uint16_t parameterCount, Instruction* instructions)
+    Function::Function(Module& module, String name, FunctionKind kind, uint16_t registerCount, uint16_t parameterCount, Instruction* instructions, uint32_t instructionCount)
         : mModule(&module)
         , mName(name)
         , mKind(kind)
         , mRegisterCount(registerCount)
         , mParameterCount(parameterCount)
+        , mInstructionCount(instructionCount)
         , mInstructions(instructions)
         , mEntryPoint(SafetyNet) {}
 
