@@ -5,7 +5,6 @@
 
 #include "BibbleVM/compiler/jit/code.h"
 
-#include <atomic>
 #include <cstdint>
 
 namespace bibblevm::jit {
@@ -16,7 +15,7 @@ namespace bibblevm::jit {
             Compiled
         };
 
-        std::atomic<State> state = Queued;
+        State state = Queued;
 
         Code* code = nullptr;
     };
