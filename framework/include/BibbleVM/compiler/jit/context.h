@@ -3,7 +3,7 @@
 #ifndef BIBBLEVM_JIT_CONTEXT_H
 #define BIBBLEVM_JIT_CONTEXT_H 1
 
-#include "BibbleVM/jit/code.h"
+#include "BibbleVM/compiler/jit/code.h"
 
 #include <atomic>
 #include <cstdint>

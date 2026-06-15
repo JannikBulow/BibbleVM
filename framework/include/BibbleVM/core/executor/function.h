@@ -8,7 +8,7 @@
 #include "BibbleVM/core/executor/scheduler_message.h"
 #include "BibbleVM/core/executor/task.h"
 
-#include "BibbleVM/jit/context.h"
+#include "BibbleVM/compiler/jit/context.h"
 
 #include "BibbleVM/util/string_pool.h"
 
@@ -51,7 +51,7 @@ namespace bibblevm::executor {
         jit::Context* getJitContext() const { return mJitContext; }
         void setJitContext(jit::Context* context) { mJitContext = context; }
 
-        SchedulerMessage invoke(VM& vm, Frame& frame, Task* task) const;
+        SchedulerMessage invoke(VM& vm, Frame& frame, Task* task);
 
     private:
         Module* mModule;

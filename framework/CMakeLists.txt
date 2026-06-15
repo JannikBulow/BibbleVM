@@ -75,6 +75,9 @@ set(SOURCES
 set(HEADERS
     include/BibbleVM/allocator/arena.h
 
+    include/BibbleVM/compiler/jit/code.h
+    include/BibbleVM/compiler/jit/context.h
+
     include/BibbleVM/core/executor/const_pool.h
     include/BibbleVM/core/executor/function.h
     include/BibbleVM/core/executor/instruction.h
@@ -105,9 +108,6 @@ set(HEADERS
     include/BibbleVM/core/error.h
     include/BibbleVM/core/opcodes.h
     include/BibbleVM/core/value.h
-
-    include/BibbleVM/jit/code.h
-    include/BibbleVM/jit/context.h
 
     include/BibbleVM/linker/intrinsics.h
     include/BibbleVM/linker/linker.h
