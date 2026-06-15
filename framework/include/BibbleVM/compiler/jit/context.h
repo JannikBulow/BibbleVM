@@ -1,7 +1,7 @@
 // Copyright 2026 Jannik Laugmand Bülow
 
-#ifndef BIBBLEVM_JIT_CONTEXT_H
-#define BIBBLEVM_JIT_CONTEXT_H 1
+#ifndef BIBBLEVM_COMPILER_JIT_CONTEXT_H
+#define BIBBLEVM_COMPILER_JIT_CONTEXT_H 1
 
 #include "BibbleVM/compiler/jit/code.h"
 
@@ -21,4 +21,4 @@ namespace bibblevm::jit {
     };
 }
 
-#endif // BIBBLEVM_JIT_CONTEXT_H
+#endif // BIBBLEVM_COMPILER_JIT_CONTEXT_H
