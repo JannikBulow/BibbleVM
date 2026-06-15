@@ -68,6 +68,13 @@ namespace bibblevm {
         } priority;
     };
 
+    struct CompilerConfig {
+        struct {
+            bool enabled = true;
+            uint16_t hotThreshold = 1000;
+        } jit;
+    };
+
     struct DebugConfig {
         bool enableDebugLogging = false;
 
@@ -83,6 +90,7 @@ namespace bibblevm {
         MemoryConfig memory;
         GCConfig gc;
         SchedulerConfig scheduler;
+        CompilerConfig compiler;
         DebugConfig debug;
     };
 }

@@ -409,6 +409,28 @@ static std::vector<ConfigOption> BuildConfigOptionTable() {
             }
         },
 
+        // compiler
+
+        {
+            "compiler.jit.enabled",
+            "enable just-in-time compilation of functions",
+            ValueType::Bool,
+            true,
+            [](Config& config, std::optional<std::string_view> value) {
+                config.compiler.jit.enabled = ParseBool(value);
+            }
+        },
+
+        {
+            "compiler.jit.hot-threshold",
+            "how many invocations a function has before it is considered hot. A hot function is a target for JIT compilation",
+            ValueType::Integer,
+            false,
+            [](Config& config, std::optional<std::string_view> value) {
+                config.compiler.jit.hotThreshold = ParseInteger(*value);
+            }
+        },
+
         // debug
 
         {
