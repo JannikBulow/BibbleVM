@@ -78,6 +78,8 @@ set(HEADERS
     include/BibbleVM/compiler/jit/code.h
     include/BibbleVM/compiler/jit/context.h
 
+    include/BibbleVM/compiler/compiler.h
+
     include/BibbleVM/core/executor/const_pool.h
     include/BibbleVM/core/executor/function.h
     include/BibbleVM/core/executor/instruction.h
