@@ -1,0 +1,63 @@
+// Copyright 2026 Jannik Laugmand Bülow
+
+#include "BibbleVM/compiler/jit/compiler.h"
+
+namespace bibblevm::jit {
+    Compiler::Compiler(VM& vm) {
+        spawnCompilerThread(vm);
+    }
+
+    Compiler::~Compiler() {
+        {
+            std::lock_guard lock(mMutex);
+            mStop = true;
+        }
+
+        mCondition.notify_all();
+
+        for (auto& thread : mThreads) {
+            if (thread.joinable()) {
+                thread.join();
+            }
+        }
+    }
+
+    void Compiler::spawnCompilerThread(VM& vm) {
+        mThreads.emplace_back([this] (VM& vm) {
+            workerLoop(vm);
+        }, vm);
+    }
+
+    void Compiler::enqueueForCompilation(executor::Function* function) {
+        std::lock_guard lock(mMutex);
+        mCompileQueue.push(function);
+        mCondition.notify_one();
+    }
+
+    void Compiler::workerLoop(VM& vm) {
+        while (true) {
+            executor::Function* function = nullptr;
+
+            {
+                std::unique_lock lock(mMutex);
+
+                mCondition.wait(lock, [this] {
+                    return mStop || !mCompileQueue.empty();
+                });
+
+                if (mStop) [[unlikely]] {
+                    return;
+                }
+
+                function = mCompileQueue.front();
+                mCompileQueue.pop();
+            }
+
+            compileOne(vm, function);
+        }
+    }
+
+    void Compiler::compileOne(VM& vm, executor::Function* function) {
+
+    }
+}

@@ -36,6 +36,8 @@ FetchContent_MakeAvailable(frozen)
 set(SOURCES
     src/allocator/arena.cpp
 
+    src/compiler/jit/compiler.cpp
+
     src/core/executor/const_pool.cpp
     src/core/executor/function.cpp
     src/core/executor/interpreter.cpp
@@ -76,6 +78,7 @@ set(HEADERS
     include/BibbleVM/allocator/arena.h
 
     include/BibbleVM/compiler/jit/code.h
+    include/BibbleVM/compiler/jit/compiler.h
     include/BibbleVM/compiler/jit/context.h
 
     include/BibbleVM/compiler/compiler.h
