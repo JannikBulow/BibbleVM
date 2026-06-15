@@ -2,6 +2,8 @@
 
 #include "BibbleVM/core/executor/function.h"
 
+#include "BibbleVM/vm.h"
+
 #include <iostream>
 
 namespace bibblevm::executor {
@@ -43,7 +45,11 @@ namespace bibblevm::executor {
         return *this;
     }
 
-    SchedulerMessage Function::invoke(VM& vm, Frame& frame, Task* task) const {
-        return mEntryPoint.load()(vm, frame, task);
+    SchedulerMessage Function::invoke(VM& vm, Frame& frame, Task* task) {
+        if (++mInvocationCount == vm.config().compiler.jit.hotThreshold) {
+            //TODO: enqueue for compilation
+        }
+
+        return mEntryPoint.load(std::memory_order_acquire)(vm, frame, task);
     }
 }
