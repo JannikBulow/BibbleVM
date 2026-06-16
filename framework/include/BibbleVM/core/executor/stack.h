@@ -5,6 +5,8 @@
 
 #include "BibbleVM/allocator/arena.h"
 
+#include "BibbleVM/core/executor/function.h"
+
 #include "BibbleVM/core/value.h"
 
 #include "BibbleVM/api.h"
@@ -21,6 +23,7 @@ namespace bibblevm::executor {
         Frame* getPrev() const { return mPrev; }
         Module& getModule() const;
         Function& getFunction() const { return mFunction; }
+        EntryPoint getEntryPoint() const { return mEntryPoint; }
         Instruction*& ip() { return mIP; }
         Value* returnRegister() const { return mReturnRegister; }
 
@@ -32,6 +35,7 @@ namespace bibblevm::executor {
         Frame* mPrev;
 
         Function& mFunction;
+        EntryPoint mEntryPoint;
         Instruction* mIP;
         Value* mRegisters;
         Value* mReturnRegister; // pointer to single register which is where eventual return value will go

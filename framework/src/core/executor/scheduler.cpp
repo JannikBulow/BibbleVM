@@ -85,11 +85,18 @@ namespace bibblevm::executor {
         return task;
     }
 
+    static SchedulerMessage InvokeFunction(VM& vm, Function& function, EntryPoint entryPoint, Frame& frame, Task* task) {
+        if (function.incrementInvocationCount() == vm.config().compiler.jit.hotThreshold && function.getJitContext() == nullptr) {
+            vm.enqueueForJitCompile(&function);
+        }
+        return entryPoint(vm, frame, task);
+    }
+
     static SchedulerMessage RunTask(VM& vm, Task& task) {
         while (task.stack.getTop() != nullptr) {
             Frame& frame = *task.stack.getTop();
 
-            SchedulerMessage message = frame.getFunction().invoke(vm, frame, &task);
+            SchedulerMessage message = InvokeFunction(vm, frame.getFunction(), frame.getEntryPoint(), frame, &task);
             switch (message.type) {
                 case SchedulerMessageType::Errored: return message;
                 case SchedulerMessageType::Called: {

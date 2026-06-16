@@ -1,5 +1,7 @@
 // Copyright 2026 Jannik Laugmand Bülow
 
+#include "BibbleVM/core/error.h"
+
 #include "BibbleVM/linker/intrinsics.h"
 
 #include "BibbleVM/vm.h"

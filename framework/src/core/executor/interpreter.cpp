@@ -1,10 +1,11 @@
 // Copyright 2026 Jannik Laugmand Bülow
 
-#include "BibbleVM/core/opcodes.h"
-
 #include "BibbleVM/core/executor/function.h"
 #include "BibbleVM/core/executor/instruction.h"
 #include "BibbleVM/core/executor/interpreter.h"
+
+#include "BibbleVM/core/error.h"
+#include "BibbleVM/core/opcodes.h"
 
 #include "BibbleVM/util/safe_math.h"
 

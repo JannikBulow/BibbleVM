@@ -3,11 +3,8 @@
 #ifndef BIBBLEVM_CORE_INTERPRETER_H
 #define BIBBLEVM_CORE_INTERPRETER_H 1
 
-#include "BibbleVM/core/executor/stack.h"
-
 #include "BibbleVM/core/oop/object.h"
 
-#include "BibbleVM/core/error.h"
 #include "BibbleVM/core/opcodes.h"
 
 #include "BibbleVM/api.h"
@@ -20,8 +17,10 @@ namespace bibblevm {
 
 namespace bibblevm::executor {
     class Function;
+    class Frame;
     struct Instruction;
     struct SchedulerMessage;
+    struct Task;
 
     enum class InterpreterMessageType {
         Continue,
@@ -37,7 +36,7 @@ namespace bibblevm::executor {
         InterpreterMessageType type;
         union {
             int64_t branch;
-            struct { Error::Type type; String message; } error;
+            struct { uint8_t type; String message; } error;
             struct { Function* function; uint16_t destinationRegister; uint16_t argsBegin; } call;
             uint16_t returnRegister;
             oop::Future* future;
@@ -51,7 +50,7 @@ namespace bibblevm::executor {
             m.branch = branch;
             return m;
         }
-        static inline InterpreterMessage Errored(Error::Type type, String message = nullptr) {
+        static inline InterpreterMessage Errored(uint8_t type, String message = nullptr) {
             InterpreterMessage m = InterpreterMessageType::Errored;
             m.error.type = type;
             m.error.message = message;

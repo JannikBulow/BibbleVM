@@ -8,6 +8,7 @@ namespace bibblevm::executor {
         : mArena(std::move(arena))
         , mPrev(prev)
         , mFunction(function)
+        , mEntryPoint(function.getEntryPoint())
         , mIP(function.getInstructions())
         , mRegisters(mArena->allocate<Value>(registerCount))
         , mReturnRegister(returnRegister) {}

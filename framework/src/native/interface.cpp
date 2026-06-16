@@ -37,6 +37,13 @@ namespace bibblevm::native {
         return static_cast<executor::Task*>(interface->reserved[0]);
     }
 
+    static executor::SchedulerMessage InvokeFunction(VM& vm, executor::Function& function, executor::EntryPoint entryPoint, executor::Frame& frame, executor::Task* task) {
+        if (function.incrementInvocationCount() == vm.config().compiler.jit.hotThreshold && function.getJitContext() == nullptr) {
+            vm.enqueueForJitCompile(&function);
+        }
+        return entryPoint(vm, frame, task);
+    }
+
     // Shittily execute a function whilst avoiding the scheduler because there's currently no way to do it cleanly.
     static Value ExecuteFunction(VM& vm, executor::Function* function, executor::Task* task, auto addArgs) {
         using namespace executor;
@@ -52,7 +59,7 @@ namespace bibblevm::native {
         while (stack.getTop() != targetFrame) {
             Frame& frame = *stack.getTop();
 
-            SchedulerMessage message = frame.getFunction().invoke(vm, frame, task);
+            SchedulerMessage message = InvokeFunction(vm, frame.getFunction(), frame.getEntryPoint(), frame, task);
             switch (message.type) {
                 case SchedulerMessageType::Errored: return {}; // TODO: do something proper
                 case SchedulerMessageType::Called: {

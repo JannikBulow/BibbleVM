@@ -23,9 +23,9 @@ namespace bibblevm::jit {
     }
 
     void Compiler::spawnCompilerThread(VM& vm) {
-        mThreads.emplace_back([this] (VM& vm) {
-            workerLoop(vm);
-        }, vm);
+        mThreads.emplace_back([this] (VM* vm) {
+            workerLoop(*vm);
+        }, &vm);
     }
 
     void Compiler::enqueueForCompilation(executor::Function* function) {

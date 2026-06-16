@@ -3,10 +3,6 @@
 #ifndef BIBBLEVM_CORE_EXECUTOR_SCHEDULER_MESSAGE_H
 #define BIBBLEVM_CORE_EXECUTOR_SCHEDULER_MESSAGE_H 1
 
-#include "BibbleVM/core/executor/task.h"
-
-#include "BibbleVM/core/error.h"
-
 #include "BibbleVM/util/string_pool.h"
 
 namespace bibblevm::executor {
@@ -21,7 +17,7 @@ namespace bibblevm::executor {
     struct SchedulerMessage {
         SchedulerMessageType type;
         union {
-            struct { Error::Type type; String message; } error;
+            struct { uint8_t type; String message; } error;
             struct { Function* function; uint16_t returnRegister; uint16_t argsBegin; } call;
             Value returnValue;
             oop::Future* future;
@@ -29,7 +25,7 @@ namespace bibblevm::executor {
 
         constexpr SchedulerMessage(SchedulerMessageType type) : type(type) {}
 
-        static inline SchedulerMessage Errored(Error::Type type, String message = nullptr) {
+        static inline SchedulerMessage Errored(uint8_t type, String message = nullptr) {
             SchedulerMessage m = SchedulerMessageType::Errored;
             m.error.type = type;
             m.error.message = message;

@@ -9,7 +9,7 @@
 
 namespace bibblevm {
     struct Error {
-        enum Type {
+        enum Type : uint8_t {
             USERLAND,
             NULL_REFERENCE,
             INVALID_STATE,

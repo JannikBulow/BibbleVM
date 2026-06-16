@@ -6,7 +6,6 @@
 #include "BibbleVM/core/executor/const_pool.h"
 #include "BibbleVM/core/executor/instruction.h"
 #include "BibbleVM/core/executor/scheduler_message.h"
-#include "BibbleVM/core/executor/task.h"
 
 #include "BibbleVM/compiler/jit/context.h"
 
@@ -19,7 +18,8 @@ namespace bibblevm {
 }
 
 namespace bibblevm::executor {
-    class Function;
+    class Frame;
+    struct Task;
 
     using EntryPoint = SchedulerMessage(*)(VM& vm, Frame& frame, Task* task);
 
@@ -45,13 +45,13 @@ namespace bibblevm::executor {
         Instruction* getInstructions() const { return mInstructions; }
         void*& implementation() { return mImplementation; }
 
-        EntryPoint getEntryPoint() const { return mEntryPoint; }
-        void setEntryPoint(EntryPoint entryPoint) { mEntryPoint = entryPoint; }
+        EntryPoint getEntryPoint() const;
+        void setEntryPoint(EntryPoint entryPoint);
 
-        jit::Context* getJitContext() const { return mJitContext; }
-        void setJitContext(jit::Context* context) { mJitContext = context; }
+        jit::Context* getJitContext() const;
+        void setJitContext(jit::Context* context);
 
-        SchedulerMessage invoke(VM& vm, Frame& frame, Task* task);
+        uint16_t incrementInvocationCount();
 
     private:
         Module* mModule;

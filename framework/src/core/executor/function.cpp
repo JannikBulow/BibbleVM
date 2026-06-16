@@ -45,11 +45,23 @@ namespace bibblevm::executor {
         return *this;
     }
 
-    SchedulerMessage Function::invoke(VM& vm, Frame& frame, Task* task) {
-        if (++mInvocationCount == vm.config().compiler.jit.hotThreshold && mJitContext.load(std::memory_order_acquire) == nullptr) {
-            vm.enqueueForJitCompile(this);
-        }
+    EntryPoint Function::getEntryPoint() const {
+        return mEntryPoint.load(std::memory_order_acquire);
+    }
 
-        return mEntryPoint.load(std::memory_order_acquire)(vm, frame, task);
+    void Function::setEntryPoint(EntryPoint entryPoint) {
+        mEntryPoint.store(entryPoint, std::memory_order_release);
+    }
+
+    jit::Context* Function::getJitContext() const {
+        return mJitContext.load(std::memory_order_acquire);
+    }
+
+    void Function::setJitContext(jit::Context* context) {
+        mJitContext.store(context, std::memory_order_release);
+    }
+
+    uint16_t Function::incrementInvocationCount() {
+        return mInvocationCount.fetch_add(1, std::memory_order_relaxed) + 1;
     }
 }
