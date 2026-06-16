@@ -35,8 +35,11 @@ FetchContent_MakeAvailable(frozen)
 
 set(SOURCES
     src/allocator/arena.cpp
+    src/allocator/code_alloc.cpp
 
     src/compiler/jit/compiler.cpp
+
+    src/compiler/compiler.cpp
 
     src/core/executor/const_pool.cpp
     src/core/executor/function.cpp
@@ -76,6 +79,7 @@ set(SOURCES
 
 set(HEADERS
     include/BibbleVM/allocator/arena.h
+    include/BibbleVM/allocator/code_alloc.h
 
     include/BibbleVM/compiler/jit/compiler.h
 
@@ -131,7 +135,6 @@ set(HEADERS
     include/BibbleVM/config.h
     include/BibbleVM/init.h
     include/BibbleVM/vm.h
-    include/BibbleVM/compiler/compilation_unit.h
 )
 
 source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS})

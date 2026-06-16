@@ -9,6 +9,7 @@ FetchContent_Declare(googletest
 FetchContent_MakeAvailable(googletest)
 
 set(SOURCES
+    code_alloc_test.cpp
     gc_test.cpp
     test_main.cpp
 )
