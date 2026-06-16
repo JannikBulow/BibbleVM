@@ -46,8 +46,8 @@ namespace bibblevm::executor {
     }
 
     SchedulerMessage Function::invoke(VM& vm, Frame& frame, Task* task) {
-        if (++mInvocationCount == vm.config().compiler.jit.hotThreshold) {
-            //TODO: enqueue for compilation
+        if (++mInvocationCount == vm.config().compiler.jit.hotThreshold && mJitContext.load(std::memory_order_acquire) == nullptr) {
+            vm.enqueueForJitCompile(this);
         }
 
         return mEntryPoint.load(std::memory_order_acquire)(vm, frame, task);

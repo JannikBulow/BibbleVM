@@ -3,6 +3,8 @@
 #ifndef BIBBLEVM_VM_H
 #define BIBBLEVM_VM_H 1
 
+#include "BibbleVM/compiler/jit/compiler.h"
+
 #include "BibbleVM/core/executor/scheduler.h"
 
 #include "BibbleVM/core/gc/memory_manager.h"
@@ -61,6 +63,8 @@ namespace bibblevm {
         linker::Module* getModule(String name);
         linker::Module* getModule(std::string_view name);
 
+        void enqueueForJitCompile(executor::Function* function);
+
     private:
         Config mConfig;
 
@@ -70,6 +74,8 @@ namespace bibblevm {
         gc::MemoryManager mMemoryManager;
         executor::Scheduler mScheduler;
         linker::Linker mLinker;
+
+        std::unique_ptr<jit::Compiler> mJitCompiler;
     };
 }
 

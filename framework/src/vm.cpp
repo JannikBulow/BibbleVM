@@ -9,6 +9,8 @@ namespace bibblevm {
         : mConfig(config)
         , mScheduler(*this) {
         mMemoryManager.init(*this); // TODO: check result and throw a tantrum
+
+        if (mConfig.compiler.jit.enabled) mJitCompiler = std::make_unique<jit::Compiler>(*this);
     }
 
     String VM::describeOSResult(os_result res) {
@@ -24,5 +26,11 @@ namespace bibblevm {
 
     linker::Module* VM::getModule(std::string_view name) {
         return mLinker.loadModule(*this, name);
+    }
+
+    void VM::enqueueForJitCompile(executor::Function* function) {
+        if (mConfig.compiler.jit.enabled) {
+            mJitCompiler->enqueueForCompilation(function);
+        }
     }
 }
