@@ -26,7 +26,7 @@ namespace bibblevm::jit {
     private:
         std::mutex mMutex;
         std::condition_variable mCondition;
-        std::queue<executor::Function*, std::vector<executor::Function*>> mCompileQueue;
+        std::queue<executor::Function*> mCompileQueue;
 
         std::vector<std::thread> mThreads;
 
