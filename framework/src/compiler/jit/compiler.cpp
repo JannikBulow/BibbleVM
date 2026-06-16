@@ -73,9 +73,9 @@ namespace bibblevm::jit {
         options.opt = OptLevel::O0;
 
         ::bibblevm::Compiler compiler;
-        std::unique_ptr<Code> baseline = compiler.compile(vm, function, options);
+        Code* baseline = compiler.compile(vm, function, options);
 
-        unit->baseline = std::move(baseline);
+        unit->baseline = baseline;
         unit->state = CompilationState::Compiled;
     }
 }
