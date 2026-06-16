@@ -7,9 +7,8 @@
 
 namespace bibblevm {
     struct Code {
+        void* mc; // for those who just joined, mc is slang for machine code
         size_t size;
-
-        uint8_t mc[];
     };
 }
 
