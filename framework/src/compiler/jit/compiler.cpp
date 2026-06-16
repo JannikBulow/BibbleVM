@@ -77,5 +77,7 @@ namespace bibblevm::jit {
 
         unit->baseline = baseline;
         unit->state = CompilationState::Compiled;
+
+        function->setEntryPoint((executor::EntryPoint) baseline->mc);
     }
 }
