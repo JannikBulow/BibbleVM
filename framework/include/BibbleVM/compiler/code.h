@@ -1,7 +1,7 @@
 // Copyright 2026 Jannik Laugmand Bülow
 
-#ifndef BIBBLEVM_COMPILER_JIT_CODE_H
-#define BIBBLEVM_COMPILER_JIT_CODE_H 1
+#ifndef BIBBLEVM_COMPILER_CODE_H
+#define BIBBLEVM_COMPILER_CODE_H 1
 
 #include <cstddef>
 
