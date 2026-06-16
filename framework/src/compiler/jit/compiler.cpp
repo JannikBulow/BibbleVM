@@ -75,6 +75,11 @@ namespace bibblevm::jit {
         ::bibblevm::Compiler compiler;
         Code* baseline = compiler.compile(vm, function, options);
 
+        if (baseline == nullptr) {
+            unit->state = CompilationState::Failed;
+            return;
+        }
+
         unit->baseline = baseline;
         unit->state = CompilationState::Compiled;
 
