@@ -73,6 +73,9 @@ namespace bibblevm::jit {
         options.opt = OptLevel::O0;
 
         ::bibblevm::Compiler compiler;
-        compiler.compile(vm, function, options);
+        Code* baseline = compiler.compile(vm, function, options);
+
+        unit->baseline = baseline;
+        unit->state = CompilationState::Compiled;
     }
 }

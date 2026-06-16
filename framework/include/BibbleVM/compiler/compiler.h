@@ -16,7 +16,7 @@ namespace bibblevm {
 
     class Compiler {
     public:
-        void compile(VM& vm, executor::Function* function, CompileOptions options);
+        Code* compile(VM& vm, executor::Function* function, CompileOptions options);
     };
 }
 
