@@ -86,7 +86,7 @@ namespace bibblevm::executor {
     }
 
     static SchedulerMessage InvokeFunction(VM& vm, Function& function, EntryPoint entryPoint, Frame& frame, Task* task) {
-        if (function.incrementInvocationCount() == vm.config().compiler.jit.hotThreshold && function.getJitContext() == nullptr) {
+        if (function.incrementInvocationCount() == vm.config().compiler.jit.hotThreshold && function.getCompilationUnit() == nullptr) {
             vm.enqueueForJitCompile(&function);
         }
         return entryPoint(vm, frame, task);

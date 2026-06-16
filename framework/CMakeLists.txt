@@ -78,7 +78,6 @@ set(HEADERS
     include/BibbleVM/allocator/arena.h
 
     include/BibbleVM/compiler/jit/compiler.h
-    include/BibbleVM/compiler/jit/context.h
 
     include/BibbleVM/compiler/code.h
     include/BibbleVM/compiler/compiler.h
@@ -131,6 +130,7 @@ set(HEADERS
     include/BibbleVM/config.h
     include/BibbleVM/init.h
     include/BibbleVM/vm.h
+    include/BibbleVM/compiler/compilation_unit.h
 )
 
 source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS})

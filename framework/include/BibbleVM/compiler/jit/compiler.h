@@ -3,8 +3,6 @@
 #ifndef BIBBLEVM_COMPILER_JIT_COMPILER_H
 #define BIBBLEVM_COMPILER_JIT_COMPILER_H 1
 
-#include "BibbleVM/compiler/jit/context.h"
-
 #include "BibbleVM/core/executor/function.h"
 
 #include <condition_variable>

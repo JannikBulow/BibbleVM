@@ -62,9 +62,7 @@ namespace bibblevm::jit {
     }
 
     void Compiler::compileOne(VM& vm, executor::Function* function) {
-        Context* context = new Context();
-        function->setJitContext(context);
-
-
+        CompilationUnit* unit = new CompilationUnit();
+        function->setCompilationUnit(unit);
     }
 }

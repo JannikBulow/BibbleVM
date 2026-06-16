@@ -33,9 +33,7 @@ namespace bibblevm::executor {
         , mEntryPoint(SafetyNet) {}
 
     Function::~Function() {
-        if (getJitContext() != nullptr) {
-            delete getJitContext();
-        }
+        delete getCompilationUnit();
     }
 
     Function& Function::operator=(const Function& other) {
@@ -59,12 +57,12 @@ namespace bibblevm::executor {
         mEntryPoint.store(entryPoint, std::memory_order_release);
     }
 
-    jit::Context* Function::getJitContext() const {
-        return mJitContext.load(std::memory_order_acquire);
+    CompilationUnit* Function::getCompilationUnit() const {
+        return mCompilationUnit.load(std::memory_order_acquire);
     }
 
-    void Function::setJitContext(jit::Context* context) {
-        mJitContext.store(context, std::memory_order_release);
+    void Function::setCompilationUnit(CompilationUnit* unit) {
+        mCompilationUnit.store(unit, std::memory_order_release);
     }
 
     uint16_t Function::incrementInvocationCount() {

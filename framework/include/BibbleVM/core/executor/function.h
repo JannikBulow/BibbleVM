@@ -3,11 +3,11 @@
 #ifndef BIBBLEVM_CORE_EXECUTOR_FUNCTION_H
 #define BIBBLEVM_CORE_EXECUTOR_FUNCTION_H 1
 
+#include "BibbleVM/compiler/compilation_unit.h"
+
 #include "BibbleVM/core/executor/const_pool.h"
 #include "BibbleVM/core/executor/instruction.h"
 #include "BibbleVM/core/executor/scheduler_message.h"
-
-#include "BibbleVM/compiler/jit/context.h"
 
 #include "BibbleVM/util/string_pool.h"
 
@@ -49,8 +49,8 @@ namespace bibblevm::executor {
         EntryPoint getEntryPoint() const;
         void setEntryPoint(EntryPoint entryPoint);
 
-        jit::Context* getJitContext() const;
-        void setJitContext(jit::Context* context);
+        CompilationUnit* getCompilationUnit() const;
+        void setCompilationUnit(CompilationUnit* unit);
 
         uint16_t incrementInvocationCount();
 
@@ -74,7 +74,7 @@ namespace bibblevm::executor {
 
         std::atomic<EntryPoint> mEntryPoint;
 
-        std::atomic<jit::Context*> mJitContext;
+        std::atomic<CompilationUnit*> mCompilationUnit = nullptr;
     };
 }
 
