@@ -3,7 +3,8 @@
 #ifndef BIBBLEVM_COMPILER_JIT_CONTEXT_H
 #define BIBBLEVM_COMPILER_JIT_CONTEXT_H 1
 
-#include "BibbleVM/compiler/jit/code.h"
+#include "BibbleVM/compiler/code.h"
+#include "BibbleVM/compiler/compiler.h"
 
 #include <cstdint>
 
@@ -12,10 +13,12 @@ namespace bibblevm::jit {
         enum State : uint8_t {
             Queued,
             Compiling,
-            Compiled
+            Compiled,
+            Failed
         };
 
         State state = Queued;
+        ::bibblevm::Compiler compiler;
 
         Code* code = nullptr;
     };

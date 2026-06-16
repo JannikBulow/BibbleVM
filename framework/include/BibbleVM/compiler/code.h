@@ -5,7 +5,7 @@
 
 #include <cstddef>
 
-namespace bibblevm::jit {
+namespace bibblevm {
     struct Code {
         void* ptr;
         size_t size;
