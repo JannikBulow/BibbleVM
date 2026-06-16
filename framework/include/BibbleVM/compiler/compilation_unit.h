@@ -5,6 +5,8 @@
 
 #include "BibbleVM/compiler/code.h"
 
+#include <memory>
+
 namespace bibblevm {
     enum class CompilationState {
         None,
@@ -16,7 +18,7 @@ namespace bibblevm {
     struct CompilationUnit {
         CompilationState state = CompilationState::None;
 
-        Code* baseline = nullptr;
+        std::unique_ptr<Code> baseline = nullptr;
     };
 }
 

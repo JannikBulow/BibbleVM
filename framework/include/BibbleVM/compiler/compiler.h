@@ -16,7 +16,7 @@ namespace bibblevm {
 
     class Compiler {
     public:
-        Code* compile(VM& vm, executor::Function* function, CompileOptions options);
+        std::unique_ptr<Code> compile(VM& vm, executor::Function* function, CompileOptions options);
     };
 }
 
