@@ -4,6 +4,6 @@
 
 namespace bibblevm {
     Code* Compiler::compile(VM& vm, executor::Function* function, CompileOptions options) {
-
+        return nullptr;
     }
 }
