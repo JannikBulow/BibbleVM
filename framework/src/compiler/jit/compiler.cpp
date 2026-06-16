@@ -2,6 +2,8 @@
 
 #include "BibbleVM/compiler/jit/compiler.h"
 
+#include "BibbleVM/compiler/compiler.h"
+
 namespace bibblevm::jit {
     Compiler::Compiler(VM& vm) {
         spawnCompilerThread(vm);
@@ -64,5 +66,13 @@ namespace bibblevm::jit {
     void Compiler::compileOne(VM& vm, executor::Function* function) {
         CompilationUnit* unit = new CompilationUnit();
         function->setCompilationUnit(unit);
+
+        unit->state = CompilationState::Compiling;
+
+        CompileOptions options;
+        options.opt = OptLevel::O0;
+
+        ::bibblevm::Compiler compiler;
+        compiler.compile(vm, function, options);
     }
 }
