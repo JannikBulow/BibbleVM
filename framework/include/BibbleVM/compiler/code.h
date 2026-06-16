@@ -3,12 +3,13 @@
 #ifndef BIBBLEVM_COMPILER_CODE_H
 #define BIBBLEVM_COMPILER_CODE_H 1
 
-#include <cstddef>
+#include <cstdint>
 
 namespace bibblevm {
     struct Code {
-        void* ptr;
         size_t size;
+
+        uint8_t mc[];
     };
 }
 
