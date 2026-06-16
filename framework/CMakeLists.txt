@@ -21,6 +21,12 @@ FetchContent_Declare(libos
 )
 FetchContent_MakeAvailable(libos)
 
+FetchContent_Declare(vasm
+    GIT_REPOSITORY https://github.com/JannikBulow/vasm-bibble
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(vasm)
+
 FetchContent_Declare(utf8cpp
     GIT_REPOSITORY https://github.com/nemtrif/utfcpp
     GIT_TAG v4.0.9
@@ -167,8 +173,8 @@ target_include_directories(BibbleVM-framework-static PUBLIC
 target_compile_features(BibbleVM-framework-shared PUBLIC cxx_std_20)
 target_compile_features(BibbleVM-framework-static PUBLIC cxx_std_20)
 
-target_link_libraries(BibbleVM-framework-shared BibbleVM-native-interface BibbleBytecode-shared BibbleOpcodes libos-static utf8cpp frozen)
-target_link_libraries(BibbleVM-framework-static BibbleVM-native-interface BibbleBytecode-static BibbleOpcodes libos-static utf8cpp frozen)
+target_link_libraries(BibbleVM-framework-shared BibbleVM-native-interface BibbleBytecode-shared BibbleOpcodes libos-static vasm::framework utf8cpp frozen)
+target_link_libraries(BibbleVM-framework-static BibbleVM-native-interface BibbleBytecode-static BibbleOpcodes libos-static vasm::framework utf8cpp frozen)
 
 set_target_properties(BibbleVM-framework-shared PROPERTIES OUTPUT_NAME "bibblevm")
 set_target_properties(BibbleVM-framework-static PROPERTIES OUTPUT_NAME "bibblevm-aio")
