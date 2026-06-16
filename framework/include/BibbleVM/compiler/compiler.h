@@ -6,9 +6,17 @@
 #include "BibbleVM/core/executor/function.h"
 
 namespace bibblevm {
+    enum class OptLevel {
+        O0,
+    };
+
+    struct CompileOptions {
+        OptLevel opt;
+    };
+
     class Compiler {
     public:
-        void compile(VM& vm, executor::Function* function);
+        void compile(VM& vm, executor::Function* function, CompileOptions options);
     };
 }
 
