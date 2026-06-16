@@ -35,29 +35,36 @@ namespace bibblevm::jit {
     }
 
     void Compiler::workerLoop(VM& vm) {
-        while (true) {
-            executor::Function* function = nullptr;
+        try {
+            while (true) {
+                executor::Function* function = nullptr;
 
-            {
-                std::unique_lock lock(mMutex);
+                {
+                    std::unique_lock lock(mMutex);
 
-                mCondition.wait(lock, [this] {
-                    return mStop || !mCompileQueue.empty();
-                });
+                    mCondition.wait(lock, [this] {
+                        return mStop || !mCompileQueue.empty();
+                    });
 
-                if (mStop) [[unlikely]] {
-                    return;
+                    if (mStop) [[unlikely]] {
+                        return;
+                    }
+
+                    function = mCompileQueue.front();
+                    mCompileQueue.pop();
                 }
 
-                function = mCompileQueue.front();
-                mCompileQueue.pop();
+                compileOne(vm, function);
             }
-
-            compileOne(vm, function);
+        } catch (...) {
+            spawnCompilerThread(vm); // restart the thread lol
         }
     }
 
     void Compiler::compileOne(VM& vm, executor::Function* function) {
+        Context* context = new Context();
+        function->setJitContext(context);
+
 
     }
 }
