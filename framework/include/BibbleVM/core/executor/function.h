@@ -33,6 +33,7 @@ namespace bibblevm::executor {
     public:
         Function(Module& module, String name); // partial initializing for linker shit
         Function(Module& module, String name, FunctionKind kind, uint16_t registerCount, uint16_t parameterCount, Instruction* instructions, uint32_t instructionCount);
+        ~Function();
 
         Function& operator=(const Function& other);
 

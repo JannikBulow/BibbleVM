@@ -32,6 +32,12 @@ namespace bibblevm::executor {
         , mInstructions(instructions)
         , mEntryPoint(SafetyNet) {}
 
+    Function::~Function() {
+        if (getJitContext() != nullptr) {
+            delete getJitContext();
+        }
+    }
+
     Function& Function::operator=(const Function& other) {
         mModule = other.mModule;
         mName = other.mName;
