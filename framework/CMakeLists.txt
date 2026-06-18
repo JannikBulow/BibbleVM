@@ -39,6 +39,38 @@ FetchContent_Declare(frozen
 )
 FetchContent_MakeAvailable(frozen)
 
+set(SUPPORTED_ARCH off)
+
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+    set(ARCH "x64")
+
+    if(WIN32)
+        set(ABI "win64")
+    else()
+        set(ABI "sysv")
+    endif()
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+    set(ARCH "aarch64")
+    set(ABI "generic")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
+    set(ARCH "riscv64")
+    set(ABI "generic")
+else()
+    message(FATAL_ERROR "Unsupported architecture")
+endif()
+
+set(ASM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/asm/${ARCH}_${ABI}")
+
+set(ASM_SOURCES
+    ${ASM_DIR}/enter.asm
+)
+
+add_library(BibbleVM-assemblies OBJECT ${ASM_SOURCES})
+
+set_property(TARGET BibbleVM-assemblies PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+set_target_properties(BibbleVM-assemblies PROPERTIES LINKER_LANGUAGE CXX)
+
 set(SOURCES
     src/allocator/arena.cpp
     src/allocator/code_alloc.cpp
@@ -46,6 +78,7 @@ set(SOURCES
     src/compiler/jit/compiler.cpp
 
     src/compiler/compiler.cpp
+    src/compiler/trampoline.cpp
 
     src/core/executor/const_pool.cpp
     src/core/executor/function.cpp
@@ -150,11 +183,24 @@ source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS})
 add_library(BibbleVM-framework-shared SHARED ${SOURCES} ${HEADERS})
 add_library(BibbleVM-framework-static STATIC ${SOURCES} ${HEADERS})
 
+target_sources(BibbleVM-framework-shared PRIVATE
+    $<TARGET_OBJECTS:BibbleVM-assemblies>
+)
+
+target_sources(BibbleVM-framework-static PRIVATE
+    $<TARGET_OBJECTS:BibbleVM-assemblies>
+)
+
 generate_export_header(BibbleVM-framework-shared
     EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/BibbleVM/api.h
     EXPORT_MACRO_NAME BIBBLEVM_EXPORT
     NO_EXPORT_MACRO_NAME BIBBLEVM_NO_EXPORT
     STATIC_DEFINE BIBBLEVM_STATIC_DEFINE
+)
+
+set_target_properties(BibbleVM-framework-shared PROPERTIES
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN YES
 )
 
 target_compile_definitions(BibbleVM-framework-static PUBLIC BIBBLEVM_STATIC_DEFINE)
