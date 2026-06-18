@@ -14,7 +14,7 @@ namespace bibblevm::compiler {
         OptLevel opt;
     };
 
-    class Compiler {
+    class BIBBLEVM_EXPORT Compiler {
     public:
         Code* compile(VM& vm, executor::Function* function, CompileOptions options);
     };
