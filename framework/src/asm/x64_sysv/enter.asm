@@ -5,6 +5,7 @@ struc Frame
     .registers resq 1
     .frame resq 1
     .task resq 1
+    .code resq 1
 endstruc
 
 struc LeaveRegisters
