@@ -36,6 +36,9 @@ namespace bibblevm::compiler {
         for (executor::Instruction* inst = instructionsBegin; inst != instructionsEnd; inst++) {
             switch (inst->opcode) {
                 case LOAD_IMM: {
+                    VMRegister dst = vmReg(inst->a);
+                    addValue<instruction::MovInstruction>(std::move(dst.isObjectAddress), imm(0)); // TODO: figure out a single byte write
+                    addValue<instruction::MovInstruction>(std::move(dst.valueAddress), imm(inst->imm));
                     break;
                 }
 
