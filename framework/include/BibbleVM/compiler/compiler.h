@@ -5,15 +5,6 @@
 
 #include "BibbleVM/core/executor/function.h"
 
-#include <vasm/codegen/Opcodes.h>
-
-#include <vasm/instruction/operand/Register.h>
-
-#include <vasm/instruction/Value.h>
-
-#include <optional>
-#include <vector>
-
 namespace bibblevm::compiler {
     enum class OptLevel {
         O0,
@@ -28,24 +19,7 @@ namespace bibblevm::compiler {
         Code* compile(VM& vm, executor::Function* function, CompileOptions options);
 
     private:
-        struct VMRegister {
-            instruction::OperandPtr isObjectAddress;
-            instruction::OperandPtr valueAddress;
-        };
 
-        std::vector<instruction::ValuePtr> mMachineCode;
-
-        instruction::OperandPtr imm(uint64_t value);
-        instruction::OperandPtr label(std::string name);
-        instruction::OperandPtr memory(instruction::RegisterPtr baseReg, std::optional<int> displacement = std::nullopt, instruction::RegisterPtr indexReg = nullptr, std::optional<int> scale = std::nullopt);
-        instruction::RegisterPtr reg(int id, codegen::OperandSize size = codegen::OperandSize::Quad);
-
-        VMRegister vmReg(uint16_t index);
-
-        template<class T, class... Args>
-        void addValue(Args&&... args) {
-            mMachineCode.push_back(std::make_unique<T>(std::forward<Args>(args)...));
-        }
     };
 }
 
