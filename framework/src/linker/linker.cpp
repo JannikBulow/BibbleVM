@@ -1,5 +1,7 @@
 // Copyright 2026 Jannik Laugmand Bülow
 
+#include "BibbleVM/compiler/aot_trap.h"
+
 #include "BibbleVM/core/module/instruction.h"
 
 #include "BibbleVM/core/opcodes.h"
@@ -581,7 +583,11 @@ namespace bibblevm::linker {
 
             switch (kind) {
                 case executor::FunctionKind::Normal:
-                    linkedFunction.setEntryPoint(vm.config().scheduler.autoYielding.enabled ? executor::AutoYieldingBytecodeInterpreter : executor::BytecodeInterpreter); // TODO: cache?
+                    if (vm.config().compiler.aot.enabled) {
+                        linkedFunction.setEntryPoint(compiler::AOTCompileTrap);
+                    } else {
+                        linkedFunction.setEntryPoint(vm.config().scheduler.autoYielding.enabled ? executor::AutoYieldingBytecodeInterpreter : executor::BytecodeInterpreter); // TODO: cache?
+                    }
                     break;
                 case executor::FunctionKind::Native: {
                     void* implementation = vm.pluginManager().getNativeFunction<void*>(moduleName, linkedFunction.getName());

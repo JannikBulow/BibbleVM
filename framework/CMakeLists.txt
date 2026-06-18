@@ -77,6 +77,7 @@ set(SOURCES
 
     src/compiler/jit/compiler.cpp
 
+    src/compiler/aot_trap.cpp
     src/compiler/compiler.cpp
     src/compiler/trampoline.cpp
 
@@ -123,6 +124,7 @@ set(HEADERS
     include/BibbleVM/compiler/jit/compiler.h
 
     include/BibbleVM/compiler/abi.h
+    include/BibbleVM/compiler/aot_trap.h
     include/BibbleVM/compiler/code.h
     include/BibbleVM/compiler/compilation_unit.h
     include/BibbleVM/compiler/compiler.h
