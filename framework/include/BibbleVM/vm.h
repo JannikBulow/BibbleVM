@@ -3,6 +3,8 @@
 #ifndef BIBBLEVM_VM_H
 #define BIBBLEVM_VM_H 1
 
+#include "BibbleVM/allocator/code_alloc.h"
+
 #include "BibbleVM/compiler/jit/compiler.h"
 
 #include "BibbleVM/core/executor/scheduler.h"
@@ -49,6 +51,7 @@ namespace bibblevm {
         gc::MemoryManager& memoryManager() { return mMemoryManager; }
         executor::Scheduler& scheduler() { return mScheduler; }
         linker::Linker& linker() { return mLinker; }
+        CodeAllocator& codeAllocator() { return mCodeAllocator; }
 
         String describeOSResult(os_result res);
 
@@ -74,6 +77,8 @@ namespace bibblevm {
         gc::MemoryManager mMemoryManager;
         executor::Scheduler mScheduler;
         linker::Linker mLinker;
+
+        CodeAllocator mCodeAllocator;
 
         std::unique_ptr<jit::Compiler> mJitCompiler;
     };
