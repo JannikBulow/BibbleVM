@@ -5,7 +5,11 @@
 
 #include "BibbleVM/core/executor/function.h"
 
+#include <asmjit/asmjit.h>
+
 namespace bibblevm::compiler {
+    using namespace asmjit;
+
     enum class OptLevel {
         O0,
     };
@@ -19,7 +23,8 @@ namespace bibblevm::compiler {
         Code* compile(VM& vm, executor::Function* function, CompileOptions options);
 
     private:
-
+        x86::Mem getIsObjectAddress(uint16_t vregIndex);
+        x86::Mem getValueAddress(uint16_t vregIndex);
     };
 }
 
