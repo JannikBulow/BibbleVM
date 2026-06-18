@@ -44,8 +44,8 @@ namespace bibblevm::compiler::abi {
     };
 
 #if defined(BIBBLEVM_ABI_X64_WIN64) || defined(BIBBLEVM_ABI_X64_SYSV)
-    constexpr int FRAME_REGISTER = 12;
-    constexpr int REGS_REGISTER = 13;
+    constexpr int FRAME_REGISTER = 13;
+    constexpr int REGS_REGISTER = 12;
     constexpr int EXIT0_REGISTER = 0;
     constexpr int EXIT1_REGISTER = 1;
     constexpr int EXIT2_REGISTER = 2;
