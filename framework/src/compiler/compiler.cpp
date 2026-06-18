@@ -73,6 +73,6 @@ namespace bibblevm::compiler {
 
     Compiler::VMRegister Compiler::vmReg(uint16_t index) {
         int displacement = index * sizeof(Value);
-        return {memory(reg(abi::REGS_REGISTER), displacement), memory(reg(abi::REGS_REGISTER), displacement + 8)};
+        return {memory(reg(abi::REGS_REGISTER), displacement == 0 ? std::nullopt : std::optional(displacement)), memory(reg(abi::REGS_REGISTER), displacement + 8)};
     }
 }
