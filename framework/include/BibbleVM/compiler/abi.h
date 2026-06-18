@@ -5,6 +5,8 @@
 
 #include "BibbleVM/core/executor/function.h"
 
+#include <array>
+
 #if defined(_M_X64) || defined(__x86_64__)
 #define BIBBLEVM_ARCH_X64
 #elif defined(__aarch64__)
@@ -52,23 +54,25 @@ namespace bibblevm::compiler::abi {
     static_assert(offsetof(LeaveRegisters, exit2) == 16);
 
 #if defined(BIBBLEVM_ABI_X64_WIN64) || defined(BIBBLEVM_ABI_X64_SYSV)
-    constexpr int FRAME_REGISTER = 13;
-    constexpr int REGS_REGISTER = 12;
+    constexpr int FRAME_REGISTER = 14;
+    constexpr int REGS_REGISTER = 15;
     constexpr int EXIT0_REGISTER = 0;
     constexpr int EXIT1_REGISTER = 1;
     constexpr int EXIT2_REGISTER = 2;
+
+    // allowed to use
+    constexpr std::array GENERAL_PURPOSE_REGISTERS = {
+        0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13
+    };
+
+    // never touch
+    constexpr std::array RESERVED_REGISTERS = {
+        4, 14, 15
+    };
 #elif defined(BIBBLEVM_ABI_AARCH64)
-    constexpr int FRAME_REGISTER = 19;
-    constexpr int REGS_REGISTER = 20;
-    constexpr int EXIT0_REGISTER = 0;
-    constexpr int EXIT1_REGISTER = 1;
-    constexpr int EXIT2_REGISTER = 2;
+    //TODO: aarch64 abi
 #elif defined(BIBBLEVM_ABI_RISCV64)
-    constexpr int FRAME_REGISTER = 8;
-    constexpr int REGS_REGISTER = 9;
-    constexpr int EXIT0_REGISTER = 10
-    constexpr int EXIT1_REGISTER = 11
-    constexpr int EXIT2_REGISTER = 12
+//TODO: riscv64 abi
 #endif
 
     void bibblevm_enter(const Frame* frame, LeaveRegisters* leave);
