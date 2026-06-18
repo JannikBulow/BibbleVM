@@ -412,6 +412,16 @@ static std::vector<ConfigOption> BuildConfigOptionTable() {
         // compiler
 
         {
+            "compiler.aot.enabled",
+            "enable ahead-of-time compilation of functions",
+            ValueType::Bool,
+            true,
+            [](Config& config, std::optional<std::string_view> value) {
+                config.compiler.aot.enabled = ParseBool(value);
+            }
+        },
+
+        {
             "compiler.jit.enabled",
             "enable just-in-time compilation of functions",
             ValueType::Bool,

@@ -70,6 +70,10 @@ namespace bibblevm {
 
     struct CompilerConfig {
         struct {
+            bool enabled = false;
+        } aot;
+
+        struct {
             bool enabled = true;
             uint16_t hotThreshold = 1000;
         } jit;
