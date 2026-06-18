@@ -37,9 +37,15 @@ namespace bibblevm::compiler {
             switch (inst->opcode) {
                 case LOAD_IMM: {
                     VMRegister dst = vmReg(inst->a);
+
                     addValue<instruction::MovInstruction>(std::move(dst.isObjectAddress), imm(0), codegen::OperandSize::Byte); //TODO: figure out a single byte write
-                    addValue<instruction::MovInstruction>(reg(0), imm(inst->imm));
-                    addValue<instruction::MovInstruction>(std::move(dst.valueAddress), reg(0)); //TODO: more generic register stuff instead of hardcoded rax
+
+                    if (inst->imm > 0xFFFFFFFF) {
+                        addValue<instruction::MovInstruction>(reg(0), imm(inst->imm));
+                        addValue<instruction::MovInstruction>(std::move(dst.valueAddress), reg(0)); //TODO: more generic register stuff instead of hardcoded rax
+                    } else {
+                        addValue<instruction::MovInstruction>(std::move(dst.valueAddress), imm(inst->imm));
+                    }
                     break;
                 }
 
