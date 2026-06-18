@@ -43,6 +43,12 @@ namespace bibblevm::compiler::abi {
         uintptr_t exit2;
     };
 
+    static_assert(sizeof(Frame) == 32);
+    static_assert(offsetof(Frame, task) == 24);
+
+    static_assert(sizeof(LeaveRegisters) == 24);
+    static_assert(offsetof(LeaveRegisters, exit2) == 16);
+
 #if defined(BIBBLEVM_ABI_X64_WIN64) || defined(BIBBLEVM_ABI_X64_SYSV)
     constexpr int FRAME_REGISTER = 13;
     constexpr int REGS_REGISTER = 12;
