@@ -30,7 +30,12 @@ bibblevm_enter:
 
     push rsi
 
-    ; prepare and enter jit code
+    mov r14, rdi
+    mov r15, [rdi + Frame.registers]
+
+    sub rsp, 8
+    call [rdi + Frame.code]
+    add rsp, 8
 
     pop rsi
 
