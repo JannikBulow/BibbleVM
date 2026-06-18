@@ -63,7 +63,7 @@ namespace bibblevm::compiler {
         return std::make_unique<instruction::Memory>(std::move(baseReg), displacement, std::move(indexReg), scale);
     }
 
-    instruction::OperandPtr Compiler::reg(int id, codegen::OperandSize size) {
+    instruction::RegisterPtr Compiler::reg(int id, codegen::OperandSize size) {
         return std::make_unique<instruction::Register>(id, size);
     }
 
