@@ -31,12 +31,11 @@ namespace bibblevm::compiler {
         executor::Instruction* instructionsBegin = function->getInstructions();
         executor::Instruction* instructionsEnd = instructionsBegin + function->getInstructionCount();
 
-        std::vector<instruction::ValuePtr> machineInstructions;
+        mMachineCode.clear();
 
         for (executor::Instruction* inst = instructionsBegin; inst != instructionsEnd; inst++) {
             switch (inst->opcode) {
                 case LOAD_IMM: {
-                    machineInstructions.push_back(std::make_unique<instruction::MovInstruction>());
                     break;
                 }
 
@@ -45,7 +44,7 @@ namespace bibblevm::compiler {
             }
         }
 
-        for (const instruction::ValuePtr& inst : machineInstructions) {
+        for (const instruction::ValuePtr& inst : mMachineCode) {
             inst->print(std::cout);
         }
 
