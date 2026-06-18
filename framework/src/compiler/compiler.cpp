@@ -49,6 +49,7 @@ namespace bibblevm::compiler {
 
         for (const instruction::ValuePtr& inst : mMachineCode) {
             inst->print(std::cout);
+            std::cout << "\n";
         }
 
         return nullptr;
