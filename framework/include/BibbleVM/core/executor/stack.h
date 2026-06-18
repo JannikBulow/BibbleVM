@@ -25,6 +25,7 @@ namespace bibblevm::executor {
         Function& getFunction() const { return mFunction; }
         EntryPoint getEntryPoint() const { return mEntryPoint; }
         Instruction*& ip() { return mIP; }
+        Value* getRegisters() const { return mRegisters; }
         Value* returnRegister() const { return mReturnRegister; }
 
         Value& operator[](uint16_t index) const { return mRegisters[index]; }
