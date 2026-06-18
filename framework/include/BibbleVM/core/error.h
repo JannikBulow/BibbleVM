@@ -11,6 +11,7 @@ namespace bibblevm {
     struct Error {
         enum Type : uint8_t {
             USERLAND,
+            INTERNAL_ERROR, // unrecoverable and usually only caused by bugs
             NULL_REFERENCE,
             INVALID_STATE,
             INDEX_OUT_OF_BOUNDS,
