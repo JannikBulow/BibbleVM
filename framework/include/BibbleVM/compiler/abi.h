@@ -47,6 +47,11 @@ namespace bibblevm::compiler::abi {
         uintptr_t exit2;
     };
 
+    enum class LeaveReason {
+        Error = 0,
+        Return = 1,
+    };
+
     static_assert(sizeof(Frame) == 40);
     static_assert(offsetof(Frame, code) == 32);
 
