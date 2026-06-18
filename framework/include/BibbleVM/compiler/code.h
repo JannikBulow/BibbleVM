@@ -3,7 +3,7 @@
 #ifndef BIBBLEVM_COMPILER_CODE_H
 #define BIBBLEVM_COMPILER_CODE_H 1
 
-#include <cstdint>
+#include <cstddef>
 
 namespace bibblevm::compiler {
     struct Code {
