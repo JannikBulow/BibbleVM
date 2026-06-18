@@ -55,6 +55,8 @@ namespace bibblevm {
         if (res != OS_OK) {
             return;
         }
+
+        os_mem_flush_instruction_cache(code->mc, code->size);
     }
 
     void CodeAllocator::markReadWrite(compiler::Code* code) {
