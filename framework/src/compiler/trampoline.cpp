@@ -5,5 +5,6 @@
 
 namespace bibblevm::compiler {
     executor::SchedulerMessage Trampoline(VM& vm, executor::Frame& frame, executor::Task* task) {
+        return executor::SchedulerMessage::Yielded();
     }
 }
