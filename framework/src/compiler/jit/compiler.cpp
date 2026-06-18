@@ -72,7 +72,7 @@ namespace bibblevm::jit {
         CompileOptions options;
         options.opt = OptLevel::O0;
 
-        ::bibblevm::Compiler compiler;
+        compiler::Compiler compiler;
         Code* baseline = compiler.compile(vm, function, options);
 
         if (baseline == nullptr) {

@@ -12,6 +12,8 @@
 #include <vector>
 
 namespace bibblevm::jit {
+    using namespace compiler;
+
     class BIBBLEVM_EXPORT Compiler {
     public:
         explicit Compiler(VM& vm);

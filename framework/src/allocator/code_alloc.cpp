@@ -6,25 +6,25 @@
 
 namespace bibblevm {
     CodeAllocator::~CodeAllocator() {
-        for (Code* code : mBuffers) {
+        for (compiler::Code* code : mBuffers) {
             deallocate(code);
         }
     }
 
-    Code* CodeAllocator::allocate(size_t size) {
+    compiler::Code* CodeAllocator::allocate(size_t size) {
         void* mc;
         os_result res = os_mem_allocate(&mc, nullptr, size, OS_MEM_RESERVE | OS_MEM_COMMIT, OS_MEM_PROTECT_READWRITE);
         if (res != OS_OK) {
             return nullptr;
         }
 
-        Code* code = new Code(mc, size);
+        compiler::Code* code = new compiler::Code(mc, size);
         mBuffers.push_back(code);
 
         return code;
     }
 
-    void CodeAllocator::deallocate(Code* code) {
+    void CodeAllocator::deallocate(compiler::Code* code) {
         if (code == nullptr) [[unlikely]] return;
 
         os_result res = os_mem_free(code->mc, code->size, OS_MEM_RELEASE);
@@ -48,7 +48,7 @@ namespace bibblevm {
         delete code;
     }
 
-    void CodeAllocator::markExecutable(Code* code) {
+    void CodeAllocator::markExecutable(compiler::Code* code) {
         if (code == nullptr) [[unlikely]] return;
 
         os_result res = os_mem_protect(code->mc, code->size, OS_MEM_PROTECT_EXECUTE_READ);
@@ -57,7 +57,7 @@ namespace bibblevm {
         }
     }
 
-    void CodeAllocator::markReadWrite(Code* code) {
+    void CodeAllocator::markReadWrite(compiler::Code* code) {
         if (code == nullptr) [[unlikely]] return;
 
         os_result res = os_mem_protect(code->mc, code->size, OS_MEM_PROTECT_READWRITE);

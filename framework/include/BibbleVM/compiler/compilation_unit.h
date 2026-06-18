@@ -5,7 +5,7 @@
 
 #include "BibbleVM/compiler/code.h"
 
-namespace bibblevm {
+namespace bibblevm::compiler {
     enum class CompilationState {
         None,
         Compiling,

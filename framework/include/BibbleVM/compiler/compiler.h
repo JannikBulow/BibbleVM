@@ -5,7 +5,7 @@
 
 #include "BibbleVM/core/executor/function.h"
 
-namespace bibblevm {
+namespace bibblevm::compiler {
     enum class OptLevel {
         O0,
     };

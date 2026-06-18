@@ -7,6 +7,7 @@
 #include <cstring>
 
 using namespace bibblevm;
+using namespace bibblevm::compiler;
 
 class CodeAllocatorTest : public ::testing::Test {
 protected:

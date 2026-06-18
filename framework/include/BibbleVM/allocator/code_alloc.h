@@ -15,19 +15,19 @@ namespace bibblevm {
         ~CodeAllocator();
 
         // allocate readwrite memory to write code into
-        Code* allocate(size_t size);
+        compiler::Code* allocate(size_t size);
 
         // deallocate code
-        void deallocate(Code* code);
+        void deallocate(compiler::Code* code);
 
         // mark the code as executable and remove write permissions, then flush it into instruction cache
-        void markExecutable(Code* code);
+        void markExecutable(compiler::Code* code);
 
         // mark the code as read-write and remove executable permissions
-        void markReadWrite(Code* code);
+        void markReadWrite(compiler::Code* code);
 
     private:
-        std::vector<Code*> mBuffers;
+        std::vector<compiler::Code*> mBuffers;
     };
 }
 

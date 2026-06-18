@@ -57,11 +57,11 @@ namespace bibblevm::executor {
         mEntryPoint.store(entryPoint, std::memory_order_release);
     }
 
-    CompilationUnit* Function::getCompilationUnit() const {
+    compiler::CompilationUnit* Function::getCompilationUnit() const {
         return mCompilationUnit.load(std::memory_order_acquire);
     }
 
-    void Function::setCompilationUnit(CompilationUnit* unit) {
+    void Function::setCompilationUnit(compiler::CompilationUnit* unit) {
         mCompilationUnit.store(unit, std::memory_order_release);
     }
 

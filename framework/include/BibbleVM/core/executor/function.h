@@ -49,8 +49,8 @@ namespace bibblevm::executor {
         EntryPoint getEntryPoint() const;
         void setEntryPoint(EntryPoint entryPoint);
 
-        CompilationUnit* getCompilationUnit() const;
-        void setCompilationUnit(CompilationUnit* unit);
+        compiler::CompilationUnit* getCompilationUnit() const;
+        void setCompilationUnit(compiler::CompilationUnit* unit);
 
         uint16_t incrementInvocationCount();
 
@@ -74,7 +74,7 @@ namespace bibblevm::executor {
 
         std::atomic<EntryPoint> mEntryPoint;
 
-        std::atomic<CompilationUnit*> mCompilationUnit = nullptr;
+        std::atomic<compiler::CompilationUnit*> mCompilationUnit = nullptr;
     };
 }
 

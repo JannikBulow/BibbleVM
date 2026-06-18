@@ -5,7 +5,7 @@
 
 #include <cstdint>
 
-namespace bibblevm {
+namespace bibblevm::compiler {
     struct Code {
         void* mc; // for those who just joined, mc is slang for machine code
         size_t size;
