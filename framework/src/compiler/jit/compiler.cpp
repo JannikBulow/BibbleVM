@@ -3,6 +3,7 @@
 #include "BibbleVM/compiler/jit/compiler.h"
 
 #include "BibbleVM/compiler/compiler.h"
+#include "BibbleVM/compiler/trampoline.h"
 
 namespace bibblevm::jit {
     Compiler::Compiler(VM& vm) {
@@ -83,6 +84,6 @@ namespace bibblevm::jit {
         unit->baseline = baseline;
         unit->state = CompilationState::Compiled;
 
-        function->setEntryPoint((executor::EntryPoint) baseline->mc);
+        function->setEntryPoint(Trampoline);
     }
 }
