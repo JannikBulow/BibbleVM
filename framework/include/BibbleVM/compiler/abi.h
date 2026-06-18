@@ -35,6 +35,8 @@ namespace bibblevm::compiler::abi {
 
         executor::Frame* frame;
         executor::Task* task;
+
+        void* code;
     };
 
     struct LeaveRegisters {
@@ -43,8 +45,8 @@ namespace bibblevm::compiler::abi {
         uintptr_t exit2;
     };
 
-    static_assert(sizeof(Frame) == 32);
-    static_assert(offsetof(Frame, task) == 24);
+    static_assert(sizeof(Frame) == 40);
+    static_assert(offsetof(Frame, code) == 32);
 
     static_assert(sizeof(LeaveRegisters) == 24);
     static_assert(offsetof(LeaveRegisters, exit2) == 16);
