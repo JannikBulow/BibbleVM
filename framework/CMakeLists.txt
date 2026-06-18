@@ -89,6 +89,7 @@ set(HEADERS
 
     include/BibbleVM/compiler/jit/compiler.h
 
+    include/BibbleVM/compiler/abi.h
     include/BibbleVM/compiler/code.h
     include/BibbleVM/compiler/compilation_unit.h
     include/BibbleVM/compiler/compiler.h
