@@ -66,4 +66,9 @@ namespace bibblevm::compiler {
     instruction::OperandPtr Compiler::reg(int id, codegen::OperandSize size) {
         return std::make_unique<instruction::Register>(id, size);
     }
+
+    Compiler::VMRegister Compiler::vmReg(uint16_t index) {
+        int displacement = index * sizeof(Value);
+        return {memory(reg(abi::REGS_REGISTER), displacement), memory(reg(abi::REGS_REGISTER), displacement + 8)};
+    }
 }

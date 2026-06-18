@@ -28,12 +28,19 @@ namespace bibblevm::compiler {
         Code* compile(VM& vm, executor::Function* function, CompileOptions options);
 
     private:
+        struct VMRegister {
+            instruction::OperandPtr isObjectAddress;
+            instruction::OperandPtr valueAddress;
+        };
+
         std::vector<instruction::ValuePtr> mMachineCode;
 
         instruction::OperandPtr imm(uint64_t value);
         instruction::OperandPtr label(std::string name);
         instruction::OperandPtr memory(instruction::RegisterPtr baseReg, std::optional<int> displacement = std::nullopt, instruction::RegisterPtr indexReg = nullptr, std::optional<int> scale = std::nullopt);
-        instruction::OperandPtr reg(int id, codegen::OperandSize size = codegen::OperandSize::Quad);
+        instruction::RegisterPtr reg(int id, codegen::OperandSize size = codegen::OperandSize::Quad);
+
+        VMRegister vmReg(uint16_t index);
 
         template<class T, class... Args>
         void addValue(Args&&... args) {
