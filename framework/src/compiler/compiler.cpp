@@ -3,6 +3,8 @@
 #include "BibbleVM/compiler/abi.h"
 #include "BibbleVM/compiler/compiler.h"
 
+#include <vasm/codegen/Binary.h>
+
 #include <vasm/instruction/singleOperandInstruction/CallInstruction.h>
 #include <vasm/instruction/singleOperandInstruction/DeclInstruction.h>
 #include <vasm/instruction/singleOperandInstruction/JmpInstruction.h>
@@ -24,6 +26,8 @@
 
 #include <vasm/instruction/Label.h>
 #include <vasm/instruction/NoOperandInstruction.h>
+
+#include "BibbleVM/vm.h"
 
 namespace bibblevm::compiler {
     Code* Compiler::compile(VM& vm, executor::Function* function, CompileOptions options) {
@@ -69,7 +73,25 @@ namespace bibblevm::compiler {
             std::cout << "\n";
         }
 
-        return nullptr;
+        codegen::BinaryFormat out;
+        codegen::OpcodeBuilder builder(&out, std::string(function->getName()));
+
+        for (const instruction::ValuePtr& inst : mMachineCode) {
+            inst->emit(builder, builder.getSection());
+        }
+
+        if (builder.hadErrors()) return nullptr;
+
+        builder.patchForwardLabels();
+
+        size_t bufferSize;
+        out.loadjitInto(nullptr, &bufferSize);
+
+        Code* code = vm.codeAllocator().allocate(bufferSize);
+        out.loadjitInto(static_cast<unsigned char*>(code->mc), nullptr);
+        vm.codeAllocator().markExecutable(code);
+
+        return code;
     }
 
     instruction::OperandPtr Compiler::imm(uint64_t value) {
