@@ -22,9 +22,8 @@
 #include <vasm/instruction/twoOperandInstruction/OutInInstruction.h>
 #include <vasm/instruction/twoOperandInstruction/TestInstruction.h>
 
+#include <vasm/instruction/Label.h>
 #include <vasm/instruction/NoOperandInstruction.h>
-
-#include "vasm/instruction/Label.h"
 
 namespace bibblevm::compiler {
     Code* Compiler::compile(VM& vm, executor::Function* function, CompileOptions options) {
@@ -49,8 +48,19 @@ namespace bibblevm::compiler {
                     break;
                 }
 
-                default:
+                case RETURN: {
+                    VMRegister returnValue = vmReg(inst->a);
+
+                    addValue<instruction::MovInstruction>(reg(abi::EXIT0_REGISTER), imm(static_cast<uint64_t>(abi::LeaveReason::Return)));
+                    addValue<instruction::MovInstruction>(reg(abi::EXIT1_REGISTER), std::move(returnValue.isObjectAddress), codegen::OperandSize::Byte);
+                    addValue<instruction::MovInstruction>(reg(abi::EXIT2_REGISTER), std::move(returnValue.valueAddress), codegen::OperandSize::Quad);
+                    addValue<instruction::RetInstruction>();
+
                     break;
+                }
+
+                default:
+                    return nullptr;
             }
         }
 
