@@ -40,8 +40,8 @@ namespace bibblevm::compiler {
                     addValue<instruction::MovInstruction>(std::move(dst.isObjectAddress), imm(0), codegen::OperandSize::Byte);
 
                     if (inst->imm > 0xFFFFFFFF) {
-                        addValue<instruction::MovInstruction>(reg(0), imm(inst->imm));
-                        addValue<instruction::MovInstruction>(std::move(dst.valueAddress), reg(0)); //TODO: more generic register stuff instead of hardcoded rax
+                        addValue<instruction::MovInstruction>(reg(abi::GENERAL_PURPOSE_REGISTERS[0]), imm(inst->imm));
+                        addValue<instruction::MovInstruction>(std::move(dst.valueAddress), reg(abi::GENERAL_PURPOSE_REGISTERS[0]), codegen::OperandSize::Quad);
                     } else {
                         addValue<instruction::MovInstruction>(std::move(dst.valueAddress), imm(inst->imm));
                     }
