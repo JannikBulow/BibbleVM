@@ -42,7 +42,7 @@ namespace bibblevm::compiler::abi {
     };
 
     struct LeaveRegisters {
-        uintptr_t exit0;
+        uintptr_t reason;
         uintptr_t exit1;
         uintptr_t exit2;
     };
