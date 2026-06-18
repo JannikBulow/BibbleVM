@@ -28,7 +28,15 @@ bibblevm_enter:
     push r14
     push r15
 
+    push rsi
+
     ; prepare and enter jit code
+
+    pop rsi
+
+    mov [rsi + LeaveRegisters.exit0], rax
+    mov [rsi + LeaveRegisters.exit1], rcx
+    mov [rsi + LeaveRegisters.exit2], rdx
 
     pop r15
     pop r14
