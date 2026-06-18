@@ -24,6 +24,8 @@
 
 #include <vasm/instruction/NoOperandInstruction.h>
 
+#include "vasm/instruction/Label.h"
+
 namespace bibblevm::compiler {
     Code* Compiler::compile(VM& vm, executor::Function* function, CompileOptions options) {
         executor::Instruction* instructionsBegin = function->getInstructions();
@@ -34,10 +36,7 @@ namespace bibblevm::compiler {
         for (executor::Instruction* inst = instructionsBegin; inst != instructionsEnd; inst++) {
             switch (inst->opcode) {
                 case LOAD_IMM: {
-                    instruction::RegisterPtr regs = std::make_unique<instruction::Register>(abi::REGS_REGISTER, codegen::OperandSize::Quad);
-                    instruction::MemoryPtr dst = std::make_unique<instruction::Memory>(std::move(regs), inst->a * 16 + 8, nullptr, std::nullopt); // TODO: make values 8 bytes
-                    instruction::ImmediatePtr imm = std::make_unique<instruction::Immediate>(inst->imm);
-                    machineInstructions.push_back(std::make_unique<instruction::MovInstruction>(std::move(dst), std::move(imm)));
+                    machineInstructions.push_back(std::make_unique<instruction::MovInstruction>());
                     break;
                 }
 
@@ -51,5 +50,21 @@ namespace bibblevm::compiler {
         }
 
         return nullptr;
+    }
+
+    instruction::OperandPtr Compiler::imm(uint64_t value) {
+        return std::make_unique<instruction::Immediate>(value);
+    }
+
+    instruction::OperandPtr Compiler::label(std::string name) {
+        return std::make_unique<instruction::LabelOperand>(name);
+    }
+
+    instruction::OperandPtr Compiler::memory(instruction::RegisterPtr baseReg, std::optional<int> displacement, instruction::RegisterPtr indexReg, std::optional<int> scale) {
+        return std::make_unique<instruction::Memory>(std::move(baseReg), displacement, std::move(indexReg), scale);
+    }
+
+    instruction::OperandPtr Compiler::reg(int id, codegen::OperandSize size) {
+        return std::make_unique<instruction::Register>(id, size);
     }
 }
