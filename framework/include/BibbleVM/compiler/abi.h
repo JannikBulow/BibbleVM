@@ -63,7 +63,7 @@ namespace bibblevm::compiler::abi {
     constexpr int EXIT2_REGISTER = 12
 #endif
 
-    void bibblevm_enter(const Frame* frame, LeaveRegisters* leave);
+    BIBBLEVM_EXPORT void bibblevm_enter(const Frame* frame, LeaveRegisters* leave);
 }
 }
 
