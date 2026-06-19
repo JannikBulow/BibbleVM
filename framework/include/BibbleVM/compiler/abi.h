@@ -66,7 +66,7 @@ namespace bibblevm::compiler::abi {
     constexpr int EXIT2_REGISTER = 2;
 
     // allowed to use
-    constexpr std::array GENERAL_PURPOSE_REGISTERS = {
+    constexpr std::array GPRS = {
         0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13
     };
 
