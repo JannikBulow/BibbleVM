@@ -74,6 +74,16 @@ namespace bibblevm::compiler::abi {
     constexpr std::array RESERVED_REGISTERS = {
         4, 14, 15
     };
+
+#if defined(BIBBLEVM_ABI_X64_WIN64)
+    constexpr std::array PLATFORM_ABI_VOLATILE_REGISTERS = {
+        0, 1, 2, 8, 9, 10, 11
+    };
+#else
+    constexpr std::array PLATFORM_ABI_VOLATILE_REGISTERS = {
+        0, 1, 2, 6, 7, 8, 9, 10, 11
+    };
+#endif
 #elif defined(BIBBLEVM_ABI_AARCH64)
     //TODO: aarch64 abi
 #elif defined(BIBBLEVM_ABI_RISCV64)
