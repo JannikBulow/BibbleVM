@@ -73,8 +73,8 @@ namespace bibblevm::jit {
         CompileOptions options;
         options.opt = OptLevel::O0;
 
-        compiler::Compiler compiler;
-        Code* baseline = compiler.compile(vm, function, options);
+        compiler::Compiler compiler(function);
+        Code* baseline = compiler.compile(vm, options);
 
         if (baseline == nullptr) {
             unit->state = CompilationState::Failed;

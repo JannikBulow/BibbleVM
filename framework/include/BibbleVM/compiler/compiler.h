@@ -7,6 +7,8 @@
 
 #include <asmjit/asmjit.h>
 
+#include <vector>
+
 namespace bibblevm::compiler {
     using namespace asmjit;
 
@@ -20,9 +22,20 @@ namespace bibblevm::compiler {
 
     class BIBBLEVM_EXPORT Compiler {
     public:
-        Code* compile(VM& vm, executor::Function* function, CompileOptions options);
+        explicit Compiler(executor::Function* function);
+
+        Code* compile(VM& vm, CompileOptions options);
 
     private:
+        executor::Function* mFunction;
+        executor::Instruction* mInstructionsBegin;
+        executor::Instruction* mInstructionsEnd;
+
+        x86::Assembler* mAsm = nullptr;
+        std::vector<Label> mLabels;
+
+        bool compileInstruction(VM& vm, executor::Instruction* instruction);
+
         x86::Mem getIsObjectAddress(uint16_t vregIndex);
         x86::Mem getValueAddress(uint16_t vregIndex);
     };

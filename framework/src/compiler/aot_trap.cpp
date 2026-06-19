@@ -18,8 +18,8 @@ namespace bibblevm::compiler {
         CompileOptions options;
         options.opt = OptLevel::O0;
 
-        compiler::Compiler compiler;
-        Code* baseline = compiler.compile(vm, &function, options);
+        compiler::Compiler compiler(&function);
+        Code* baseline = compiler.compile(vm, options);
 
         if (baseline == nullptr) {
             // better to default to interpreter than to take the whole program down with us
