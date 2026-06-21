@@ -71,6 +71,10 @@ namespace bibblevm::compiler::abi {
         0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13
     };
 
+    constexpr std::array VECTOR_REGISTERS = {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+    }
+
     // never touch
     constexpr std::array RESERVED_REGISTERS = {
         4, 14, 15
