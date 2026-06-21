@@ -79,6 +79,18 @@ namespace bibblevm::compiler::abi {
     constexpr std::array PLATFORM_ABI_VOLATILE_REGISTERS = {
         0, 1, 2, 8, 9, 10, 11
     };
+
+    constexpr std::array PLATFORM_ABI_ARGUMENT_REGISTERS = {
+        1, 2, 8, 9
+    };
+
+    constexpr std::array PLATFORM_ABI_FLOAT_ARGUMENT_REGISTERS = {
+        0, 1, 2, 3;
+    };
+
+    constexpr int PLATFORM_ABI_RETURN_REGISTER = 0;
+
+    constexpr int PLATFORM_ABI_FLOAT_RETURN_REGISTER = 0;
 #else
     constexpr std::array PLATFORM_ABI_VOLATILE_REGISTERS = {
         0, 1, 2, 6, 7, 8, 9, 10, 11
@@ -92,9 +104,9 @@ namespace bibblevm::compiler::abi {
         0, 1, 2, 3, 4, 5, 6, 7
     };
 
-    constexpr int PLATFORM_ABI_RETURN_REGISTER = {
-        0
-    };
+    constexpr int PLATFORM_ABI_RETURN_REGISTER = 0;
+
+    constexpr int PLATFORM_ABI_FLOAT_RETURN_REGISTER = 0;
 #endif
 #elif defined(BIBBLEVM_ABI_AARCH64)
     //TODO: aarch64 abi
