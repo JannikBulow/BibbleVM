@@ -279,7 +279,7 @@ namespace bibblevm::compiler {
         }
 
         size_t stackAdjust = 0;
-        size_t stackOffset = popOrder.size() * 8;
+        size_t stackOffset = popOrder.size() * 8 + 8; // +8 represents the return address already on the stack
         if (stackOffset % 16 != 0) {
             stackAdjust += 8;
         }
