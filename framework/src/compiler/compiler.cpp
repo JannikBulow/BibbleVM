@@ -730,11 +730,10 @@ namespace bibblevm::compiler {
     void Compiler::compileCALLARP_DYN(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
 
     void Compiler::compileRETURN(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        // No need to make a utility for this snippet as RETURN is the only instruction that would tell the scheduler it has returned
-        a.mov(x86::gpq(abi::LEAVE_REASON_REGISTER), abi::LeaveReason::Return);
         a.mov(x86::gpq(abi::EXIT1_REGISTER), getIsObjectAddress(inst->a));
         a.mov(x86::gpq(abi::EXIT2_REGISTER), getValueAddress(inst->a));
-        a.ret();
+
+        createLeave(abi::LeaveReason::Return, false);
     }
 
     void Compiler::compileYIELD(VM& vm, x86::Builder& a, executor::Instruction* inst) {
