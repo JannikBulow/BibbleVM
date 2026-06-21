@@ -306,14 +306,14 @@ namespace bibblevm::compiler {
 
     }
 
-    void Compiler::createPlatformCall(const std::vector<int>& neededRegisters, int returnRegister, void* function) {
+    void Compiler::createPlatformCall(const std::vector<x86::Gp>& neededRegisters, x86::Gp returnRegister, void* function) {
         auto& a = *mAsm;
 
-        std::vector<int> popOrder;
+        std::vector<x86::Gp> popOrder;
 
-        for (int r : neededRegisters) {
-            if (std::ranges::find(abi::PLATFORM_ABI_VOLATILE_REGISTERS, r) != abi::PLATFORM_ABI_VOLATILE_REGISTERS.end()) {
-                a.push(x86::gpq(r));
+        for (auto& r : neededRegisters) {
+            if (std::ranges::find(abi::PLATFORM_ABI_VOLATILE_REGISTERS, r.id()) != abi::PLATFORM_ABI_VOLATILE_REGISTERS.end()) {
+                a.push(r);
                 popOrder.insert(popOrder.begin(), r);
             }
         }
@@ -339,12 +339,12 @@ namespace bibblevm::compiler {
             a.add(x86::rsp, stackAdjust);
         }
 
-        if (returnRegister != abi::PLATFORM_ABI_RETURN_REGISTER) {
-            a.mov(x86::gpq(returnRegister), x86::gpq(abi::PLATFORM_ABI_RETURN_REGISTER));
+        if (returnRegister.id() != abi::PLATFORM_ABI_RETURN_REGISTER) {
+            a.mov(returnRegister, x86::gpq(abi::PLATFORM_ABI_RETURN_REGISTER));
         }
 
-        for (int r : popOrder) {
-            a.pop(x86::gpq(r));
+        for (auto& r : popOrder) {
+            a.pop(r);
         }
     }
 
@@ -669,7 +669,7 @@ namespace bibblevm::compiler {
         withArrayGuard(object, [&] {
             auto elemSize = allocateRegister();
             a.mov(x86::gpd(abi::PLATFORM_ABI_ARGUMENT_REGISTERS[0]), x86::byte_ptr(object, offsetof(oop::Array, baseType)));
-            createPlatformCall({abi::GPRS[0]}, abi::GPRS[1], (void*) &oop::GetPrimitiveSizeForType);
+            createPlatformCall({object}, elemSize, (void*) &oop::GetPrimitiveSizeForType);
 
             auto index = allocateRegister();
             a.mov(index, getValueAddress(inst->c));
