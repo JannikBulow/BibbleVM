@@ -56,7 +56,7 @@ namespace bibblevm::compiler {
         bool compileInstruction(VM& vm, executor::Instruction* inst);
 
         x86::Gp allocateRegister(std::vector<int> disallowed = {}); // signature defaults to Gp64 (gpq)
-        x86::Vec allocateVectorRegister(std::vector<int> disallowed = {});
+        x86::Vec allocateVectorRegister(std::vector<int> disallowed = {}); // signature defaults to Vec128
         void deallocateRegister(x86::Gp reg);
         void deallocateRegister(x86::Vec reg);
         void resetRegAlloc();
