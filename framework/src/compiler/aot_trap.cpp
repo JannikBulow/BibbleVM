@@ -32,6 +32,8 @@ namespace bibblevm::compiler {
         unit->state = CompilationState::Compiled;
 
         function.setEntryPoint(Trampoline);
+        frame.mEntryPoint = Trampoline;
+        frame.checkpoint() = 0;
         return function.getEntryPoint()(vm, frame, task);
     }
 }

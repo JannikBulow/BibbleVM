@@ -5,11 +5,13 @@ struc Frame
     .registers resq 1
     .frame resq 1
     .task resq 1
+    .resumeCheckpoint resq 1
     .code resq 1
 endstruc
 
 struc LeaveRegisters
-    .exit0 resq 1
+    .reason resq 1
+    .checkpoint resq 1
     .exit1 resq 1
     .exit2 resq 1
 endstruc
@@ -32,6 +34,7 @@ bibblevm_enter:
 
     mov r14, rdi
     mov r15, [rdi + Frame.registers]
+    mov r13, [rdi + Frame.resumeCheckpoint]
 
     sub rsp, 8
     call [rdi + Frame.code]
@@ -39,9 +42,10 @@ bibblevm_enter:
 
     pop rsi
 
-    mov [rsi + LeaveRegisters.exit0], rax
-    mov [rsi + LeaveRegisters.exit1], rcx
-    mov [rsi + LeaveRegisters.exit2], rdx
+    mov [rsi + LeaveRegisters.reason], rax
+    mov [rsi + LeaveRegisters.checkpoint], rcx
+    mov [rsi + LeaveRegisters.exit1], rdx
+    mov [rsi + LeaveRegisters.exit2], rbx
 
     pop r15
     pop r14

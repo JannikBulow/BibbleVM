@@ -9,9 +9,14 @@ namespace bibblevm::executor {
         , mPrev(prev)
         , mFunction(function)
         , mEntryPoint(function.getEntryPoint())
-        , mIP(function.getInstructions())
         , mRegisters(mArena->allocate<Value>(registerCount))
-        , mReturnRegister(returnRegister) {}
+        , mReturnRegister(returnRegister) {
+        if (mFunction.getCompilationUnit() != nullptr) {
+            mCheckpoint = 0;
+        } else {
+            mIP = mFunction.getInstructions();
+        }
+    }
 
     Module& Frame::getModule() const {
         return mFunction.getModule();

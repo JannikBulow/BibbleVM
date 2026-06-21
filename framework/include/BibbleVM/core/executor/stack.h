@@ -5,6 +5,8 @@
 
 #include "BibbleVM/allocator/arena.h"
 
+#include "BibbleVM/compiler/aot_trap.h"
+
 #include "BibbleVM/core/executor/function.h"
 
 #include "BibbleVM/core/value.h"
@@ -16,6 +18,7 @@ namespace bibblevm::executor {
     struct Instruction;
 
     class BIBBLEVM_EXPORT Frame {
+        friend SchedulerMessage compiler::AOTCompileTrap(VM& vm, executor::Frame& frame, executor::Task* task);
     public:
         Frame(Snapshot<GrowingArenaAllocator> arena, Frame* prev, Function& function, uint16_t registerCount, Value* returnRegister);
 
@@ -25,6 +28,7 @@ namespace bibblevm::executor {
         Function& getFunction() const { return mFunction; }
         EntryPoint getEntryPoint() const { return mEntryPoint; }
         Instruction*& ip() { return mIP; }
+        uintptr_t& checkpoint() { return mCheckpoint; }
         Value* getRegisters() const { return mRegisters; }
         Value* returnRegister() const { return mReturnRegister; }
 
@@ -37,7 +41,12 @@ namespace bibblevm::executor {
 
         Function& mFunction;
         EntryPoint mEntryPoint;
-        Instruction* mIP;
+
+        union {
+            Instruction* mIP;
+            uintptr_t mCheckpoint;
+        };
+
         Value* mRegisters;
         Value* mReturnRegister; // pointer to single register which is where eventual return value will go
     };

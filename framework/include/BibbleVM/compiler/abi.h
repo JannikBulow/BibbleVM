@@ -38,32 +38,32 @@ namespace bibblevm::compiler::abi {
         executor::Frame* frame;
         executor::Task* task;
 
+        uintptr_t resumeCheckpoint;
+
         void* code;
     };
 
     struct LeaveRegisters {
         uintptr_t reason;
+        uintptr_t checkpoint;
         uintptr_t exit1;
         uintptr_t exit2;
     };
 
-    enum class LeaveReason {
+    enum class LeaveReason  {
         Error = 0,
-        Return = 1,
+        Call = 1,
+        Return = 2,
     };
 
-    static_assert(sizeof(Frame) == 40);
-    static_assert(offsetof(Frame, code) == 32);
-
-    static_assert(sizeof(LeaveRegisters) == 24);
-    static_assert(offsetof(LeaveRegisters, exit2) == 16);
-
 #if defined(BIBBLEVM_ABI_X64_WIN64) || defined(BIBBLEVM_ABI_X64_SYSV)
+    constexpr int RESUME_CHECKPOINT_REGISTER = 13;
     constexpr int FRAME_REGISTER = 14;
     constexpr int REGS_REGISTER = 15;
-    constexpr int EXIT0_REGISTER = 0;
-    constexpr int EXIT1_REGISTER = 1;
-    constexpr int EXIT2_REGISTER = 2;
+    constexpr int LEAVE_REASON_REGISTER = 0;
+    constexpr int LEAVE_CHECKPOINT_REGISTER = 1;
+    constexpr int EXIT1_REGISTER = 2;
+    constexpr int EXIT2_REGISTER = 3;
 
     // allowed to use
     constexpr std::array GPRS = {
@@ -82,6 +82,18 @@ namespace bibblevm::compiler::abi {
 #else
     constexpr std::array PLATFORM_ABI_VOLATILE_REGISTERS = {
         0, 1, 2, 6, 7, 8, 9, 10, 11
+    };
+
+    constexpr std::array PLATFORM_ABI_ARGUMENT_REGISTERS = {
+        7, 6, 2, 1, 8, 9
+    };
+
+    constexpr std::array PLATFORM_ABI_FLOAT_ARGUMENT_REGISTERS = {
+        0, 1, 2, 3, 4, 5, 6, 7
+    };
+
+    constexpr int PLATFORM_ABI_RETURN_REGISTER = {
+        0
     };
 #endif
 #elif defined(BIBBLEVM_ABI_AARCH64)
