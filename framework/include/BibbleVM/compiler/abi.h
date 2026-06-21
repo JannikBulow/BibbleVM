@@ -54,6 +54,7 @@ namespace bibblevm::compiler::abi {
         Error = 0,
         Call = 1,
         Return = 2,
+        Yield = 3,
     };
 
 #if defined(BIBBLEVM_ABI_X64_WIN64) || defined(BIBBLEVM_ABI_X64_SYSV)

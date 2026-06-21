@@ -737,6 +737,6 @@ namespace bibblevm::compiler {
     }
 
     void Compiler::compileYIELD(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-
+        createLeave(abi::LeaveReason::Yield, true);
     }
 }

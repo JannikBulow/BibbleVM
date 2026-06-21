@@ -30,6 +30,8 @@ namespace bibblevm::compiler {
                 return executor::SchedulerMessage::Called(reinterpret_cast<executor::Function*>(leaveRegisters.exit1), static_cast<uint16_t>((leaveRegisters.exit2 >> 16) & 0xFFFF), static_cast<uint16_t>(leaveRegisters.exit2 & 0xFFFF));
             case abi::LeaveReason::Return:
                 return executor::SchedulerMessage::Returned({.isObject = leaveRegisters.exit1 != 0, .ul = leaveRegisters.exit2});
+            case abi::LeaveReason::Yield:
+                return executor::SchedulerMessage::Yielded();
 
             default:
                 return executor::SchedulerMessage::Errored(Error::Type::INTERNAL_ERROR, vm.memoryManager().allocateString(vm, "unknown leave reason from compiled function")->asString());
