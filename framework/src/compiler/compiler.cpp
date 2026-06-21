@@ -200,12 +200,30 @@ namespace bibblevm::compiler {
         return {};
     }
 
+    x86::Vec Compiler::allocateVectorRegister(std::vector<int> disallowed) {
+        disallowed.insert(disallowed.end(), mAllocatedVectorRegisters.begin(), mAllocatedVectorRegisters.end());
+        for (int gpr : abi::GP_REGISTERS) {
+            if (std::ranges::find(disallowed, gpr) == disallowed.end()) {
+                mAllocatedRegisters.push_back(gpr);
+                return x86::xmm(gpr);
+            }
+        }
+
+        BIBBLEVM_ASSERT(false && "TODO: better error handling");
+        return {};
+    }
+
     void Compiler::deallocateRegister(x86::Gp reg) {
         std::erase(mAllocatedRegisters, static_cast<int>(reg.id()));
     }
 
+    void Compiler::deallocateRegister(x86::Vec reg) {
+        std::erase(mAllocatedVectorRegisters, static_cast<int>(reg.id()));
+    }
+
     void Compiler::resetRegAlloc() {
         mAllocatedRegisters.clear();
+        mAllocatedVectorRegisters.clear();
     }
 
     x86::Mem Compiler::getIsObjectAddress(uint16_t vreg) {

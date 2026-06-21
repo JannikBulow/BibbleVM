@@ -48,6 +48,7 @@ namespace bibblevm::compiler {
         x86::Builder* mAsm = nullptr;
 
         std::vector<int> mAllocatedRegisters;
+        std::vector<int> mAllocatedVectorRegisters;
 
         std::vector<Label> mCheckpoints;
         std::vector<Label> mLabels;
@@ -55,7 +56,9 @@ namespace bibblevm::compiler {
         bool compileInstruction(VM& vm, executor::Instruction* inst);
 
         x86::Gp allocateRegister(std::vector<int> disallowed = {}); // signature defaults to Gp64 (gpq)
+        x86::Vec allocateVectorRegister(std::vector<int> disallowed = {});
         void deallocateRegister(x86::Gp reg);
+        void deallocateRegister(x86::Vec reg);
         void resetRegAlloc();
 
         x86::Mem getIsObjectAddress(uint16_t vreg);
