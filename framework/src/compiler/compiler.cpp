@@ -278,18 +278,25 @@ namespace bibblevm::compiler {
             }
         }
 
-        bool alignFix = false;
+        size_t stackAdjust = 0;
         size_t stackOffset = popOrder.size() * 8;
         if (stackOffset % 16 != 0) {
-            a.sub(x86::rsp, 8);
-            alignFix = true;
+            stackAdjust += 8;
+        }
+
+#if defined(BIBBLEVM_ABI_X64_WIN64)
+        stackAdjust += 32;
+#endif
+
+        if (stackAdjust != 0) {
+            a.sub(x86::rsp, stackAdjust);
         }
 
         a.mov(x86::gpq(abi::PLATFORM_ABI_RETURN_REGISTER), (uint64_t) function);
         a.call(x86::gpq(abi::PLATFORM_ABI_RETURN_REGISTER));
 
-        if (alignFix) {
-            a.add(x86::rsp, 8);
+        if (stackAdjust != 0) {
+            a.add(x86::rsp, stackAdjust);
         }
 
         if (returnRegister != abi::PLATFORM_ABI_RETURN_REGISTER) {
