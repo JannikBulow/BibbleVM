@@ -144,8 +144,8 @@ namespace bibblevm::compiler {
         Label checkpointTable = builder.new_label();
         builder.set_cursor(startNode);
 
-        builder.lea(x86::gpq(abi::GPRS[0]), x86::ptr(checkpointTable));
-        builder.jmp(x86::qword_ptr(x86::gpq(abi::GPRS[0]), x86::gpq(abi::RESUME_CHECKPOINT_REGISTER), 3));
+        builder.lea(x86::gpq(abi::GP_REGISTERS[0]), x86::ptr(checkpointTable));
+        builder.jmp(x86::qword_ptr(x86::gpq(abi::GP_REGISTERS[0]), x86::gpq(abi::RESUME_CHECKPOINT_REGISTER), 3));
 
         builder.bind(checkpointTable);
         for (auto& checkpoint : mCheckpoints) {
@@ -189,7 +189,7 @@ namespace bibblevm::compiler {
 
     x86::Gp Compiler::allocateRegister(std::vector<int> disallowed) {
         disallowed.insert(disallowed.end(), mAllocatedRegisters.begin(), mAllocatedRegisters.end());
-        for (int gpr : abi::GPRS) {
+        for (int gpr : abi::GP_REGISTERS) {
             if (std::ranges::find(disallowed, gpr) == disallowed.end()) {
                 mAllocatedRegisters.push_back(gpr);
                 return x86::gpq(gpr);
