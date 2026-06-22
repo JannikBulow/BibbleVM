@@ -73,7 +73,7 @@ namespace bibblevm::compiler::abi {
 
     constexpr std::array VECTOR_REGISTERS = {
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-    }
+    };
 
     // never touch
     constexpr std::array RESERVED_REGISTERS = {
@@ -83,6 +83,10 @@ namespace bibblevm::compiler::abi {
 #if defined(BIBBLEVM_ABI_X64_WIN64)
     constexpr std::array PLATFORM_ABI_VOLATILE_REGISTERS = {
         0, 1, 2, 8, 9, 10, 11
+    };
+
+    constexpr std::array PLATFORM_ABI_VOLATILE_FLOAT_REGISTERS = {
+        0, 1, 2, 3, 4, 5
     };
 
     constexpr std::array PLATFORM_ABI_ARGUMENT_REGISTERS = {
@@ -99,6 +103,10 @@ namespace bibblevm::compiler::abi {
 #else
     constexpr std::array PLATFORM_ABI_VOLATILE_REGISTERS = {
         0, 1, 2, 6, 7, 8, 9, 10, 11
+    };
+
+    constexpr std::array PLATFORM_ABI_VOLATILE_FLOAT_REGISTERS = {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
     };
 
     constexpr std::array PLATFORM_ABI_ARGUMENT_REGISTERS = {

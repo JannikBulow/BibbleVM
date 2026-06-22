@@ -117,6 +117,9 @@ namespace bibblevm::compiler {
         Environment env = Environment::host();
         codeHolder.init(env);
 
+        FileLogger logger(stdout);
+        codeHolder.set_logger(&logger);
+
         x86::Builder builder(&codeHolder);
         BaseNode* startNode = builder.cursor();
 
@@ -173,8 +176,53 @@ namespace bibblevm::compiler {
         return code;
     }
 
+    Compiler::VReg::VReg(uint16_t id, const x86::Gp& untaggedPhysical)
+        : location(VRegLocation::UntaggedPhysical)
+        , id(id)
+        , untaggedPhysical(untaggedPhysical) {}
+
+    Compiler::VReg::VReg(uint16_t id, const x86::Vec& physical)
+        : location(VRegLocation::Physical)
+        , id(id)
+        , physical(physical) {}
+
+    Compiler::VReg::VReg(uint16_t id, const x86::Mem& address)
+        : location(VRegLocation::SpillSlot)
+        , id(id)
+        , address(address) {}
+
+    Compiler::VReg::VReg(const VReg& other)
+        : location(other.location)
+        , id(other.id) {
+        switch (location) {
+            case VRegLocation::UntaggedPhysical:
+                untaggedPhysical = other.untaggedPhysical;
+                break;
+            case VRegLocation::Physical:
+                physical = other.physical;
+                break;
+            case VRegLocation::SpillSlot:
+                address = other.address;
+                break;
+        }
+    }
+
+    Compiler::VReg::~VReg() {
+        switch (location) {
+            case VRegLocation::UntaggedPhysical:
+                untaggedPhysical.~Gp();
+                break;
+            case VRegLocation::Physical:
+                physical.~Vec();
+                break;
+            case VRegLocation::SpillSlot:
+                address.~Mem();
+                break;
+        }
+    }
+
     bool Compiler::compileInstruction(VM& vm, executor::Instruction* inst) {
-        resetRegAlloc();
+        //resetRegAlloc();
 
         InstructionCompiler fn = mInstructionCompilers[inst->opcode];
         if (!fn) {
@@ -196,21 +244,56 @@ namespace bibblevm::compiler {
             }
         }
 
+        // simple spill logic. will be made better later on
+        for (auto& vreg : mVRegs) {
+            if (vreg->location == VRegLocation::UntaggedPhysical) {
+                std::erase(disallowed, vreg->untaggedPhysical.id()); // super hacky way to avoid copying a ton of memory
+                spillVReg(vreg.get());
+                for (int gpr : abi::GP_REGISTERS) {
+                    if (std::ranges::find(disallowed, gpr) == disallowed.end()) {
+                        mAllocatedRegisters.push_back(gpr);
+                        return x86::gpq(gpr);
+                    }
+                }
+            }
+        }
+
         BIBBLEVM_ASSERT(false && "TODO: better error handling");
         return {};
     }
 
     x86::Vec Compiler::allocateVectorRegister(std::vector<int> disallowed) {
         disallowed.insert(disallowed.end(), mAllocatedVectorRegisters.begin(), mAllocatedVectorRegisters.end());
-        for (int gpr : abi::GP_REGISTERS) {
+        for (int gpr : abi::VECTOR_REGISTERS) {
             if (std::ranges::find(disallowed, gpr) == disallowed.end()) {
-                mAllocatedRegisters.push_back(gpr);
+                mAllocatedVectorRegisters.push_back(gpr);
                 return x86::xmm(gpr);
+            }
+        }
+
+        for (auto& vreg : mVRegs) {
+            if (vreg->location == VRegLocation::Physical) {
+                std::erase(disallowed, vreg->physical.id()); // super hacky way to avoid copying a ton of memory
+                spillVReg(vreg.get());
+                for (int gpr : abi::VECTOR_REGISTERS) {
+                    if (std::ranges::find(disallowed, gpr) == disallowed.end()) {
+                        mAllocatedVectorRegisters.push_back(gpr);
+                        return x86::xmm(gpr);
+                    }
+                }
             }
         }
 
         BIBBLEVM_ASSERT(false && "TODO: better error handling");
         return {};
+    }
+
+    Compiler::TempRegister<x86::Gp> Compiler::allocateTempRegister(std::vector<int> disallowed) {
+        return {*this, allocateRegister(std::move(disallowed))};
+    }
+
+    Compiler::TempRegister<x86::Vec> Compiler::allocateTempVectorRegister(std::vector<int> disallowed) {
+        return {*this, allocateVectorRegister(std::move(disallowed))};
     }
 
     void Compiler::deallocateRegister(x86::Gp reg) {
@@ -222,69 +305,296 @@ namespace bibblevm::compiler {
     }
 
     void Compiler::resetRegAlloc() {
+        for (auto& vreg : mVRegs) {
+            spillVReg(vreg.get());
+        }
+        mVRegs.clear();
+
         mAllocatedRegisters.clear();
         mAllocatedVectorRegisters.clear();
     }
 
-    x86::Mem Compiler::getIsObjectAddress(uint16_t vreg) {
-        return x86::byte_ptr(x86::gpq(abi::REGS_REGISTER), vreg * static_cast<uint16_t>(sizeof(Value)));
+    Compiler::VReg* Compiler::getVReg(uint16_t vregId) {
+        for (auto& vreg : mVRegs) {
+            if (vreg->id == vregId) return vreg.get();
+        }
+
+        mVRegs.push_back(std::make_unique<VReg>(vregId, getFullRegisterAddress(vregId)));
+        return mVRegs.back().get();
     }
 
-    x86::Mem Compiler::getValueAddress(uint16_t vreg) {
-        return x86::qword_ptr(x86::gpq(abi::REGS_REGISTER), vreg * static_cast<uint16_t>(sizeof(Value)) + 8);
+    x86::Gp Compiler::assignPhysRegUntagged(VReg* vreg) {
+        if (vreg->location == VRegLocation::UntaggedPhysical) return vreg->untaggedPhysical;
+
+        auto& a = *mAsm;
+
+        auto reg = allocateRegister();
+        if (vreg->location == VRegLocation::SpillSlot) {
+            a.mov(reg, getValueAddress(vreg->id));
+        } else { // full physical backed
+            a.pextrq(reg, vreg->physical, 1);
+            a.mov(getIsObjectAddress(vreg->id), reg);
+            a.movq(reg, vreg->physical);
+            deallocateRegister(vreg->physical);
+        }
+
+        vreg->location = VRegLocation::UntaggedPhysical;
+        vreg->untaggedPhysical = reg;
+        return reg;
     }
 
-    Compiler::VMRegisterRef Compiler::getRegisterRef(uint16_t vreg) {
-        return {getIsObjectAddress(vreg), getValueAddress(vreg)};
+    x86::Vec Compiler::assignPhysReg(VReg* vreg) {
+        if (vreg->location == VRegLocation::Physical) return vreg->physical;
+
+        auto& a = *mAsm;
+
+        auto reg = allocateVectorRegister();
+        if (vreg->location == VRegLocation::SpillSlot) {
+            a.movdqu(reg, getFullRegisterAddress(vreg->id));
+        } else { // untagged physical backed
+            a.movq(reg, vreg->untaggedPhysical);
+            a.mov(vreg->untaggedPhysical, getIsObjectAddress(vreg->id));
+            a.pinsrq(reg, vreg->untaggedPhysical, 1);
+            deallocateRegister(vreg->untaggedPhysical);
+        }
+
+        vreg->location = VRegLocation::Physical;
+        vreg->physical = reg;
+        return reg;
     }
 
-    void Compiler::storeVReg(uint16_t vreg, x86::Gp isObject, x86::Gp value) {
-        x86::Builder& a = *mAsm;
+    x86::Mem Compiler::spillVReg(VReg* vreg) {
+        if (vreg->location == VRegLocation::SpillSlot) return vreg->address;
 
-        auto reg = getRegisterRef(vreg);
-        a.mov(reg.isObjectAddr, isObject);
-        a.mov(reg.valueAddr, value);
+        auto& a = *mAsm;
+
+        if (vreg->location == VRegLocation::UntaggedPhysical) {
+            a.mov(getValueAddress(vreg->id), vreg->untaggedPhysical);
+            // can't change isObject. assume that an untagged physically backed vreg hasn't changed its object tag
+            deallocateRegister(vreg->untaggedPhysical);
+        } else { // full physical backed
+            a.movdqu(getFullRegisterAddress(vreg->id), vreg->physical);
+            deallocateRegister(vreg->physical);
+        }
+
+        vreg->location = VRegLocation::SpillSlot;
+        vreg->address = getFullRegisterAddress(vreg->id);
+        return vreg->address;
     }
 
-    void Compiler::storeVReg(uint16_t vreg, bool isObject, x86::Gp value) {
-        x86::Builder& a = *mAsm;
+    void Compiler::moveVReg(VReg* dst, VReg* src) {
+        if (&dst != &src) return;
+        if (dst->location == VRegLocation::UntaggedPhysical && src->location == VRegLocation::UntaggedPhysical && dst->untaggedPhysical.id() == src->untaggedPhysical.id()) return;
+        if (dst->location == VRegLocation::Physical && src->location == VRegLocation::Physical && dst->physical.id() == src->physical.id()) return;
+        if (dst->location == VRegLocation::SpillSlot && src->location == VRegLocation::SpillSlot && dst->id == src->id) return;
 
-        auto reg = getRegisterRef(vreg);
-        a.mov(reg.isObjectAddr, isObject);
-        a.mov(reg.valueAddr, value);
-    }
+        auto& a = *mAsm;
 
-    void Compiler::storeVReg(uint16_t vreg, x86::Gp isObject, uint64_t value) {
-        x86::Builder& a = *mAsm;
-
-        auto reg = getRegisterRef(vreg);
-        a.mov(reg.isObjectAddr, isObject);
-        if (value > 0xFFFFFFFF) {
-            auto tmp = allocateRegister();
-            a.mov(tmp, value);
-            a.mov(reg.valueAddr, tmp);
-            deallocateRegister(tmp);
-        } else {
-            a.mov(reg.valueAddr, value);
+        //TODO: consider promotion instead of temporary register allocations
+        switch (dst->location) {
+            case VRegLocation::UntaggedPhysical: {
+                switch (src->location) {
+                    case VRegLocation::UntaggedPhysical:
+                        a.mov(dst->untaggedPhysical, getIsObjectAddress(src->id));
+                        a.mov(getIsObjectAddress(dst->id), dst->untaggedPhysical);
+                        a.mov(dst->untaggedPhysical, src->untaggedPhysical);
+                        break;
+                    case VRegLocation::Physical:
+                        a.pextrq(dst->untaggedPhysical, src->physical, 1);
+                        a.mov(getIsObjectAddress(dst->id), dst->untaggedPhysical);
+                        a.movq(dst->untaggedPhysical, src->physical);
+                        break;
+                    case VRegLocation::SpillSlot:
+                        a.mov(dst->untaggedPhysical, getIsObjectAddress(src->id));
+                        a.mov(getIsObjectAddress(dst->id), dst->untaggedPhysical);
+                        a.mov(dst->untaggedPhysical, getValueAddress(src->id));
+                        break;
+                }
+                break;
+            }
+            case VRegLocation::Physical: {
+                switch (src->location) {
+                    case VRegLocation::UntaggedPhysical: {
+                        auto tmp = allocateTempRegister();
+                        a.mov(tmp, getIsObjectAddress(src->id));
+                        a.pinsrq(dst->physical, tmp, 1);
+                        a.movq(dst->physical, src->untaggedPhysical);
+                        break;
+                    }
+                    case VRegLocation::Physical:
+                        a.movdqa(dst->physical, src->physical);
+                        break;
+                    case VRegLocation::SpillSlot:
+                        a.movdqu(dst->physical, src->address);
+                        break;
+                }
+                break;
+            }
+            case VRegLocation::SpillSlot: {
+                switch (src->location) {
+                    case VRegLocation::UntaggedPhysical: {
+                        auto tmp = allocateTempRegister();
+                        a.mov(getValueAddress(dst->id), src->untaggedPhysical);
+                        a.mov(tmp, getIsObjectAddress(src->id));
+                        a.mov(getIsObjectAddress(dst->id), tmp);
+                        break;
+                    }
+                    case VRegLocation::Physical:
+                        a.movdqu(dst->address, src->physical);
+                        break;
+                    case VRegLocation::SpillSlot: {
+                        auto tmp = allocateTempVectorRegister();
+                        a.movdqu(tmp, src->address);
+                        a.movdqu(dst->address, tmp);
+                        break;
+                    }
+                }
+                break;
+            }
         }
     }
 
-    void Compiler::storeVReg(uint16_t vreg, bool isObject, uint64_t value) {
-        x86::Builder& a = *mAsm;
-
-        auto reg = getRegisterRef(vreg);
-        a.mov(reg.isObjectAddr, isObject);
-        if (value > 0xFFFFFFFF) {
-            auto tmp = allocateRegister();
-            a.mov(tmp, value);
-            a.mov(reg.valueAddr, tmp);
-            deallocateRegister(tmp);
-        } else {
-            a.mov(reg.valueAddr, value);
+    void Compiler::getIsObject(VReg* vreg, x86::Gp isObjectDst) {
+        auto& a = *mAsm;
+        switch (vreg->location) {
+            case VRegLocation::UntaggedPhysical:
+                // assume isObject doesn't change when backed by untagged physical, so load it from memory
+                a.mov(isObjectDst, getIsObjectAddress(vreg->id));
+                break;
+            case VRegLocation::Physical:
+                a.pextrq(isObjectDst, vreg->physical, 1);
+                break;
+            case VRegLocation::SpillSlot:
+                a.mov(isObjectDst, getIsObjectAddress(vreg->id));
+                break;
+        }
+    }
+    void Compiler::setIsObject(VReg* vreg, x86::Gp isObject) {
+        auto& a = *mAsm;
+        switch (vreg->location) {
+            case VRegLocation::UntaggedPhysical:
+                a.mov(getIsObjectAddress(vreg->id), isObject);
+                break;
+            case VRegLocation::Physical:
+                a.pinsrq(vreg->physical, isObject, 1);
+                break;
+            case VRegLocation::SpillSlot:
+                a.mov(getIsObjectAddress(vreg->id), isObject);
+                break;
         }
     }
 
-    void Compiler::createArrayLoad(x86::Gp object, x86::Gp index, x86::Gp elementSize, x86::Gp dst) {
+    void Compiler::setIsObject(VReg* vreg, bool isObject) {
+        auto& a = *mAsm;
+        switch (vreg->location) {
+            case VRegLocation::UntaggedPhysical:
+                a.mov(getIsObjectAddress(vreg->id), isObject);
+                break;
+            case VRegLocation::Physical: {
+                auto tmp = allocateTempRegister();
+                a.mov(tmp, isObject);
+                a.pinsrq(vreg->physical, tmp, 1);
+                break;
+            }
+            case VRegLocation::SpillSlot:
+                a.mov(getIsObjectAddress(vreg->id), isObject);
+                break;
+        }
+    }
+
+    void Compiler::getValue(VReg* vreg, x86::Gp valueDst) {
+        auto& a = *mAsm;
+        switch (vreg->location) {
+            case VRegLocation::UntaggedPhysical:
+                a.mov(valueDst, vreg->untaggedPhysical);
+                break;
+            case VRegLocation::Physical:
+                a.movq(valueDst, vreg->physical);
+                break;
+            case VRegLocation::SpillSlot:
+                a.mov(valueDst, getValueAddress(vreg->id));
+                break;
+        }
+    }
+
+    void Compiler::setValue(VReg* vreg, x86::Gp value) {
+        auto& a = *mAsm;
+        switch (vreg->location) {
+            case VRegLocation::UntaggedPhysical:
+                a.mov(vreg->untaggedPhysical, value);
+                break;
+            case VRegLocation::Physical:
+                a.pinsrq(vreg->physical, value, 0);
+                break;
+            case VRegLocation::SpillSlot:
+                a.mov(getValueAddress(vreg->id), value);
+                break;
+        }
+    }
+
+    void Compiler::setValue(VReg* vreg, uint64_t value) {
+        auto& a = *mAsm;
+        switch (vreg->location) {
+            case VRegLocation::UntaggedPhysical:
+                a.mov(vreg->untaggedPhysical, value);
+                break;
+            case VRegLocation::Physical: {
+                auto tmp = allocateTempRegister();
+                a.mov(tmp, value);
+                a.pinsrq(vreg->physical, tmp, 0);
+                break;
+            }
+            case VRegLocation::SpillSlot:
+                if (value > 0xFFFFFFFF) {
+                    auto tmp = allocateTempRegister();
+                    a.mov(tmp, value);
+                    a.mov(getValueAddress(vreg->id), tmp);
+                } else {
+                    a.mov(getValueAddress(vreg->id), value);
+                }
+                break;
+        }
+    }
+
+    void Compiler::compareVReg(VReg* lhs, VReg* rhs) {
+        auto& a = *mAsm;
+
+        //NOTE: is this the more appropriate thing to do in other vreg operations too? this could also be done less aggressively by assigning lhs, then switching on rhs only. i will ponder on this topic
+        a.cmp(assignPhysRegUntagged(lhs), assignPhysRegUntagged(rhs));
+    }
+
+    void Compiler::compareVReg(VReg* lhs, uint32_t rhs) {
+        auto& a = *mAsm;
+
+        switch (lhs->location) {
+            case VRegLocation::UntaggedPhysical:
+                a.cmp(lhs->untaggedPhysical, rhs);
+                break;
+            case VRegLocation::Physical: {
+                auto tmp = allocateTempRegister();
+                a.movq(tmp, lhs->physical);
+                a.cmp(tmp, 0);
+                break;
+            }
+            case VRegLocation::SpillSlot:
+                a.cmp(getValueAddress(lhs->id), rhs);
+                break;
+        }
+    }
+
+    x86::Mem Compiler::getIsObjectAddress(uint16_t index) {
+        return x86::byte_ptr(x86::gpq(abi::REGS_REGISTER), index * static_cast<uint16_t>(sizeof(Value)));
+    }
+
+    x86::Mem Compiler::getValueAddress(uint16_t index) {
+        return x86::qword_ptr(x86::gpq(abi::REGS_REGISTER), index * static_cast<uint16_t>(sizeof(Value)) + 8);
+    }
+
+    x86::Mem Compiler::getFullRegisterAddress(uint16_t index) {
+        return x86::dqword_ptr(x86::gpq(abi::REGS_REGISTER), index * static_cast<uint16_t>(sizeof(Value)));
+    }
+
+    void Compiler::createArrayLoad(VReg* object, VReg* index, x86::Gp elementSize, x86::Gp dst) {
         auto& a = *mAsm;
 
         Label size1 = a.new_label();
@@ -301,38 +611,54 @@ namespace bibblevm::compiler {
         a.cmp(elementSize.r32(), 4);
         a.je(size4);
 
-        // fall-through: size 8
-        a.mov(dst.r64(), x86::qword_ptr(object, index, 3, offsetof(oop::Array, elementBytes)));
+        // fall through to size 8
+        a.mov(dst.r64(), x86::qword_ptr(assignPhysRegUntagged(object), assignPhysRegUntagged(index), 3, offsetof(oop::Array, elementBytes)));
         a.jmp(done);
 
         a.bind(size1);
-        a.movzx(dst.r32(), x86::byte_ptr(object, index, 0, offsetof(oop::Array, elementBytes)));
+        a.movzx(dst.r32(), x86::byte_ptr(assignPhysRegUntagged(object), assignPhysRegUntagged(index), 0, offsetof(oop::Array, elementBytes)));
         a.jmp(done);
 
         a.bind(size2);
-        a.movzx(dst.r32(), x86::word_ptr(object, index, 1, offsetof(oop::Array, elementBytes)));
+        a.movzx(dst.r32(), x86::word_ptr(assignPhysRegUntagged(object), assignPhysRegUntagged(index), 1, offsetof(oop::Array, elementBytes)));
         a.jmp(done);
 
         a.bind(size4);
-        a.mov(dst.r32(), x86::dword_ptr(object, index, 2, offsetof(oop::Array, elementBytes)));
+        a.mov(dst.r32(), x86::dword_ptr(assignPhysRegUntagged(object), assignPhysRegUntagged(index), 2, offsetof(oop::Array, elementBytes)));
         // fall through to done
 
         a.bind(done);
     }
 
-    void Compiler::createArrayStore(x86::Gp object, x86::Gp index, x86::Gp elementSize, x86::Gp src) {
+    void Compiler::createArrayStore(VReg* object, VReg* index, x86::Gp elementSize, x86::Gp src) {
 
     }
 
-    void Compiler::createPlatformCall(const std::vector<x86::Gp>& neededRegisters, x86::Gp returnRegister, void* function) {
+    void Compiler::createPlatformCall(x86::Gp returnRegister, void* function) { // TODO: make this whole thing work with the regalloc
+        auto isVolatile = [](x86::Gp reg) {
+            return std::ranges::find(abi::PLATFORM_ABI_VOLATILE_REGISTERS, reg.id()) != abi::PLATFORM_ABI_VOLATILE_REGISTERS.end();
+        };
+        auto isVolatileFloat = [](x86::Vec reg) {
+            return std::ranges::find(abi::PLATFORM_ABI_VOLATILE_FLOAT_REGISTERS, reg.id()) != abi::PLATFORM_ABI_VOLATILE_FLOAT_REGISTERS.end();
+        };
+
         auto& a = *mAsm;
 
         std::vector<x86::Gp> popOrder;
 
-        for (auto& r : neededRegisters) {
-            if (std::ranges::find(abi::PLATFORM_ABI_VOLATILE_REGISTERS, r.id()) != abi::PLATFORM_ABI_VOLATILE_REGISTERS.end()) {
-                a.push(r);
-                popOrder.insert(popOrder.begin(), r);
+        for (auto& vreg : mVRegs) {
+            if (vreg->location == VRegLocation::UntaggedPhysical && isVolatile(vreg->untaggedPhysical)) {
+                spillVReg(vreg.get());
+            } else if (vreg->location == VRegLocation::Physical && isVolatileFloat(vreg->physical)) {
+                spillVReg(vreg.get());
+            }
+        }
+
+        for (auto& regId : mAllocatedRegisters) {
+            x86::Gp reg = x86::gpq(regId);
+            if (isVolatile(reg)) {
+                a.push(reg);
+                popOrder.insert(popOrder.begin(), reg);
             }
         }
 
@@ -381,8 +707,11 @@ namespace bibblevm::compiler {
         mAsm->bind(mCheckpoints[checkpoint]);
     }
 
-    void Compiler::createLeave(abi::LeaveReason reason, bool generateCheckpoint) {
+    void Compiler::createLeave(abi::LeaveReason reason, std::function<void()> populateExitRegisters, bool generateCheckpoint) {
         auto& a = *mAsm;
+
+        resetRegAlloc();
+        populateExitRegisters();
 
         a.mov(x86::gpq(abi::LEAVE_REASON_REGISTER), reason);
 
@@ -403,71 +732,74 @@ namespace bibblevm::compiler {
     void Compiler::createError(Error::Type type, std::optional<std::string_view> message) {
         auto& a = *mAsm;
 
-        a.mov(x86::gpq(abi::EXIT1_REGISTER), type);
+        createLeave(abi::LeaveReason::Error, [&] {
+            a.mov(x86::gpq(abi::EXIT1_REGISTER), type);
 
-        if (message.has_value()) {
-
-        } else {
-            a.xor_(x86::gpq(abi::EXIT2_REGISTER), x86::gpq(abi::EXIT2_REGISTER));
-        }
-
-        createLeave(abi::LeaveReason::Error, false);
+            if (message.has_value()) {
+                //TODO: create string
+            } else {
+                a.xor_(x86::gpq(abi::EXIT2_REGISTER), x86::gpq(abi::EXIT2_REGISTER));
+            }
+        }, false);
     }
 
-    void Compiler::createCall(int functionRegister, uint16_t dstVReg, uint16_t argsVReg) {
+    void Compiler::createCall(const x86::Gp& function, uint16_t dstVReg, uint16_t argsVReg) {
         auto& a = *mAsm;
 
-        if (functionRegister != abi::EXIT1_REGISTER) {
-            a.mov(x86::gpq(abi::EXIT1_REGISTER), x86::gpq(functionRegister));
-        }
+        createLeave(abi::LeaveReason::Call, [&] {
+            if (function.id() != abi::EXIT1_REGISTER) {
+                a.mov(x86::gpq(abi::EXIT1_REGISTER), function);
+            }
 
-        a.mov(x86::gpq(abi::EXIT2_REGISTER), (static_cast<uint32_t>(dstVReg) << 16) | argsVReg);
-        createLeave(abi::LeaveReason::Call, true);
+            a.mov(x86::gpq(abi::EXIT2_REGISTER), (static_cast<uint32_t>(dstVReg) << 16) | argsVReg);
+        }, true);
     }
 
     void Compiler::createCall(const x86::Mem& function, uint16_t dstVReg, uint16_t argsVReg) {
         auto& a = *mAsm;
 
-        a.mov(x86::gpq(abi::EXIT1_REGISTER), function);
-        a.mov(x86::gpq(abi::EXIT2_REGISTER), (static_cast<uint32_t>(dstVReg) << 16) | argsVReg);
-        createLeave(abi::LeaveReason::Call, true);
+        createLeave(abi::LeaveReason::Call, [&] {
+            a.mov(x86::gpq(abi::EXIT1_REGISTER), function);
+            a.mov(x86::gpq(abi::EXIT2_REGISTER), (static_cast<uint32_t>(dstVReg) << 16) | argsVReg);
+        }, true);
     }
 
     void Compiler::createCall(executor::Function* function, uint16_t dstVReg, uint16_t argsVReg) {
         auto& a = *mAsm;
 
-        a.mov(x86::gpq(abi::EXIT1_REGISTER), function);
-        a.mov(x86::gpq(abi::EXIT2_REGISTER), (static_cast<uint32_t>(dstVReg) << 16) | argsVReg);
-        createLeave(abi::LeaveReason::Call, true);
+        createLeave(abi::LeaveReason::Call, [&] {
+            a.mov(x86::gpq(abi::EXIT1_REGISTER), function);
+            a.mov(x86::gpq(abi::EXIT2_REGISTER), (static_cast<uint32_t>(dstVReg) << 16) | argsVReg);
+        }, true);
     }
 
-    Label Compiler::createNullCheck(x86::Gp objectReg) {
+    Label Compiler::createNullCheck(VReg* object) {
         auto& a = *mAsm;
 
         Label label = a.new_label();
 
-        a.test(objectReg, objectReg); // will set ZF to 1 if obj is 0
+        a.test(assignPhysRegUntagged(object), assignPhysRegUntagged(object)); // will set ZF to 1 if obj is 0
         a.jz(label);
 
         return label;
     }
 
-    Label Compiler::createObjectKindCheck(x86::Gp objectReg, oop::ObjectKind expectedKind) {
+    Label Compiler::createObjectKindCheck(VReg* object, oop::ObjectKind expectedKind) {
         auto& a = *mAsm;
 
         Label label = a.new_label();
 
-        a.cmp(x86::byte_ptr(objectReg, offsetof(oop::Object, kind)), expectedKind);
+        a.cmp(x86::byte_ptr(assignPhysRegUntagged(object), offsetof(oop::Object, kind)), expectedKind);
         a.jne(label);
 
         return label;
     }
 
-    void Compiler::withArrayGuard(x86::Gp objectReg, std::function<void()> body) {
+    void Compiler::withArrayGuard(VReg* object, std::function<void()> body) {
         auto& a = *mAsm;
 
-        Label isNull = createNullCheck(objectReg);
-        Label isNotArray = createObjectKindCheck(objectReg, oop::ObjectKind::Array);
+        Label isNull = createNullCheck(object);
+        Label isNotArray = createObjectKindCheck(object, oop::ObjectKind::Array);
         Label allGood = a.new_label();
 
         body();
@@ -488,13 +820,10 @@ namespace bibblevm::compiler {
     }
 
     void Compiler::compileMOV(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        auto tmp0 = allocateRegister();
-        auto tmp1 = allocateRegister();
-        auto src = getRegisterRef(inst->b);
+        VReg* dst = getVReg(inst->a);
+        VReg* src = getVReg(inst->b);
 
-        a.mov(tmp0, src.isObjectAddr);
-        a.mov(tmp1, src.valueAddr);
-        storeVReg(inst->a, tmp0, tmp1);
+        moveVReg(dst, src);
     }
 
     void Compiler::compileMOV_RANGE(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
@@ -504,11 +833,15 @@ namespace bibblevm::compiler {
     void Compiler::compileLOAD_CONST(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
 
     void Compiler::compileLOAD_IMM(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        storeVReg(inst->a, false, inst->imm);
+        VReg* dst = getVReg(inst->a);
+        setIsObject(dst, false);
+        setValue(dst, inst->b);
     }
 
     void Compiler::compileLOAD_NULL(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        storeVReg(inst->a, true, 0);
+        VReg* dst = getVReg(inst->a);
+        setIsObject(dst, true);
+        setValue(dst, 0);
     }
 
     void Compiler::compileADD(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
@@ -594,16 +927,15 @@ namespace bibblevm::compiler {
     void Compiler::compileD2F(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
 
     void Compiler::compileICMP(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        auto compareTmp = allocateRegister();
+        VReg* dst = getVReg(inst->a);
+        VReg* lhs = getVReg(inst->b);
+        VReg* rhs = getVReg(inst->c);
 
-        a.mov(compareTmp, getValueAddress(inst->b));
-        a.cmp(compareTmp, getValueAddress(inst->c));
+        compareVReg(lhs, rhs);
 
-        deallocateRegister(compareTmp);
-
-        auto result = allocateRegister();
-        auto lessThan = allocateRegister();
-        auto greaterThan = allocateRegister();
+        auto result = allocateTempRegister();
+        auto lessThan = allocateTempRegister();
+        auto greaterThan = allocateTempRegister();
 
         a.mov(result, 0);
         a.mov(lessThan, -1);
@@ -612,8 +944,8 @@ namespace bibblevm::compiler {
         a.cmovl(result, lessThan);
         a.cmovg(result, greaterThan);
 
-        a.mov(getIsObjectAddress(inst->a), 0);
-        a.mov(getValueAddress(inst->a), result);
+        setIsObject(dst, false);
+        setValue(dst, result);
     }
 
     void Compiler::compileUCMP(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
@@ -643,7 +975,8 @@ namespace bibblevm::compiler {
     void Compiler::compileJGT(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
 
     void Compiler::compileJGE(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        a.cmp(getValueAddress(inst->a), 0);
+        VReg* value = getVReg(inst->a);
+        compareVReg(value, 0u);
         a.jge(mLabels[(inst - mInstructionsBegin) + static_cast<int64_t>(inst->imm)]);
     }
 
@@ -670,40 +1003,36 @@ namespace bibblevm::compiler {
     void Compiler::compileGETCLASS(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
 
     void Compiler::compileARRAYLENGTH(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        auto object = allocateRegister();
-        a.mov(object, getValueAddress(inst->b));
+        VReg* dst = getVReg(inst->a);
+        VReg* object = getVReg(inst->b);
 
         withArrayGuard(object, [&] {
-            auto len = allocateRegister();
-            a.mov(len, x86::qword_ptr(object, offsetof(oop::Array, length)));
-            a.mov(getValueAddress(inst->a), len);
+            auto len = allocateTempRegister();
+            a.mov(len, x86::qword_ptr(assignPhysRegUntagged(object), offsetof(oop::Array, length)));
+            setValue(dst, len);
         });
     }
 
     void Compiler::compileARRAYGET(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        auto object = allocateRegister();
-        a.mov(object, getValueAddress(inst->b));
+        VReg* dst = getVReg(inst->a);
+        VReg* object = getVReg(inst->b);
+        VReg* index = getVReg(inst->c);
 
         withArrayGuard(object, [&] {
-            auto elemSize = allocateRegister();
-            a.mov(x86::gpd(abi::PLATFORM_ABI_ARGUMENT_REGISTERS[0]), x86::byte_ptr(object, offsetof(oop::Array, baseType)));
-            createPlatformCall({object}, elemSize, (void*) &oop::GetPrimitiveSizeForType);
+            auto elemSize = allocateTempRegister();
+            a.mov(x86::gpd(abi::PLATFORM_ABI_ARGUMENT_REGISTERS[0]), x86::byte_ptr(assignPhysRegUntagged(object), offsetof(oop::Array, baseType)));
+            createPlatformCall(elemSize, (void*) &oop::GetPrimitiveSizeForType);
 
-            auto index = allocateRegister();
-            a.mov(index, getValueAddress(inst->c));
-
-            auto value = allocateRegister();
+            auto value = allocateTempRegister();
             createArrayLoad(object, index, elemSize, value);
 
-            deallocateRegister(elemSize);
-            deallocateRegister(index);
+            auto isObjectFlag = allocateTempRegister();
+            a.xor_(isObjectFlag->r32(), isObjectFlag->r32());
+            a.cmp(x86::byte_ptr(assignPhysRegUntagged(object), offsetof(oop::Array, baseType)), oop::Type::Reference);
+            a.sete(isObjectFlag->r8_lo());
 
-            auto isObjectFlag = allocateRegister();
-            a.xor_(isObjectFlag.r32(), isObjectFlag.r32());
-            a.cmp(x86::byte_ptr(object, offsetof(oop::Array, baseType)), oop::Type::Reference);
-            a.sete(isObjectFlag.r8_lo());
-
-            storeVReg(inst->a, isObjectFlag, value);
+            setIsObject(dst, isObjectFlag);
+            setValue(dst, value);
         });
     }
 
@@ -748,13 +1077,13 @@ namespace bibblevm::compiler {
     void Compiler::compileCALLARP_DYN(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
 
     void Compiler::compileRETURN(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        a.mov(x86::gpq(abi::EXIT1_REGISTER), getIsObjectAddress(inst->a));
-        a.mov(x86::gpq(abi::EXIT2_REGISTER), getValueAddress(inst->a));
-
-        createLeave(abi::LeaveReason::Return, false);
+        createLeave(abi::LeaveReason::Return, [&] {
+            a.mov(x86::gpq(abi::EXIT1_REGISTER), getIsObjectAddress(inst->a));
+            a.mov(x86::gpq(abi::EXIT2_REGISTER), getValueAddress(inst->a));
+        }, false);
     }
 
     void Compiler::compileYIELD(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        createLeave(abi::LeaveReason::Yield, true);
+        createLeave(abi::LeaveReason::Yield, []{}, true);
     }
 }

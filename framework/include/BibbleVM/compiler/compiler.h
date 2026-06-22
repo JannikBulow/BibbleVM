@@ -12,6 +12,7 @@
 #include <asmjit/asmjit.h>
 
 #include <functional>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -33,9 +34,38 @@ namespace bibblevm::compiler {
         Code* compile(VM& vm, CompileOptions options);
 
     private:
-        struct VMRegisterRef {
-            x86::Mem isObjectAddr;
-            x86::Mem valueAddr;
+        enum class VRegLocation : uint8_t {
+            UntaggedPhysical,
+            Physical,
+            SpillSlot
+        };
+
+        struct VReg {
+            VRegLocation location;
+            uint16_t id;
+
+            union {
+                x86::Gp untaggedPhysical;
+                x86::Vec physical;
+                x86::Mem address;
+            };
+
+            VReg(uint16_t id, const x86::Gp& untaggedPhysical);
+            VReg(uint16_t id, const x86::Vec& physical);
+            VReg(uint16_t id, const x86::Mem& address);
+            VReg(const VReg& other);
+            ~VReg();
+        };
+
+        template<class R>
+        struct TempRegister {
+            Compiler& owner;
+            R r;
+
+            TempRegister(Compiler& owner, R r) : owner(owner), r(r) {}
+            ~TempRegister() { owner.deallocateRegister(r); }
+            operator R() const { return r; }
+            R* operator->() { return &r; }
         };
 
         using InstructionCompiler = void(Compiler::*)(VM&, x86::Builder& a, executor::Instruction*);
@@ -49,6 +79,7 @@ namespace bibblevm::compiler {
 
         std::vector<int> mAllocatedRegisters;
         std::vector<int> mAllocatedVectorRegisters;
+        std::vector<std::unique_ptr<VReg>> mVRegs;
 
         std::vector<Label> mCheckpoints;
         std::vector<Label> mLabels;
@@ -57,38 +88,55 @@ namespace bibblevm::compiler {
 
         x86::Gp allocateRegister(std::vector<int> disallowed = {}); // signature defaults to Gp64 (gpq)
         x86::Vec allocateVectorRegister(std::vector<int> disallowed = {}); // signature defaults to Vec128
+        TempRegister<x86::Gp> allocateTempRegister(std::vector<int> disallowed = {});
+        TempRegister<x86::Vec> allocateTempVectorRegister(std::vector<int> disallowed = {});
         void deallocateRegister(x86::Gp reg);
         void deallocateRegister(x86::Vec reg);
         void resetRegAlloc();
 
-        x86::Mem getIsObjectAddress(uint16_t vreg);
-        x86::Mem getValueAddress(uint16_t vreg);
-        VMRegisterRef getRegisterRef(uint16_t vreg);
+        VReg* getVReg(uint16_t vregId);
 
-        void storeVReg(uint16_t vreg, x86::Gp isObject, x86::Gp value);
-        void storeVReg(uint16_t vreg, bool isObject, x86::Gp value);
-        void storeVReg(uint16_t vreg, x86::Gp isObject, uint64_t value);
-        void storeVReg(uint16_t vreg, bool isObject, uint64_t value);
+        // change a vregs backing. returns its new backing as a usable operand
+        x86::Gp assignPhysRegUntagged(VReg* vreg);
+        x86::Vec assignPhysReg(VReg* vreg);
+        x86::Mem spillVReg(VReg* vreg);
 
-        void createArrayLoad(x86::Gp object, x86::Gp index, x86::Gp elementSize, x86::Gp dst);
-        void createArrayStore(x86::Gp object, x86::Gp index, x86::Gp elementSize, x86::Gp src);
+        void moveVReg(VReg* dst, VReg* src);
 
-        void createPlatformCall(const std::vector<x86::Gp>& neededRegisters, x86::Gp returnRegister, void* function); // for now, this required manually moving arguments to the correct registers
+        void getIsObject(VReg* vreg, x86::Gp isObjectDst);
+        void setIsObject(VReg* vreg, x86::Gp isObject);
+        void setIsObject(VReg* vreg, bool isObject);
+
+        void getValue(VReg* vreg, x86::Gp valueDst);
+        void setValue(VReg* vreg, x86::Gp value);
+        void setValue(VReg* vreg, uint64_t value);
+
+        void compareVReg(VReg* a, VReg* b);
+        void compareVReg(VReg* a, uint32_t b);
+
+        x86::Mem getIsObjectAddress(uint16_t index); // deprecated and only used within the vreg operators
+        x86::Mem getValueAddress(uint16_t index); // deprecated and only used within the vreg operators
+        x86::Mem getFullRegisterAddress(uint16_t index); // deprecated and only used within the vreg operators
+
+        void createArrayLoad(VReg* object, VReg* index, x86::Gp elementSize, x86::Gp dst);
+        void createArrayStore(VReg* object, VReg* index, x86::Gp elementSize, x86::Gp src);
+
+        void createPlatformCall(x86::Gp returnRegister, void* function); // for now, this requires manually moving arguments to the correct registers
 
         uintptr_t createCheckpoint();
         void bindCheckpoint(uintptr_t checkpoint);
-        void createLeave(abi::LeaveReason reason, bool generateCheckpoint); // assumes exit1 and exit2 are populated before call
+        void createLeave(abi::LeaveReason reason, std::function<void()> populateExitRegisters, bool generateCheckpoint);
 
         void createError(Error::Type type, std::optional<std::string_view> message = std::nullopt);
 
-        void createCall(int functionRegister, uint16_t dstVReg, uint16_t argsVReg);
+        void createCall(const x86::Gp& function, uint16_t dstVReg, uint16_t argsVReg);
         void createCall(const x86::Mem& function, uint16_t dstVReg, uint16_t argsVReg);
         void createCall(executor::Function* function, uint16_t dstVReg, uint16_t argsVReg);
 
-        Label createNullCheck(x86::Gp objectReg);
-        Label createObjectKindCheck(x86::Gp, oop::ObjectKind expectedKind);
+        Label createNullCheck(VReg* object);
+        Label createObjectKindCheck(VReg* object, oop::ObjectKind expectedKind);
 
-        void withArrayGuard(x86::Gp objectReg, std::function<void()> body);
+        void withArrayGuard(VReg* object, std::function<void()> body);
 
 
 
