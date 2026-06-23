@@ -9,7 +9,8 @@
 
 #include "BibbleVM/core/error.h"
 
-#include <asmjit/asmjit.h>
+#include <asmjit/core.h>
+#include <asmjit/x86.h>
 
 #include <functional>
 #include <memory>
