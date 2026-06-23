@@ -122,7 +122,7 @@ namespace bibblevm::compiler {
         void createArrayLoad(VReg* object, VReg* index, x86::Gp elementSize, x86::Gp dst);
         void createArrayStore(VReg* object, VReg* index, x86::Gp elementSize, x86::Gp src);
 
-        void createPlatformCall(x86::Gp returnRegister, void* function); // for now, this requires manually moving arguments to the correct registers
+        void createPlatformCall(x86::Gp returnRegister, std::function<void()> setupArguments, void* function); // for now, this requires manually moving arguments to the correct registers
 
         uintptr_t createCheckpoint();
         void bindCheckpoint(uintptr_t checkpoint);

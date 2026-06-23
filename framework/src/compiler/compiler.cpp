@@ -634,7 +634,7 @@ namespace bibblevm::compiler {
 
     }
 
-    void Compiler::createPlatformCall(x86::Gp returnRegister, void* function) { // TODO: make this whole thing work with the regalloc
+    void Compiler::createPlatformCall(x86::Gp returnRegister, std::function<void()> setupArguments, void* function) { // TODO: make this whole thing work with the regalloc
         auto isVolatile = [](x86::Gp reg) {
             return std::ranges::find(abi::PLATFORM_ABI_VOLATILE_REGISTERS, reg.id()) != abi::PLATFORM_ABI_VOLATILE_REGISTERS.end();
         };
@@ -661,6 +661,8 @@ namespace bibblevm::compiler {
                 popOrder.insert(popOrder.begin(), reg);
             }
         }
+
+        setupArguments();
 
         size_t stackAdjust = 0;
         size_t stackOffset = popOrder.size() * 8 + 8; // +8 represents the return address already on the stack
@@ -1020,8 +1022,11 @@ namespace bibblevm::compiler {
 
         withArrayGuard(object, [&] {
             auto elemSize = allocateTempRegister();
-            a.mov(x86::gpd(abi::PLATFORM_ABI_ARGUMENT_REGISTERS[0]), x86::byte_ptr(assignPhysRegUntagged(object), offsetof(oop::Array, baseType)));
-            createPlatformCall(elemSize, (void*) &oop::GetPrimitiveSizeForType);
+            createPlatformCall(elemSize, [&] {
+                auto objectRegister = allocateTempRegister();
+                getValue(object, objectRegister);
+                a.mov(x86::gpd(abi::PLATFORM_ABI_ARGUMENT_REGISTERS[0]), x86::byte_ptr(objectRegister, offsetof(oop::Array, baseType)));
+            }, (void*) &oop::GetPrimitiveSizeForType);
 
             auto value = allocateTempRegister();
             createArrayLoad(object, index, elemSize, value);
