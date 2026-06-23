@@ -66,21 +66,20 @@ namespace bibblevm::compiler::abi {
     constexpr int EXIT1_REGISTER = 2;
     constexpr int EXIT2_REGISTER = 3;
 
-    // allowed to use
-    constexpr std::array GP_REGISTERS = {
-        0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13
-    };
-
-    constexpr std::array VECTOR_REGISTERS = {
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-    };
-
     // never touch
     constexpr std::array RESERVED_REGISTERS = {
         4, 14, 15
     };
 
 #if defined(BIBBLEVM_ABI_X64_WIN64)
+    constexpr std::array GP_REGISTERS = {
+        3, 5, 6, 7, 12, 13, 0, 1, 2, 8, 9, 10, 11
+    };
+
+    constexpr std::array VECTOR_REGISTERS = {
+        6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5
+    };
+
     constexpr std::array PLATFORM_ABI_VOLATILE_REGISTERS = {
         0, 1, 2, 8, 9, 10, 11
     };
@@ -101,6 +100,14 @@ namespace bibblevm::compiler::abi {
 
     constexpr int PLATFORM_ABI_FLOAT_RETURN_REGISTER = 0;
 #else
+    constexpr std::array GP_REGISTERS = {
+        3, 5, 12, 13, 14, 15, 0, 1, 2, 6, 7, 8, 9, 10, 11
+    };
+
+    constexpr std::array VECTOR_REGISTERS = {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+    };
+
     constexpr std::array PLATFORM_ABI_VOLATILE_REGISTERS = {
         0, 1, 2, 6, 7, 8, 9, 10, 11
     };
