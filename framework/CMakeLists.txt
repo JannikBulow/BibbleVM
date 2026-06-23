@@ -21,6 +21,7 @@ FetchContent_Declare(libos
 )
 FetchContent_MakeAvailable(libos)
 
+set(ASMJIT_STATIC ON)
 FetchContent_Declare(asmjit
     GIT_REPOSITORY https://github.com/asmjit/asmjit.git
     GIT_TAG master
