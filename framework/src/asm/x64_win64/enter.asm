@@ -30,7 +30,7 @@ bibblevm_enter:
     push r14
     push r15
 
-    sub rsp, 160
+    sub rsp, 168
     movaps [rsp + 0*16], xmm6
     movaps [rsp + 1*16], xmm7
     movaps [rsp + 2*16], xmm8
@@ -48,9 +48,9 @@ bibblevm_enter:
     mov r15, [rcx + Frame.registers]
     mov r13, [rcx + Frame.resumeCheckpoint]
 
-    sub rsp, 32
+    sub rsp, 40
     call [rcx + Frame.code]
-    add rsp, 32
+    add rsp, 40
 
     pop rsi
 
@@ -64,6 +64,8 @@ bibblevm_enter:
     movaps xmm13, [rsp + 7*16]
     movaps xmm14, [rsp + 8*16]
     movaps xmm15, [rsp + 9*16]
+
+    add rsp, 168
 
     mov [rsi + LeaveRegisters.reason], rax
     mov [rsi + LeaveRegisters.checkpoint], rcx
