@@ -94,7 +94,7 @@ namespace bibblevm::compiler::abi {
     };
 
     constexpr std::array PLATFORM_ABI_FLOAT_ARGUMENT_REGISTERS = {
-        0, 1, 2, 3;
+        0, 1, 2, 3
     };
 
     constexpr int PLATFORM_ABI_RETURN_REGISTER = 0;
