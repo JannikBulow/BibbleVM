@@ -43,6 +43,10 @@ namespace bibblevm::oop {
             bool operator()(std::string_view str1, const String& str2) const noexcept {
                 return str1 == str2;
             }
+
+            bool operator()(std::string_view str1, std::string_view str2) const noexcept {
+                return str1 == str2;
+            }
         };
 
         String(StringObject* object = nullptr) : mObject(object) {}
