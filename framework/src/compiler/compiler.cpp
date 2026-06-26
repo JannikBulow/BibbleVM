@@ -8,6 +8,8 @@
 #include "BibbleVM/_debug.h"
 #include "BibbleVM/vm.h"
 
+#include <format>
+
 namespace bibblevm::compiler {
     Compiler::Compiler(executor::Function* function)
         : mFunction(function)
@@ -142,6 +144,12 @@ namespace bibblevm::compiler {
                 mAsm = nullptr;
                 return nullptr;
             }
+        }
+
+        for (auto& [text, label] : mStrings) {
+            builder.bind(label);
+            builder.embed(text.data(), text.length());
+            builder.embed_uint8(0);
         }
 
         Label checkpointTable = builder.new_label();
@@ -620,6 +628,14 @@ namespace bibblevm::compiler {
 
     x86::Mem Compiler::getFullRegisterAddress(uint16_t index) {
         return x86::dqword_ptr(x86::gpq(abi::REGS_REGISTER), index * static_cast<uint16_t>(sizeof(Value)));
+    }
+
+    Label Compiler::getString(std::string_view str) {
+        auto it = mStrings.find(str);
+        if (it != mStrings.end()) return it->second;
+
+        std::string labelName = std::format(".str{}", mStrings.size());
+        return mStrings.emplace(std::string(str), mAsm->new_named_label(labelName.c_str())).first->second;
     }
 
     void Compiler::createArrayLoad(VReg* object, VReg* index, x86::Gp elementSize, x86::Gp dst) {

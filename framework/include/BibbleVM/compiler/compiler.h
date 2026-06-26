@@ -15,6 +15,8 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace bibblevm::compiler {
@@ -90,6 +92,7 @@ namespace bibblevm::compiler {
 
         std::vector<Label> mCheckpoints;
         std::vector<Label> mLabels;
+        std::unordered_map<std::string, Label, String::Hash, String::Eq> mStrings;
 
         bool compileInstruction(VM& vm, executor::Instruction* inst);
 
@@ -128,6 +131,8 @@ namespace bibblevm::compiler {
         x86::Mem getIsObjectAddress(uint16_t index); // deprecated and only used within the vreg operators
         x86::Mem getValueAddress(uint16_t index); // deprecated and only used within the vreg operators
         x86::Mem getFullRegisterAddress(uint16_t index); // deprecated and only used within the vreg operators
+
+        Label getString(std::string_view str);
 
         void createArrayLoad(VReg* object, VReg* index, x86::Gp elementSize, x86::Gp dst);
         void createArrayStore(VReg* object, VReg* index, x86::Gp elementSize, x86::Gp src);
