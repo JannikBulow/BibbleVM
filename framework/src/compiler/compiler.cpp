@@ -222,8 +222,6 @@ namespace bibblevm::compiler {
     }
 
     bool Compiler::compileInstruction(VM& vm, executor::Instruction* inst) {
-        //resetRegAlloc();
-
         InstructionCompiler fn = mInstructionCompilers[inst->opcode];
         if (!fn) {
             mAsm = nullptr;
@@ -308,10 +306,35 @@ namespace bibblevm::compiler {
         for (auto& vreg : mVRegs) {
             spillVReg(vreg.get());
         }
-        mVRegs.clear();
 
         mAllocatedRegisters.clear();
         mAllocatedVectorRegisters.clear();
+    }
+
+    Compiler::RegAllocSnapshot Compiler::snapshotRegAlloc() {
+        std::vector<std::unique_ptr<VReg>> vRegs;
+        for (auto& vreg : mVRegs) {
+            vRegs.push_back(std::make_unique<VReg>(*vreg));
+        }
+
+        return {mAllocatedRegisters, mAllocatedVectorRegisters, std::move(vRegs)};
+    }
+
+    void Compiler::restoreRegAlloc(const RegAllocSnapshot& regAllocSnapshot) {
+        mAllocatedRegisters = regAllocSnapshot.allocatedRegisters;
+        mAllocatedVectorRegisters = regAllocSnapshot.allocatedVectorRegisters;
+
+        mVRegs.clear();
+        mVRegs.reserve(regAllocSnapshot.vRegs.size());
+        for (auto& vreg : regAllocSnapshot.vRegs) {
+            mVRegs.push_back(std::make_unique<VReg>(*vreg));
+        }
+    }
+
+    void Compiler::restoreRegAlloc(RegAllocSnapshot&& regAllocSnapshot) {
+        mAllocatedRegisters = std::move(regAllocSnapshot.allocatedRegisters);
+        mAllocatedVectorRegisters = std::move(regAllocSnapshot.allocatedVectorRegisters);
+        mVRegs = std::move(regAllocSnapshot.vRegs);
     }
 
     Compiler::VReg* Compiler::getVReg(uint16_t vregId) {
@@ -320,6 +343,11 @@ namespace bibblevm::compiler {
         }
 
         mVRegs.push_back(std::make_unique<VReg>(vregId, getFullRegisterAddress(vregId)));
+
+        if (mAllocatedRegisters.size() <= abi::GP_REGISTERS.size() / 2) {
+            assignPhysRegUntagged(mVRegs.back().get());
+        }
+
         return mVRegs.back().get();
     }
 
@@ -573,7 +601,7 @@ namespace bibblevm::compiler {
             case VRegLocation::Physical: {
                 auto tmp = allocateTempRegister();
                 a.movq(tmp, lhs->physical);
-                a.cmp(tmp, 0);
+                a.cmp(tmp, rhs);
                 break;
             }
             case VRegLocation::SpillSlot:
@@ -712,6 +740,8 @@ namespace bibblevm::compiler {
     void Compiler::createLeave(abi::LeaveReason reason, std::function<void()> populateExitRegisters, bool generateCheckpoint) {
         auto& a = *mAsm;
 
+        auto regAllocSnapshot = snapshotRegAlloc();
+
         resetRegAlloc();
         populateExitRegisters();
 
@@ -728,6 +758,32 @@ namespace bibblevm::compiler {
 
         if (generateCheckpoint) {
             bindCheckpoint(checkpoint);
+
+            for (size_t i = 0; i < mVRegs.size(); i++) {
+                auto& currentVReg = mVRegs[i];
+                auto& expectedVReg = regAllocSnapshot.vRegs[i];
+
+                BIBBLEVM_ASSERT(currentVReg->id == expectedVReg->id);
+
+                switch (expectedVReg->location) {
+                    case VRegLocation::UntaggedPhysical:
+                        currentVReg->location = VRegLocation::UntaggedPhysical;
+                        currentVReg->untaggedPhysical = expectedVReg->untaggedPhysical;
+                        a.mov(currentVReg->untaggedPhysical, getValueAddress(currentVReg->id));
+                        break;
+                    case VRegLocation::Physical:
+                        currentVReg->location = VRegLocation::Physical;
+                        currentVReg->physical = expectedVReg->physical;
+                        a.movdqu(currentVReg->physical, getFullRegisterAddress(currentVReg->id));
+                        break;
+                    case VRegLocation::SpillSlot:
+                        currentVReg->location = VRegLocation::SpillSlot;
+                        currentVReg->address = expectedVReg->address;
+                        break;
+                }
+            }
+        } else {
+            restoreRegAlloc(std::move(regAllocSnapshot));
         }
     }
 
@@ -957,7 +1013,12 @@ namespace bibblevm::compiler {
     void Compiler::compileSTRCMP(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
 
     void Compiler::compileINC(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        a.add(getValueAddress(inst->a), inst->imm);
+        auto vreg = getVReg(inst->a);
+        if (vreg->location == VRegLocation::SpillSlot) {
+            a.add(getValueAddress(vreg->id), inst->imm);
+        } else {
+            a.add(assignPhysRegUntagged(vreg), inst->imm);
+        }
     }
 
     void Compiler::compileDEC(VM& vm, x86::Builder& a, executor::Instruction* inst) {}

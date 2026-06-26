@@ -69,6 +69,12 @@ namespace bibblevm::compiler {
             R* operator->() { return &r; }
         };
 
+        struct RegAllocSnapshot {
+            std::vector<int> allocatedRegisters;
+            std::vector<int> allocatedVectorRegisters;
+            std::vector<std::unique_ptr<VReg>> vRegs;
+        };
+
         using InstructionCompiler = void(Compiler::*)(VM&, x86::Builder& a, executor::Instruction*);
         std::array<InstructionCompiler, 256> mInstructionCompilers;
 
@@ -94,6 +100,10 @@ namespace bibblevm::compiler {
         void deallocateRegister(x86::Gp reg);
         void deallocateRegister(x86::Vec reg);
         void resetRegAlloc();
+
+        RegAllocSnapshot snapshotRegAlloc();
+        void restoreRegAlloc(const RegAllocSnapshot& regAllocSnapshot);
+        void restoreRegAlloc(RegAllocSnapshot&& regAllocSnapshot);
 
         VReg* getVReg(uint16_t vregId);
 
