@@ -100,12 +100,7 @@ namespace bibblevm::linker {
                     linkedEntry.isObject = true;
                     break;
                 case module::ConstPool::MODULE_INFO: {
-                    Module* m;
-                    if (entry.u.mi.name == module.rawModule().name) {
-                        m = &module;
-                    } else {
-                        m = vm.getModule(entries[entry.u.mi.name].u.str); // PreVerifier has ensured this exists, but not that it's fully loaded
-                    }
+                    Module* m = vm.getModule(entries[entry.u.mi.name].u.str); // PreVerifier has ensured this exists, but not that it's fully loaded
                     linkedEntry.mi = &m->linkedModule();
                     break;
                 }
@@ -733,18 +728,13 @@ namespace bibblevm::linker {
     }
 
     Module* Linker::loadModule(VM& vm, String name) {
-        return loadModule(vm, static_cast<std::string_view>(name));
-        // We keep this specialization in case this could be optimized in future
-    }
-
-    Module* Linker::loadModule(VM& vm, std::string_view name) {
         for (const auto& module : mModules) {
-            if (module->linkedModule().getName() == name) {
+            if (module->getName() == name) {
                 return module.get();
             }
         }
 
-        std::unique_ptr<Module> modulePtr = std::make_unique<Module>();
+        std::unique_ptr<Module> modulePtr = std::make_unique<Module>(name);
         Module* module = modulePtr.get();
 
         mModules.push_back(std::move(modulePtr));
@@ -766,8 +756,12 @@ namespace bibblevm::linker {
         return mModules.back().get();
     }
 
-    Module* Linker::loadModule(VM& vm, bibblebytecode::ReadableByteBuffer memory) {
-        std::unique_ptr<Module> module = std::make_unique<Module>();
+    Module* Linker::loadModule(VM& vm, std::string_view name) {
+        return loadModule(vm, vm.stringPool().intern(vm, name));
+    }
+
+    Module* Linker::loadModule(VM& vm, String name, bibblebytecode::ReadableByteBuffer memory) {
+        std::unique_ptr<Module> module = std::make_unique<Module>(name);
 
         if (!readModuleFromMemory(vm, *module, memory)) return nullptr;
         if (!parseModule(vm, *module)) return nullptr;
@@ -780,6 +774,10 @@ namespace bibblevm::linker {
 
         mModules.push_back(std::move(module));
         return mModules.back().get();
+    }
+
+    Module* Linker::loadModule(VM& vm, std::string_view name, bibblebytecode::ReadableByteBuffer memory) {
+        return loadModule(vm, vm.stringPool().intern(vm, name), std::move(memory));
     }
 
     bool Linker::readModuleFromPath(VM& vm, Module& module, std::string_view path, std::string_view name) {

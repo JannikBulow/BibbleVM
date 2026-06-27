@@ -20,7 +20,8 @@ namespace bibblevm::linker {
 
         Module* loadModule(VM& vm, String name);
         Module* loadModule(VM& vm, std::string_view name);
-        Module* loadModule(VM& vm, bibblebytecode::ReadableByteBuffer memory);
+        Module* loadModule(VM& vm, String name, bibblebytecode::ReadableByteBuffer memory);
+        Module* loadModule(VM& vm, std::string_view name, bibblebytecode::ReadableByteBuffer memory);
 
     private:
         std::vector<std::string> mModulePath;

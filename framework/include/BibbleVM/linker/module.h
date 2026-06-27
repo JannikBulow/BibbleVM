@@ -27,10 +27,14 @@ namespace bibblevm::linker {
 
     class Module {
     public:
+        Module(String name) : mName(name) {}
+
         GrowingArenaAllocator& arena() { return mArena; }
         bibblebytecode::ReadableByteBuffer& file() { return mFile; }
         module::Module& rawModule() { return mRawModule; }
         executor::Module& linkedModule() { return mLinkedModule; }
+
+        String getName() const { return mName; }
 
         Stage getStage() const {
             std::lock_guard lock(mMutex);
@@ -51,6 +55,8 @@ namespace bibblevm::linker {
 
     private:
         GrowingArenaAllocator mArena = GrowingArenaAllocator::Create(16 * 1024);
+
+        String mName;
 
         Stage mStage = Stage::None;
 
