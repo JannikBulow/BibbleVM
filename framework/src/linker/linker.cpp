@@ -73,7 +73,7 @@ namespace bibblevm::linker {
         }
     };
 
-    executor::ConstPool LinkConstPool(VM& vm, GrowingArenaAllocator& arena, const module::ConstPool& constPool, const module::Module& module, oop::Class* classes, executor::Function* functions) {
+    executor::ConstPool LinkConstPool(VM& vm, GrowingArenaAllocator& arena, const module::ConstPool& constPool, Module& module, oop::Class* classes, executor::Function* functions) {
         uint16_t entryCount = constPool.getEntryCount();
         module::ConstPool::Entry* entries = constPool.getEntries();
         auto* linkedEntries = arena.allocate<Value>(entryCount);
@@ -100,14 +100,19 @@ namespace bibblevm::linker {
                     linkedEntry.isObject = true;
                     break;
                 case module::ConstPool::MODULE_INFO: {
-                    Module* m = vm.getModule(entries[entry.u.mi.name].u.str); // PreVerifier has ensured this exists, but not that it's fully loaded
+                    Module* m;
+                    if (entry.u.mi.name == module.rawModule().name) {
+                        m = &module;
+                    } else {
+                        m = vm.getModule(entries[entry.u.mi.name].u.str); // PreVerifier has ensured this exists, but not that it's fully loaded
+                    }
                     linkedEntry.mi = &m->linkedModule();
                     break;
                 }
                 case module::ConstPool::CLASS_INFO: {
                     module::ConstPool::ClassInfo ci = entry.u.ci;
-                    if (entries[ci.module].u.mi.name == module.name) {
-                        for (uint16_t j = 0; j < module.classCount; j++) {
+                    if (entries[ci.module].u.mi.name == module.rawModule().name) {
+                        for (uint16_t j = 0; j < module.rawModule().classCount; j++) {
                             if (classes[j].getName() == entries[ci.name].u.str) {
                                 linkedEntry.ci = &classes[j];
                                 break;
@@ -124,8 +129,8 @@ namespace bibblevm::linker {
                 case bibblebytecode::ConstPool::METHOD_INFO: break;
                 case module::ConstPool::FUNCTION_INFO: {
                     module::ConstPool::FunctionInfo fni = entry.u.fni;
-                    if (entries[fni.module].u.mi.name == module.name) { // loading a function from its own module would lead to a permanent stall, so we use a list of partially initialized functions (just names) to link the pointers
-                        for (uint16_t j = 0; j < module.functionCount; j++) {
+                    if (entries[fni.module].u.mi.name == module.rawModule().name) { // loading a function from its own module would lead to a permanent stall, so we use a list of partially initialized functions (just names) to link the pointers
+                        for (uint16_t j = 0; j < module.rawModule().functionCount; j++) {
                             if (functions[j].getName() == entries[fni.name].u.str) {
                                 linkedEntry.fni = &functions[j];
                                 break;
@@ -675,7 +680,7 @@ namespace bibblevm::linker {
             linkedFunctions[i] = executor::Function(linkedModule, name); // holy fuck this is ugly
         }
 
-        executor::ConstPool linkedConstPool = LinkConstPool(vm, module.arena(), rawModule.constPool, rawModule, linkedClasses, linkedFunctions);
+        executor::ConstPool linkedConstPool = LinkConstPool(vm, module.arena(), rawModule.constPool, module, linkedClasses, linkedFunctions);
 
         if (!LinkClasses(linkedClasses, vm, module.arena(), linkedConstPool, rawModule)) return false;
         if (!LinkFunctions(linkedClasses, linkedFunctions, vm, module.arena(), linkedConstPool, rawModule, linkedModule)) return false;
@@ -733,7 +738,16 @@ namespace bibblevm::linker {
     }
 
     Module* Linker::loadModule(VM& vm, std::string_view name) {
-        std::unique_ptr<Module> module = std::make_unique<Module>();
+        for (const auto& module : mModules) {
+            if (module->linkedModule().getName() == name) {
+                return module.get();
+            }
+        }
+
+        std::unique_ptr<Module> modulePtr = std::make_unique<Module>();
+        Module* module = modulePtr.get();
+
+        mModules.push_back(std::move(modulePtr));
 
         bool success = false;
         for (const auto& path : mModulePath) {
@@ -749,7 +763,6 @@ namespace bibblevm::linker {
 
         module->setStage(Stage::Ready);
 
-        mModules.push_back(std::move(module));
         return mModules.back().get();
     }
 
