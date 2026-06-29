@@ -753,7 +753,7 @@ namespace bibblevm::linker {
 
         module->setStage(Stage::Ready);
 
-        return mModules.back().get();
+        return module;
     }
 
     Module* Linker::loadModule(VM& vm, std::string_view name) {
