@@ -1146,23 +1146,33 @@ namespace bibblevm::compiler {
     }
 
     void Compiler::compileJEQ(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        cancel();
+        VReg* value = getVReg(inst->a);
+        compareVReg(value, 0u);
+        a.je(mLabels[(inst - mInstructionsBegin) + static_cast<int64_t>(inst->imm)]);
     }
 
     void Compiler::compileJNE(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        cancel();
+        VReg* value = getVReg(inst->a);
+        compareVReg(value, 0u);
+        a.jne(mLabels[(inst - mInstructionsBegin) + static_cast<int64_t>(inst->imm)]);
     }
 
     void Compiler::compileJLT(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        cancel();
+        VReg* value = getVReg(inst->a);
+        compareVReg(value, 0u);
+        a.jl(mLabels[(inst - mInstructionsBegin) + static_cast<int64_t>(inst->imm)]);
     }
 
     void Compiler::compileJLE(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        cancel();
+        VReg* value = getVReg(inst->a);
+        compareVReg(value, 0u);
+        a.jle(mLabels[(inst - mInstructionsBegin) + static_cast<int64_t>(inst->imm)]);
     }
 
     void Compiler::compileJGT(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        cancel();
+        VReg* value = getVReg(inst->a);
+        compareVReg(value, 0u);
+        a.jg(mLabels[(inst - mInstructionsBegin) + static_cast<int64_t>(inst->imm)]);
     }
 
     void Compiler::compileJGE(VM& vm, x86::Builder& a, executor::Instruction* inst) {
