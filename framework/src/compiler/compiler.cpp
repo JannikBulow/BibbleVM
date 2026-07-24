@@ -933,7 +933,19 @@ namespace bibblevm::compiler {
     }
 
     void Compiler::compileADD(VM& vm, x86::Builder& a, executor::Instruction* inst) {
-        cancel();
+        VReg* dst = getVReg(inst->a);
+        VReg* lhs = getVReg(inst->b);
+        VReg* rhs = getVReg(inst->c);
+
+        auto tmp = allocateTempRegister();
+
+        getValue(lhs, tmp);
+        if (rhs->location == VRegLocation::SpillSlot) {
+            a.add(tmp, getValueAddress(rhs->id));
+        } else {
+            a.add(tmp, assignPhysRegUntagged(rhs));
+        }
+        setValue(dst, tmp);
     }
 
     void Compiler::compileSUB(VM& vm, x86::Builder& a, executor::Instruction* inst) {
