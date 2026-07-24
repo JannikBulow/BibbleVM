@@ -101,7 +101,7 @@ namespace bibblevm::compiler::abi {
     constexpr int PLATFORM_ABI_FLOAT_RETURN_REGISTER = 0;
 #else
     constexpr std::array GP_REGISTERS = {
-        3, 5, 12, 13, 14, 15, 0, 1, 2, 6, 7, 8, 9, 10, 11
+        3, 5, 12, 13, 0, 1, 2, 6, 7, 8, 9, 10, 11
     };
 
     constexpr std::array VECTOR_REGISTERS = {
