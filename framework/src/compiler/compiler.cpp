@@ -114,7 +114,7 @@ namespace bibblevm::compiler {
 #undef DECL_COMPILER
     }
 
-    Code* Compiler::compile(VM& vm, CompileOptions options) {
+    Code* Compiler::compile(VM& vm, CompileOptions options) try {
         CodeHolder codeHolder;
         Environment env = Environment::host();
         codeHolder.init(env);
@@ -182,6 +182,8 @@ namespace bibblevm::compiler {
         mAsm = nullptr;
 
         return code;
+    } catch (Cancel& ignore) {
+        return nullptr;
     }
 
     Compiler::VReg::VReg(uint16_t id, const x86::Gp& untaggedPhysical)
@@ -227,6 +229,10 @@ namespace bibblevm::compiler {
                 address.~Mem();
                 break;
         }
+    }
+
+    void Compiler::cancel() {
+        throw Cancel();
     }
 
     bool Compiler::compileInstruction(VM& vm, executor::Instruction* inst) {
@@ -900,11 +906,17 @@ namespace bibblevm::compiler {
         moveVReg(dst, src);
     }
 
-    void Compiler::compileMOV_RANGE(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileMOV_RANGE(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSWAP(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSWAP(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileLOAD_CONST(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileLOAD_CONST(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
     void Compiler::compileLOAD_IMM(VM& vm, x86::Builder& a, executor::Instruction* inst) {
         VReg* dst = getVReg(inst->a);
@@ -918,87 +930,169 @@ namespace bibblevm::compiler {
         setValue(dst, 0);
     }
 
-    void Compiler::compileADD(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileADD(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSUB(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSUB(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileMUL(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileMUL(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSDIV(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSDIV(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileUDIV(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileUDIV(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSMOD(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSMOD(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileUMOD(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileUMOD(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileNEG(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileNEG(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileABS(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileABS(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileAND(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileAND(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileOR(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileOR(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileXOR(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileXOR(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileNOT(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileNOT(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSHL(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSHL(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSHR(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSHR(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSAR(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSAR(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileFADD(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileFADD(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileFSUB(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileFSUB(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileFMUL(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileFMUL(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileFDIV(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileFDIV(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileFNEG(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileFNEG(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileFABS(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileFABS(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileTR8(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileTR8(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileTR16(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileTR16(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileTR32(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileTR32(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSEX8(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSEX8(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSEX16(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSEX16(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSEX32(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSEX32(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileZEX8(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileZEX8(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileZEX16(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileZEX16(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileZEX32(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileZEX32(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileI2F(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileI2F(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileU2F(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileU2F(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileI2D(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileI2D(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileU2D(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileU2D(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileF2I(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileF2I(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileF2U(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileF2U(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileD2I(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileD2I(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileD2U(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileD2U(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileF2D(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileF2D(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileD2F(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileD2F(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
     void Compiler::compileICMP(VM& vm, x86::Builder& a, executor::Instruction* inst) {
         VReg* dst = getVReg(inst->a);
@@ -1022,11 +1116,17 @@ namespace bibblevm::compiler {
         setValue(dst, result);
     }
 
-    void Compiler::compileUCMP(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileUCMP(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileFCMP(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileFCMP(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSTRCMP(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSTRCMP(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
     void Compiler::compileINC(VM& vm, x86::Builder& a, executor::Instruction* inst) {
         auto vreg = getVReg(inst->a);
@@ -1037,21 +1137,33 @@ namespace bibblevm::compiler {
         }
     }
 
-    void Compiler::compileDEC(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileDEC(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
     void Compiler::compileJMP(VM& vm, x86::Builder& a, executor::Instruction* inst) {
         a.jmp(mLabels[(inst - mInstructionsBegin) + static_cast<int64_t>(inst->imm)]);
     }
 
-    void Compiler::compileJEQ(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileJEQ(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileJNE(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileJNE(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileJLT(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileJLT(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileJLE(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileJLE(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileJGT(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileJGT(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
     void Compiler::compileJGE(VM& vm, x86::Builder& a, executor::Instruction* inst) {
         VReg* value = getVReg(inst->a);
@@ -1059,27 +1171,49 @@ namespace bibblevm::compiler {
         a.jge(mLabels[(inst - mInstructionsBegin) + static_cast<int64_t>(inst->imm)]);
     }
 
-    void Compiler::compileNEWINSTANCE(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileNEWINSTANCE(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileNEWARRAY(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileNEWARRAY(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileNEWSTRING(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileNEWSTRING(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileNEWFUTURE(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileNEWFUTURE(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileOBJKIND(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileOBJKIND(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileISKIND(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileISKIND(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileINSTANCEOF(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileINSTANCEOF(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileGETFIELD(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileGETFIELD(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSETFIELD(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSETFIELD(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileDISPATCHMETHOD(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileDISPATCHMETHOD(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileGETCLASS(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileGETCLASS(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
     void Compiler::compileARRAYLENGTH(VM& vm, x86::Builder& a, executor::Instruction* inst) {
         VReg* dst = getVReg(inst->a);
@@ -1118,45 +1252,81 @@ namespace bibblevm::compiler {
         });
     }
 
-    void Compiler::compileARRAYSET(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileARRAYSET(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSTRLENGTH(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSTRLENGTH(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSTRGET(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSTRGET(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileSTR2ARRAY(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileSTR2ARRAY(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileRESOLVE(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileRESOLVE(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileCANCEL(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileCANCEL(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileISFUTUREREADY(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileISFUTUREREADY(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compilePOLL(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compilePOLL(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileAWAIT(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileAWAIT(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
     void Compiler::compileCALL(VM& vm, x86::Builder& a, executor::Instruction* inst) {
         createCall(mFunction->getModule().getConstPool().get(inst->b).fni, inst->a, inst->c);
     }
 
-    void Compiler::compileTAIL_CALL(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileTAIL_CALL(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileCALLA(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileCALLA(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileCALLAP(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileCALLAP(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileCALLARP(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileCALLARP(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileCALL_DYN(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileCALL_DYN(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileTAIL_CALL_DYN(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileTAIL_CALL_DYN(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileCALLA_DYN(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileCALLA_DYN(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileCALLAP_DYN(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileCALLAP_DYN(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
-    void Compiler::compileCALLARP_DYN(VM& vm, x86::Builder& a, executor::Instruction* inst) {}
+    void Compiler::compileCALLARP_DYN(VM& vm, x86::Builder& a, executor::Instruction* inst) {
+        cancel();
+    }
 
     void Compiler::compileRETURN(VM& vm, x86::Builder& a, executor::Instruction* inst) {
         createLeave(abi::LeaveReason::Return, [&] {

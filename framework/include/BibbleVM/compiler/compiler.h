@@ -37,6 +37,8 @@ namespace bibblevm::compiler {
         Code* compile(VM& vm, CompileOptions options);
 
     private:
+        struct Cancel {};
+
         enum class VRegLocation : uint8_t {
             UntaggedPhysical,
             Physical,
@@ -93,6 +95,8 @@ namespace bibblevm::compiler {
         std::vector<Label> mCheckpoints;
         std::vector<Label> mLabels;
         std::unordered_map<std::string, Label, String::Hash, String::Eq> mStrings;
+
+        [[noreturn]] void cancel();
 
         bool compileInstruction(VM& vm, executor::Instruction* inst);
 
