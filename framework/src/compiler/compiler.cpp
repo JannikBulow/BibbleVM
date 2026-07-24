@@ -358,9 +358,11 @@ namespace bibblevm::compiler {
 
         mVRegs.push_back(std::make_unique<VReg>(vregId, getFullRegisterAddress(vregId)));
 
+        /*
         if (mAllocatedRegisters.size() <= abi::GP_REGISTERS.size() / 2) {
             assignPhysRegUntagged(mVRegs.back().get());
         }
+        */
 
         return mVRegs.back().get();
     }
@@ -425,7 +427,7 @@ namespace bibblevm::compiler {
     }
 
     void Compiler::moveVReg(VReg* dst, VReg* src) {
-        if (&dst != &src) return;
+        if (&dst == &src) return;
         if (dst->location == VRegLocation::UntaggedPhysical && src->location == VRegLocation::UntaggedPhysical && dst->untaggedPhysical.id() == src->untaggedPhysical.id()) return;
         if (dst->location == VRegLocation::Physical && src->location == VRegLocation::Physical && dst->physical.id() == src->physical.id()) return;
         if (dst->location == VRegLocation::SpillSlot && src->location == VRegLocation::SpillSlot && dst->id == src->id) return;
@@ -921,7 +923,7 @@ namespace bibblevm::compiler {
     void Compiler::compileLOAD_IMM(VM& vm, x86::Builder& a, executor::Instruction* inst) {
         VReg* dst = getVReg(inst->a);
         setIsObject(dst, false);
-        setValue(dst, inst->b);
+        setValue(dst, inst->imm);
     }
 
     void Compiler::compileLOAD_NULL(VM& vm, x86::Builder& a, executor::Instruction* inst) {
