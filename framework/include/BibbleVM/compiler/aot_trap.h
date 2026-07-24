@@ -6,7 +6,7 @@
 #include "BibbleVM/core/executor/function.h"
 
 namespace bibblevm::compiler {
-    executor::SchedulerMessage AOTCompileTrap(VM& vm, executor::Frame& frame, executor::Task* task);
+    BIBBLEVM_EXPORT executor::SchedulerMessage AOTCompileTrap(VM& vm, executor::Frame& frame, executor::Task* task);
 }
 
 #endif //BIBBLEVM_COMPILER_AOT_TRAP_H
