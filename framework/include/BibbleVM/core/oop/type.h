@@ -15,20 +15,20 @@ namespace bibblevm::gc {
 namespace bibblevm::oop {
     enum class Type : uint8_t {
         // Primitives
-        Byte,
-        UByte,
-        Short,
-        UShort,
-        Int,
-        UInt,
-        Long,
-        ULong,
-        Float,
-        Double,
+        Byte = 0,
+        UByte = 1,
+        Short = 2,
+        UShort = 3,
+        Int = 4,
+        UInt = 5,
+        Long = 6,
+        ULong = 7,
+        Float = 8,
+        Double = 9,
 
-        Handle,
+        Handle = 10,
 
-        Reference, // instance, array, string, future
+        Reference = 11, // instance, array, string, future
 
         // Special VM types
         ModuleRef,
