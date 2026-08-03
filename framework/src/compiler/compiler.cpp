@@ -182,7 +182,7 @@ namespace bibblevm::compiler {
         mAsm = nullptr;
 
         return code;
-    } catch (Cancel& ignore) {
+    } catch (Cancel&) {
         return nullptr;
     }
 
