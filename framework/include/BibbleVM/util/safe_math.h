@@ -3,6 +3,7 @@
 #ifndef BIBBLEVM_UTIL_SAFE_MATH_H
 #define BIBBLEVM_UTIL_SAFE_MATH_H 1
 
+#include <bit>
 #include <cstdint>
 
 // UB-less math in the language made by John UB.
