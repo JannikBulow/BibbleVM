@@ -17,6 +17,14 @@ target_compile_features(BibbleVM-main PUBLIC cxx_std_20)
 
 target_link_libraries(BibbleVM-main PRIVATE BibbleVM-framework-shared)
 
+set_target_properties(BibbleVM-main PROPERTIES OUTPUT_NAME "bibble")
+
+install(
+    TARGETS BibbleVM-main
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     add_custom_command(TARGET BibbleVM-main PRE_BUILD
@@ -45,5 +53,3 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
         )
     endif()
 endif()
-
-set_target_properties(BibbleVM-main PROPERTIES OUTPUT_NAME "bibble")

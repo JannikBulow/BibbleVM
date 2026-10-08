@@ -13,3 +13,8 @@ target_include_directories(BibbleVM-native-interface INTERFACE
 )
 
 target_compile_features(BibbleVM-native-interface INTERFACE cxx_std_20)
+
+install(
+    DIRECTORY include/
+    DESTINATION include
+)

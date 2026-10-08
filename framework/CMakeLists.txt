@@ -227,5 +227,24 @@ target_compile_features(BibbleVM-framework-static PUBLIC cxx_std_20)
 target_link_libraries(BibbleVM-framework-shared BibbleVM-native-interface BibbleBytecode-shared BibbleOpcodes libos-static asmjit::asmjit utf8cpp frozen)
 target_link_libraries(BibbleVM-framework-static BibbleVM-native-interface BibbleBytecode-static BibbleOpcodes libos-static asmjit::asmjit utf8cpp frozen)
 
-set_target_properties(BibbleVM-framework-shared PROPERTIES OUTPUT_NAME "bibblevm")
-set_target_properties(BibbleVM-framework-static PROPERTIES OUTPUT_NAME "bibblevm-aio")
+set_target_properties(BibbleVM-framework-shared PROPERTIES
+    OUTPUT_NAME "bibblevm"
+    VERSION 0.1.0
+    SOVERSION 0
+)
+set_target_properties(BibbleVM-framework-static PROPERTIES
+    OUTPUT_NAME "bibblevm-aio"
+    VERSION 0.1.0
+)
+
+install(
+    TARGETS BibbleVM-framework-shared BibbleVM-framework-static
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
+
+install(
+    DIRECTORY include/
+    DESTINATION include
+)
