@@ -21,7 +21,7 @@ FetchContent_Declare(libos
 )
 FetchContent_MakeAvailable(libos)
 
-set(ASMJIT_EMBED ON)
+set(ASMJIT_STATIC ON)
 FetchContent_Declare(asmjit
     GIT_REPOSITORY https://github.com/asmjit/asmjit.git
     GIT_TAG master
@@ -39,6 +39,10 @@ FetchContent_Declare(frozen
     GIT_TAG "1.2.0"
 )
 FetchContent_MakeAvailable(frozen)
+
+set_target_properties(asmjit PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
 
 set(SUPPORTED_ARCH off)
 
@@ -214,31 +218,54 @@ target_compile_definitions(BibbleVM-framework-static PRIVATE $<$<CONFIG:Debug>:B
 target_include_directories(BibbleVM-framework-shared PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
 
 target_include_directories(BibbleVM-framework-static PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
 
 target_compile_features(BibbleVM-framework-shared PUBLIC cxx_std_20)
 target_compile_features(BibbleVM-framework-static PUBLIC cxx_std_20)
 
-target_link_libraries(BibbleVM-framework-shared BibbleVM-native-interface BibbleBytecode-shared BibbleOpcodes libos-static asmjit::asmjit utf8cpp frozen)
-target_link_libraries(BibbleVM-framework-static BibbleVM-native-interface BibbleBytecode-static BibbleOpcodes libos-static asmjit::asmjit utf8cpp frozen)
+target_link_libraries(BibbleVM-framework-shared
+    PUBLIC
+        BibbleVM-native-interface
+        BibbleBytecode-shared
+        BibbleOpcodes
+        utf8cpp
+        frozen
+        libos-static
+        asmjit::asmjit
+)
+target_link_libraries(BibbleVM-framework-static
+    PUBLIC
+        BibbleVM-native-interface
+        BibbleBytecode-static
+        BibbleOpcodes
+        utf8cpp
+        frozen
+        libos-static
+        asmjit::asmjit
+)
 
 set_target_properties(BibbleVM-framework-shared PROPERTIES
+    EXPORT_NAME VM
     OUTPUT_NAME "bibblevm"
     VERSION 0.1.0
     SOVERSION 0
 )
 set_target_properties(BibbleVM-framework-static PROPERTIES
+    EXPORT_NAME VMStatic
     OUTPUT_NAME "bibblevm-aio"
     VERSION 0.1.0
 )
 
 install(
-    TARGETS BibbleVM-framework-shared BibbleVM-framework-static
+    TARGETS BibbleVM-framework-shared BibbleVM-framework-static libos-shared libos-static asmjit
+    EXPORT BibbleVMTargets
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
@@ -247,4 +274,11 @@ install(
 install(
     DIRECTORY include/
     DESTINATION include
+)
+
+install(
+    EXPORT BibbleVMTargets
+    FILE BibbleVMTargets.cmake
+    NAMESPACE Bibble::
+    DESTINATION lib/cmake/BibbleVM
 )
