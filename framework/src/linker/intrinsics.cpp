@@ -79,8 +79,32 @@ namespace bibblevm::linker {
         static constexpr IntrinsicModuleImpl Module = {LookupFunction};
     };
 
-    constexpr frozen::unordered_map<frozen::string, const IntrinsicModuleImpl*, 1> modules = {
-        {"Intrinsics", &IntrinsicsImpl::Module}
+    class InitImpl {
+    private:
+        static constexpr IntrinsicFunctionImpl Init = +[](VM& vm, executor::Frame& frame, executor::Task* task) -> executor::SchedulerMessage {
+            if (!vm.pluginManager().load("./libbibble_stdlib.so")) {
+                return executor::SchedulerMessage::Errored(Error::USERLAND, vm.memoryManager().allocateString(vm, "libbibble_stdlib.so failed to load")->asString());
+            }
+            return executor::SchedulerMessage::Returned(Value());
+        };
+
+        static constexpr frozen::unordered_map<frozen::string, IntrinsicFunctionImpl, 1> functions = {
+            {"Init", Init},
+        };
+
+    public:
+        static const IntrinsicFunctionImpl* LookupFunction(std::string_view name) {
+            auto it = functions.find(name);
+            if (it == functions.end()) return nullptr;
+            return &it->second;
+        }
+
+        static constexpr IntrinsicModuleImpl Module = {LookupFunction};
+    };
+
+    constexpr frozen::unordered_map<frozen::string, const IntrinsicModuleImpl*, 2> modules = {
+        {"Intrinsics", &IntrinsicsImpl::Module},
+        {"bibble.Init", &InitImpl::Module}
     };
 
     const IntrinsicModule* GetIntrinsicsModule(std::string_view name) {
