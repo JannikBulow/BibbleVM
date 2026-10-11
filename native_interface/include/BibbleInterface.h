@@ -15,9 +15,9 @@
 #   define BIBBLE_CALL __stdcall
 #else
 #   ifdef __cplusplus
-#       define BIBBLE_EXPORT extern "C"
+#       define BIBBLE_EXPORT extern "C" __attribute__((visibility("default")))
 #   else
-#       define BIBBLE_EXPORT
+#       define BIBBLE_EXPORT __attribute__((visibility("default")))
 #   endif
 #   define BIBBLE_CALL
 #endif
