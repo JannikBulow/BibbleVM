@@ -781,9 +781,12 @@ namespace bibblevm::linker {
     }
 
     bool Linker::readModuleFromPath(VM& vm, Module& module, std::string_view path, std::string_view name) {
+        std::string nameAsPath(name);
+        std::ranges::replace(nameAsPath, '.', '/');
+
         std::string fullPath(path);
         fullPath += '/';
-        fullPath += name;
+        fullPath += nameAsPath;
         fullPath += ".bmod";
 
         return ReadModule(vm, module, fullPath.c_str());
