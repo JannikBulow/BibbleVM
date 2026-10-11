@@ -2,13 +2,24 @@
 
 #include "BibbleVM/core/executor/function.h"
 
+#include "BibbleVM/native/trampoline.h"
+
 #include "BibbleVM/vm.h"
 
 #include <iostream>
 
 namespace bibblevm::executor {
     static SchedulerMessage SafetyNet(VM& vm, Frame& frame, Task* task) {
-        std::cout << "Interpreter SafetyNet triggered by: " << frame.getFunction().getName() << std::endl;
+        // in case of late initialized plugin
+        Function& function = frame.getFunction();
+        void* implementation = vm.pluginManager().getNativeFunction<void*>(frame.getModule().getName(), function.getName());
+        if (implementation != nullptr) {
+            function.setEntryPoint(native::FunctionTrampoline);
+            function.implementation() = implementation;
+            return function.getEntryPoint()(vm, frame, task);
+        }
+
+        std::cout << "Interpreter SafetyNet triggered by: " << function.getName() << std::endl;
         return SchedulerMessage::Returned(Value());
     }
 
