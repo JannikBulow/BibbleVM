@@ -27,7 +27,7 @@ namespace bibblevm::native {
             name += "/";
             name += functionName;
 
-            auto replace = [](std::string str, std::string_view value, std::string_view replacement) {
+            auto replace = [](std::string& str, std::string_view value, std::string_view replacement) {
                 size_t pos = 0;
                 while ((pos = str.find(value, pos)) != std::string::npos) {
                     str.replace(pos, value.length(), replacement);
