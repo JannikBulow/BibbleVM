@@ -698,19 +698,19 @@ static void PrintHelpMessage(const std::vector<ConfigOption>& configOptions) {
     std::cout << "where options include:\n";
 
     std::vector<Option> options = {
-        {"-h", "--help", "print this help message"},
-        {"-v", "--version", "print version"},
-        {"-mp", "--modulepath", "path to search for modules"},
-        {std::nullopt, "--redirect-stdin", "redirect stdin from file"},
-        {std::nullopt, "--redirect-stdout", "redirect stdout to file"},
-        {std::nullopt, "--redirect-stderr", "redirect stderr to file"},
-        {std::nullopt, "--config-profile", "specify config profile"},
+        {"h", "help", "print this help message"},
+        {"v", "version", "print version"},
+        {"mp", "modulepath", "path to search for modules"},
+        {std::nullopt, "redirect-stdin", "redirect stdin from file"},
+        {std::nullopt, "redirect-stdout", "redirect stdout to file"},
+        {std::nullopt, "redirect-stderr", "redirect stderr to file"},
+        {std::nullopt, "config-profile", "specify config profile"},
     };
 
     options.reserve(configOptions.size() + options.size());
 
     for (const ConfigOption& option : configOptions) {
-        options.emplace_back(std::nullopt, "--" + option.key, option.description);
+        options.emplace_back(std::nullopt, option.key, option.description);
     }
 
     auto makeLeft = [](const Option& option) {
