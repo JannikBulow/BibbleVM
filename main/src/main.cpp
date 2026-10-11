@@ -700,6 +700,7 @@ static void PrintHelpMessage(const std::vector<ConfigOption>& configOptions) {
     std::vector<Option> options = {
         {"-h", "--help", "print this help message"},
         {"-v", "--version", "print version"},
+        {"-mp", "--modulepath", "path to search for modules"},
         {std::nullopt, "--redirect-stdin", "redirect stdin from file"},
         {std::nullopt, "--redirect-stdout", "redirect stdout to file"},
         {std::nullopt, "--redirect-stderr", "redirect stderr to file"},
