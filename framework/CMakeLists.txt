@@ -264,7 +264,7 @@ set_target_properties(BibbleVM-framework-static PROPERTIES
 )
 
 install(
-    TARGETS BibbleVM-framework-shared BibbleVM-framework-static libos-shared libos-static asmjit
+    TARGETS BibbleVM-framework-shared BibbleVM-framework-static libos-shared libos-static asmjit utf8cpp frozen
     EXPORT BibbleVMTargets
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
