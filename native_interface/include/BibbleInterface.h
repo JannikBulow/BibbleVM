@@ -169,7 +169,7 @@ inline VMReturnValue BIBBLE_RETURN_IMPL_(T value) {
 #define BIBBLE_ARG(T, value) BIBBLE_ARG_IMPL_(static_cast<T>(value))
 #define BIBBLE_RETURN(T, value) BIBBLE_RETURN_IMPL_(static_cast<T>(value))
 #else
-#define BIBBLE_ARG_OR_RETURN(T, R, value) _Generic((T){0}, \
+#define BIBBLE_ARG_OR_RETURN(T, R, value) _Generic((T)0, \
 VMObject: BIBBLE_CLITERAL(R){true, BIBBLE_CLITERAL(VMValue){.obj=(VMObject)(value)}}, \
 VMHandle: BIBBLE_CLITERAL(R){false, BIBBLE_CLITERAL(VMValue){.h=(VMHandle)(value)}}, \
 VMDouble: BIBBLE_CLITERAL(R){false, BIBBLE_CLITERAL(VMValue){.d=(VMDouble)(value)}}, \
