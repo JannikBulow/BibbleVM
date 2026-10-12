@@ -113,6 +113,12 @@ struct BibbleInterface {
     VMValue (*CallFunction)(BibbleVM*, BibbleInterface*, VMFunction, ...);
     VMValue (*CallFunctionV)(BibbleVM*, BibbleInterface*, VMFunction, va_list);
     VMValue (*CallFunctionA)(BibbleVM*, BibbleInterface*, VMFunction, const VMArgument*);
+
+    VMString (*NewString)(BibbleVM*, const char* utf8Chars);
+    VMULong (*GetStringLength)(BibbleVM*, VMString);
+    const char* (*GetStringChars)(BibbleVM*, VMString);
+    char* (*CopyStringChars)(BibbleVM*, VMString);
+    void (*ReleaseStringChars)(BibbleVM*, VMString, const char*);
 };
 
 

@@ -30,7 +30,11 @@ namespace bibblevm::native {
     }
 
     static oop::Object* GetObject(VMObject object) {
-        return reinterpret_cast<oop::Object*>(object);
+        return *reinterpret_cast<oop::Object**>(object);
+    }
+
+    static oop::StringObject* GetString(VMString str) {
+        return GetObject(str)->asString();
     }
 
     static executor::Task* ExtractTask(BibbleInterface* interface) {
@@ -97,7 +101,7 @@ namespace bibblevm::native {
 
     VMObject NewGlobalReference(BibbleVM* vm_, VMObject object) {
         VM& vm = GetVM(vm_);
-        oop::Object** reference = vm.memoryManager().newGlobalStrongReference(reinterpret_cast<oop::Object*>(object));
+        oop::Object** reference = vm.memoryManager().newGlobalStrongReference(GetObject(object));
         return reinterpret_cast<VMObject>(reference);
     }
 
@@ -108,7 +112,7 @@ namespace bibblevm::native {
 
     VMObject NewLocalReference(BibbleVM* vm_, VMObject object) {
         VM& vm = GetVM(vm_);
-        oop::Object** reference = vm.memoryManager().newLocalStrongReference(reinterpret_cast<oop::Object*>(object));
+        oop::Object** reference = vm.memoryManager().newLocalStrongReference(GetObject(object));
         return reinterpret_cast<VMObject>(reference);
     }
 
@@ -145,7 +149,6 @@ namespace bibblevm::native {
     }
 
     VMField GetField(BibbleVM* vm_, VMClass clas_, const char* name) {
-        VM& vm = GetVM(vm_);
         oop::Class* clas = GetClass(clas_);
         if (clas == nullptr) return nullptr;
         return reinterpret_cast<VMField>(clas->getField(name));
@@ -172,14 +175,12 @@ namespace bibblevm::native {
     }
 
     VMMethod GetMethod(BibbleVM* vm_, VMClass clas_, const char* name) {
-        VM& vm = GetVM(vm_);
         oop::Class* clas = GetClass(clas_);
         if (clas == nullptr) return nullptr;
         return reinterpret_cast<VMMethod>(clas->getMethod(name));
     }
 
     VMFunction DispatchMethod(BibbleVM* vm_, VMObject object_, VMMethod method_) {
-        VM& vm = GetVM(vm_);
         oop::Object* object = GetObject(object_);
         const oop::Method* method = GetMethod(method_);
         if (object == nullptr || method == nullptr) return nullptr;
@@ -188,7 +189,6 @@ namespace bibblevm::native {
     }
 
     VMFunction DispatchMethodNonVirtual(BibbleVM* vm_, VMClass clas_, VMMethod method_) {
-        VM& vm = GetVM(vm_);
         oop::Class* clas = GetClass(clas_);
         const oop::Method* method = GetMethod(method_);
         if (clas == nullptr || method == nullptr) return nullptr;
@@ -196,7 +196,6 @@ namespace bibblevm::native {
     }
 
     VMFunction GetFunction(BibbleVM* vm_, VMModule module_, const char* name) {
-        VM& vm = GetVM(vm_);
         executor::Module* module = GetModule(module_);
         if (module == nullptr) return nullptr;
         return reinterpret_cast<VMFunction>(module->getFunction(name));
@@ -244,6 +243,40 @@ namespace bibblevm::native {
         return returnValue.toNative(vm.memoryManager());
     }
 
+    VMString NewString(BibbleVM* vm_, const char* utf8Chars) {
+        VM& vm = GetVM(vm_);
+        oop::Object* str = vm.memoryManager().allocateString(vm, utf8Chars);
+        return reinterpret_cast<VMString>(vm.memoryManager().newLocalStrongReference(str));
+    }
+
+    VMULong GetStringLength(BibbleVM* vm_, VMString str_) {
+        oop::StringObject* str = GetString(str_);
+        return reinterpret_cast<VMULong>(str->lengthBytes);
+    }
+
+    const char* GetStringChars(BibbleVM* vm_, VMString str_) {
+        //TODO: figure out how to make this not break when a string object gets moved
+        oop::StringObject* str = GetString(str_);
+        return reinterpret_cast<const char*>(str->bytes);
+    }
+
+    char* CopyStringChars(BibbleVM* vm_, VMString str_) {
+        //TODO: bookkeeping
+        oop::StringObject* str = GetString(str_);
+        char* chars = new char[str->lengthBytes + 1];
+        std::memcpy(chars, str->bytes, str->lengthBytes);
+        chars[str->lengthBytes] = '\0';
+        return chars;
+    }
+
+    void ReleaseStringChars(BibbleVM* vm_, VMString str_, const char* chars) {
+        //TODO: bookkeeping
+        oop::StringObject* str = GetString(str_);
+        if (chars != str->bytes) {
+            delete[] chars;
+        }
+    }
+
     void PopulateInterface(BibbleInterface* interface) {
         interface->GetModule = GetModule;
         interface->NewGlobalReference = NewGlobalReference;
@@ -264,5 +297,10 @@ namespace bibblevm::native {
         interface->CallFunction = CallFunction;
         interface->CallFunctionV = CallFunctionV;
         interface->CallFunctionA = CallFunctionA;
+        interface->NewString = NewString;
+        interface->GetStringLength = GetStringLength;
+        interface->GetStringChars = GetStringChars;
+        interface->CopyStringChars = CopyStringChars;
+        interface->ReleaseStringChars = ReleaseStringChars;
     }
 }
