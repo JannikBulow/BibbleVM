@@ -4,6 +4,7 @@
 #define BIBBLEVM_BIBBLEINTERFACE_H 1
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef _WIN32
