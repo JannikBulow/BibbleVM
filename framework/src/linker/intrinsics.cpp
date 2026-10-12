@@ -89,7 +89,7 @@ namespace bibblevm::linker {
         };
 
         static constexpr frozen::unordered_map<frozen::string, IntrinsicFunctionImpl, 1> functions = {
-            {"Init", Init},
+            {"init", Init},
         };
 
     public:
