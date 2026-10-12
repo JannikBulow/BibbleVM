@@ -104,7 +104,7 @@ namespace bibblevm::linker {
 
     constexpr frozen::unordered_map<frozen::string, const IntrinsicModuleImpl*, 2> modules = {
         {"Intrinsics", &IntrinsicsImpl::Module},
-        {"bibble.Init", &InitImpl::Module}
+        {"bibble.init", &InitImpl::Module}
     };
 
     const IntrinsicModule* GetIntrinsicsModule(std::string_view name) {
