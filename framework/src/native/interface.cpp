@@ -297,7 +297,7 @@ namespace bibblevm::native {
     void ReleaseArrayElements(BibbleVM* vm_, VMArray array_, T* elements) {
         //TODO: bookkeeping
         oop::Array* array = GetArray(array_);
-        if (elements != array->elementBytes) {
+        if (elements != reinterpret_cast<T*>(array->elementBytes)) {
             std::memcpy(array->elementBytes, elements, array->length);
             delete[] elements;
         }
