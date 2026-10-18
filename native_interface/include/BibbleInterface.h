@@ -120,6 +120,34 @@ struct BibbleInterface {
     const char* (*GetStringChars)(BibbleVM*, VMString);
     char* (*CopyStringChars)(BibbleVM*, VMString);
     void (*ReleaseStringChars)(BibbleVM*, VMString, const char*);
+
+    VMULong (*GetArrayLength)(BibbleVM*, VMArray);
+
+    VMByte* (*GetByteArrayElements)(BibbleVM*, VMArray); // bool is also this
+    VMUByte* (*GetUByteArrayElements)(BibbleVM*, VMArray);
+    VMShort* (*GetShortArrayElements)(BibbleVM*, VMArray);
+    VMUShort* (*GetUShortArrayElements)(BibbleVM*, VMArray);
+    VMInt* (*GetIntArrayElements)(BibbleVM*, VMArray);
+    VMUInt* (*GetUIntArrayElements)(BibbleVM*, VMArray);
+    VMLong* (*GetLongArrayElements)(BibbleVM*, VMArray);
+    VMULong* (*GetULongArrayElements)(BibbleVM*, VMArray);
+    VMFloat* (*GetFloatArrayElements)(BibbleVM*, VMArray);
+    VMDouble* (*GetDoubleArrayElements)(BibbleVM*, VMArray);
+    VMHandle* (*GetHandleArrayElements)(BibbleVM*, VMArray);
+    VMObject* (*GetObjectArrayElements)(BibbleVM*, VMArray); // string, array, future, object all in one
+
+    void (*ReleaseByteArrayElements)(BibbleVM*, VMArray, VMByte*); // bool is also this
+    void (*ReleaseUByteArrayElements)(BibbleVM*, VMArray, VMUByte*);
+    void (*ReleaseShortArrayElements)(BibbleVM*, VMArray, VMShort*);
+    void (*ReleaseUShortArrayElements)(BibbleVM*, VMArray, VMUShort*);
+    void (*ReleaseIntArrayElements)(BibbleVM*, VMArray, VMInt*);
+    void (*ReleaseUIntArrayElements)(BibbleVM*, VMArray, VMUInt*);
+    void (*ReleaseLongArrayElements)(BibbleVM*, VMArray, VMLong*);
+    void (*ReleaseULongArrayElements)(BibbleVM*, VMArray, VMULong*);
+    void (*ReleaseFloatArrayElements)(BibbleVM*, VMArray, VMFloat*);
+    void (*ReleaseDoubleArrayElements)(BibbleVM*, VMArray, VMDouble*);
+    void (*ReleaseHandleArrayElements)(BibbleVM*, VMArray, VMHandle*);
+    void (*ReleaseObjectArrayElements)(BibbleVM*, VMArray, VMObject*); // string, array, future, object all in one
 };
 
 

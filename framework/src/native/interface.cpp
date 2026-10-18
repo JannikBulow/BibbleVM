@@ -37,6 +37,10 @@ namespace bibblevm::native {
         return GetObject(str)->asString();
     }
 
+    static oop::Array* GetArray(VMArray array) {
+        return GetObject(array)->asArray();
+    }
+
     static executor::Task* ExtractTask(BibbleInterface* interface) {
         return static_cast<executor::Task*>(interface->reserved[0]);
     }
@@ -277,6 +281,28 @@ namespace bibblevm::native {
         }
     }
 
+    VMULong GetArrayLength(BibbleVM* vm_, VMArray array_) {
+        oop::Array* array = GetArray(array_);
+        return array->length;
+    }
+
+    template<class T>
+    T* GetArrayElements(BibbleVM* vm_, VMArray array_) {
+        //TODO: bookkeeping/copying
+        oop::Array* array = GetArray(array_);
+        return reinterpret_cast<T*>(array->elementBytes);
+    }
+
+    template<class T>
+    void ReleaseArrayElements(BibbleVM* vm_, VMArray array_, T* elements) {
+        //TODO: bookkeeping
+        oop::Array* array = GetArray(array_);
+        if (elements != array->elementBytes) {
+            std::memcpy(array->elementBytes, elements, array->length);
+            delete[] elements;
+        }
+    }
+
     void PopulateInterface(BibbleInterface* interface) {
         interface->GetModule = GetModule;
         interface->NewGlobalReference = NewGlobalReference;
@@ -302,5 +328,30 @@ namespace bibblevm::native {
         interface->GetStringChars = GetStringChars;
         interface->CopyStringChars = CopyStringChars;
         interface->ReleaseStringChars = ReleaseStringChars;
+        interface->GetArrayLength = GetArrayLength;
+        interface->GetByteArrayElements = GetArrayElements<VMByte>;
+        interface->GetUByteArrayElements = GetArrayElements<VMUByte>;
+        interface->GetShortArrayElements = GetArrayElements<VMShort>;
+        interface->GetUShortArrayElements = GetArrayElements<VMUShort>;
+        interface->GetIntArrayElements = GetArrayElements<VMInt>;
+        interface->GetUIntArrayElements = GetArrayElements<VMUInt>;
+        interface->GetLongArrayElements = GetArrayElements<VMLong>;
+        interface->GetULongArrayElements = GetArrayElements<VMULong>;
+        interface->GetFloatArrayElements = GetArrayElements<VMFloat>;
+        interface->GetDoubleArrayElements = GetArrayElements<VMDouble>;
+        interface->GetHandleArrayElements = GetArrayElements<VMHandle>;
+        interface->GetObjectArrayElements = GetArrayElements<VMObject>;
+        interface->ReleaseByteArrayElements = ReleaseArrayElements<VMByte>;
+        interface->ReleaseUByteArrayElements = ReleaseArrayElements<VMUByte>;
+        interface->ReleaseShortArrayElements = ReleaseArrayElements<VMShort>;
+        interface->ReleaseUShortArrayElements = ReleaseArrayElements<VMUShort>;
+        interface->ReleaseIntArrayElements = ReleaseArrayElements<VMInt>;
+        interface->ReleaseUIntArrayElements = ReleaseArrayElements<VMUInt>;
+        interface->ReleaseLongArrayElements = ReleaseArrayElements<VMLong>;
+        interface->ReleaseULongArrayElements = ReleaseArrayElements<VMULong>;
+        interface->ReleaseFloatArrayElements = ReleaseArrayElements<VMFloat>;
+        interface->ReleaseDoubleArrayElements = ReleaseArrayElements<VMDouble>;
+        interface->ReleaseHandleArrayElements = ReleaseArrayElements<VMHandle>;
+        interface->ReleaseObjectArrayElements = ReleaseArrayElements<VMObject>;
     }
 }
