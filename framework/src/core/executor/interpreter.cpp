@@ -349,11 +349,13 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(NEWINSTANCE) {
+        frame[args.a].isObject = true;
         frame[args.a].obj = vm.memoryManager().allocateInstance(vm, frame.getModule().getConstPool().get(args.b).ci);
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(NEWARRAY) {
+        frame[args.a].isObject = true;
         frame[args.a].obj = vm.memoryManager().allocateArray(vm, static_cast<oop::Type>(args.imm), frame[args.b].ul);
         return InterpreterMessage::Continue();
     }
@@ -363,12 +365,14 @@ namespace bibblevm::executor {
         if (data == nullptr) return InterpreterMessage::Errored(Error::NULL_REFERENCE);
         if (data->kind != oop::ObjectKind::Array) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
 
+        frame[args.a].isObject = true;
         frame[args.a].obj = vm.memoryManager().allocateString(vm, std::string_view(reinterpret_cast<const char*>(data->asArray()->elementBytes), data->asArray()->length));
 
         return InterpreterMessage::Continue();
     }
 
     DEFINE_INTERPRETER(NEWFUTURE) {
+        frame[args.a].isObject = true;
         frame[args.a].obj = vm.memoryManager().allocateFuture(vm);
         return InterpreterMessage::Continue();
     }
