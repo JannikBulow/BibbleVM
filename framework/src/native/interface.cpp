@@ -286,6 +286,13 @@ namespace bibblevm::native {
         return array->length;
     }
 
+    template<oop::Type T>
+    VMArray NewArray(BibbleVM* vm_, VMULong length) {
+        VM& vm = GetVM(vm_);
+        oop::Object* array = vm.memoryManager().allocateArray(vm, T, length);
+        return reinterpret_cast<VMArray>(vm.memoryManager().newLocalStrongReference(array));
+    }
+
     template<class T>
     T* GetArrayElements(BibbleVM* vm_, VMArray array_) {
         //TODO: bookkeeping/copying
@@ -329,6 +336,18 @@ namespace bibblevm::native {
         interface->CopyStringChars = CopyStringChars;
         interface->ReleaseStringChars = ReleaseStringChars;
         interface->GetArrayLength = GetArrayLength;
+        interface->NewByteArray = NewArray<oop::Type::Byte>;
+        interface->NewUByteArray = NewArray<oop::Type::UByte>;
+        interface->NewShortArray = NewArray<oop::Type::Short>;
+        interface->NewUShortArray = NewArray<oop::Type::UShort>;
+        interface->NewIntArray = NewArray<oop::Type::Int>;
+        interface->NewUIntArray = NewArray<oop::Type::UInt>;
+        interface->NewLongArray = NewArray<oop::Type::Long>;
+        interface->NewULongArray = NewArray<oop::Type::ULong>;
+        interface->NewFloatArray = NewArray<oop::Type::Float>;
+        interface->NewDoubleArray = NewArray<oop::Type::Double>;
+        interface->NewHandleArray = NewArray<oop::Type::Handle>;
+        interface->NewObjectArray = NewArray<oop::Type::Reference>;
         interface->GetByteArrayElements = GetArrayElements<VMByte>;
         interface->GetUByteArrayElements = GetArrayElements<VMUByte>;
         interface->GetShortArrayElements = GetArrayElements<VMShort>;

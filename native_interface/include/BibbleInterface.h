@@ -123,6 +123,19 @@ struct BibbleInterface {
 
     VMULong (*GetArrayLength)(BibbleVM*, VMArray);
 
+    VMArray (*NewByteArray)(BibbleVM*, VMULong); // bool is also this
+    VMArray (*NewUByteArray)(BibbleVM*, VMULong);
+    VMArray (*NewShortArray)(BibbleVM*, VMULong);
+    VMArray (*NewUShortArray)(BibbleVM*, VMULong);
+    VMArray (*NewIntArray)(BibbleVM*, VMULong);
+    VMArray (*NewUIntArray)(BibbleVM*, VMULong);
+    VMArray (*NewLongArray)(BibbleVM*, VMULong);
+    VMArray (*NewULongArray)(BibbleVM*, VMULong);
+    VMArray (*NewFloatArray)(BibbleVM*, VMULong);
+    VMArray (*NewDoubleArray)(BibbleVM*, VMULong);
+    VMArray (*NewHandleArray)(BibbleVM*, VMULong);
+    VMArray (*NewObjectArray)(BibbleVM*, VMULong); // string, array, future, object all in one
+
     VMByte* (*GetByteArrayElements)(BibbleVM*, VMArray); // bool is also this
     VMUByte* (*GetUByteArrayElements)(BibbleVM*, VMArray);
     VMShort* (*GetShortArrayElements)(BibbleVM*, VMArray);
