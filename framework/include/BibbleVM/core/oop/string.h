@@ -68,6 +68,10 @@ namespace bibblevm::oop {
             return {mObject->bytes, mObject->lengthBytes};
         }
 
+        operator Value() const {
+            return {.isObject = true, .obj = mObject->asObject()};
+        }
+
         bool operator==(const String& other) const {
             if (mObject == other.mObject) return true;
             if (mObject == nullptr || other.mObject == nullptr) return false;
