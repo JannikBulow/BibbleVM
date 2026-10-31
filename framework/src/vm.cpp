@@ -28,6 +28,22 @@ namespace bibblevm {
         return mLinker.loadModule(*this, name);
     }
 
+    String VM::getProperty(std::string_view name) const {
+        auto it = mProperties.find(name);
+        if (it != mProperties.end()) return (*it->second)->asString();
+        return nullptr;
+    }
+
+    void VM::setProperty(String name, String value) {
+        oop::Object** valueRef = memoryManager().newGlobalStrongReference(value.get()->asObject());
+        auto [it, inserted] = mProperties.try_emplace(name, valueRef);
+
+        if (!inserted) {
+            memoryManager().deleteGlobalStrongReference(it->second);
+            it->second = valueRef;
+        }
+    }
+
     void VM::enqueueForJitCompile(executor::Function* function) {
         if (mConfig.compiler.jit.enabled) {
             mJitCompiler->enqueueForCompilation(function);

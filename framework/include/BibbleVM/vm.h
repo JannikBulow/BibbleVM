@@ -25,6 +25,7 @@
 #include <format>
 #include <iostream>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 namespace bibblevm {
@@ -66,6 +67,9 @@ namespace bibblevm {
         linker::Module* getModule(String name);
         linker::Module* getModule(std::string_view name);
 
+        String getProperty(std::string_view name) const;
+        void setProperty(String name, String value);
+
         void enqueueForJitCompile(executor::Function* function);
 
     private:
@@ -79,6 +83,8 @@ namespace bibblevm {
         linker::Linker mLinker;
 
         CodeAllocator mCodeAllocator;
+
+        std::unordered_map<String, oop::Object**, String::Hash, String::Eq> mProperties;
 
         std::unique_ptr<jit::Compiler> mJitCompiler;
     };
