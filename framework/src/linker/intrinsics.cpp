@@ -22,51 +22,17 @@ namespace bibblevm::linker {
         const IntrinsicFunctionImpl* (*lookup)(std::string_view);
     };
 
-    class IntrinsicsImpl {
+    class InitImpl {
     private:
-        static executor::SchedulerMessage printHelper(VM& vm, std::string_view value) {
-            os_file* out;
-            os_result res = os_file_get_stdfile(&out, OS_STDOUT);
-            if (res != OS_OK) {
-                return executor::SchedulerMessage::Errored(Error::USERLAND, vm.describeOSResult(res));
+        static constexpr IntrinsicFunctionImpl init = +[](VM& vm, executor::Frame& frame, executor::Task* task) -> executor::SchedulerMessage {
+            if (!vm.pluginManager().load("/home/jannik/CLionProjects/bibble-stdlib/tests/libbibble_stdlib.so")) {
+                return executor::SchedulerMessage::Errored(Error::USERLAND, vm.memoryManager().allocateString(vm, "libbibble_stdlib.so failed to load")->asString());
             }
-
-            os_size written = 0;
-            res = os_file_write(out, value.data(), value.length(), &written);
-            if (res != OS_OK) {
-                return executor::SchedulerMessage::Errored(Error::USERLAND, vm.describeOSResult(res));
-            }
-
-            res = os_file_write(out, "\n", 1, nullptr);
-            if (res != OS_OK) {
-                return executor::SchedulerMessage::Errored(Error::USERLAND, vm.describeOSResult(res));
-            }
-
-            Value returnValue;
-            returnValue.isObject = false;
-            returnValue.ul = written;
-
-            return executor::SchedulerMessage::Returned(returnValue);
-        }
-
-        static constexpr IntrinsicFunctionImpl print = +[](VM& vm, executor::Frame& frame, executor::Task* task) -> executor::SchedulerMessage {
-            return printHelper(vm, std::to_string(frame[0].l));
+            return executor::SchedulerMessage::Returned(Value());
         };
 
-        static constexpr IntrinsicFunctionImpl printString = +[](VM& vm, executor::Frame& frame, executor::Task* task) -> executor::SchedulerMessage {
-            oop::Object* object = frame[0].obj;
-
-            if (object == nullptr) return executor::SchedulerMessage::Errored(Error::NULL_REFERENCE);
-            if (object->kind != oop::ObjectKind::String) return executor::SchedulerMessage::Errored(Error::INVALID_OBJECT_KIND);
-
-            oop::StringObject* string = object->asString();
-
-            return printHelper(vm, std::string_view(string->bytes, string->lengthBytes));
-        };
-
-        static constexpr frozen::unordered_map<frozen::string, IntrinsicFunctionImpl, 2> functions = {
-            {"print", print},
-            {"printString", printString},
+        static constexpr frozen::unordered_map<frozen::string, IntrinsicFunctionImpl, 1> functions = {
+            {"init", init},
         };
 
     public:
@@ -79,17 +45,30 @@ namespace bibblevm::linker {
         static constexpr IntrinsicModuleImpl Module = {LookupFunction};
     };
 
-    class InitImpl {
+    class RuntimeImpl {
     private:
-        static constexpr IntrinsicFunctionImpl Init = +[](VM& vm, executor::Frame& frame, executor::Task* task) -> executor::SchedulerMessage {
-            if (!vm.pluginManager().load("/home/jannik/CLionProjects/bibble-stdlib/tests/libbibble_stdlib.so")) {
-                return executor::SchedulerMessage::Errored(Error::USERLAND, vm.memoryManager().allocateString(vm, "libbibble_stdlib.so failed to load")->asString());
-            }
+        static constexpr IntrinsicFunctionImpl get_property = +[](VM& vm, executor::Frame& frame, executor::Task* task) -> executor::SchedulerMessage {
+            oop::Object* key = frame[0].obj;
+            if (key->kind != oop::ObjectKind::String) return executor::SchedulerMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+            String value = vm.getProperty(String(key->asString()));
+            return executor::SchedulerMessage::Returned(value);
+        };
+
+        static constexpr IntrinsicFunctionImpl set_property = +[](VM& vm, executor::Frame& frame, executor::Task* task) -> executor::SchedulerMessage {
+            oop::Object* key = frame[0].obj;
+            oop::Object* value = frame[1].obj;
+            if (key->kind != oop::ObjectKind::String) return executor::SchedulerMessage::Errored(Error::INVALID_OBJECT_KIND);
+            if (value->kind != oop::ObjectKind::String) return executor::SchedulerMessage::Errored(Error::INVALID_OBJECT_KIND);
+
+            vm.setProperty(key->asString(), value->asString());
+
             return executor::SchedulerMessage::Returned(Value());
         };
 
-        static constexpr frozen::unordered_map<frozen::string, IntrinsicFunctionImpl, 1> functions = {
-            {"init", Init},
+        static constexpr frozen::unordered_map<frozen::string, IntrinsicFunctionImpl, 2> functions = {
+            {"get_property", get_property},
+            {"set_property", set_property},
         };
 
     public:
@@ -103,8 +82,8 @@ namespace bibblevm::linker {
     };
 
     constexpr frozen::unordered_map<frozen::string, const IntrinsicModuleImpl*, 2> modules = {
-        {"Intrinsics", &IntrinsicsImpl::Module},
-        {"bibble.init", &InitImpl::Module}
+        {"bibble.init", &InitImpl::Module},
+        {"bibble.runtime", &RuntimeImpl::Module}
     };
 
     const IntrinsicModule* GetIntrinsicsModule(std::string_view name) {
