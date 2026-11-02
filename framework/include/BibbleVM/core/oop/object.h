@@ -26,6 +26,7 @@ namespace bibblevm::oop {
 
     enum class ObjectKind : uint8_t {
         Newborn, // Objects cannot be this kind after they leave the MemoryManager
+        Dead, // Dead objects in fragmentation holes in a heap use this. It allows for simple traversal
         Instance,
         Array,
         String,
@@ -37,7 +38,8 @@ namespace bibblevm::oop {
         uint32_t allocatedSize;
         ObjectKind kind;
         uint8_t age = 0;
-        uint8_t markBit = 0;
+        uint8_t markBit : 1 = 0;
+        uint8_t finalizedBit : 1 = 0; // for instance objects. stored here for better packing
         uint8_t heapID = 0; // 0 is reserved here for unknown heap id
 
         Instance* asInstance() { return reinterpret_cast<Instance*>(this); }

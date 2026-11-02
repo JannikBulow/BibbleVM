@@ -62,6 +62,8 @@ namespace bibblevm::gc {
         // Call this at every safe point throughout the program and the memory manager will decide if it should use this safe point to run a collection cycle or not.
         void safepoint(VM& vm);
 
+        void destroyAllObjects(VM& vm);
+
     private:
         struct LocalReferenceFrame {
             std::vector<oop::Object**> references;
@@ -111,6 +113,7 @@ namespace bibblevm::gc {
         oop::Object* forward(VM& vm, oop::Object* object);
         oop::Object* promote(VM& vm, oop::Object* object);
         void finalizeDeadObjectsInNursery(VM& vm);
+        void finalizeAllObjectsInNursery(VM& vm);
 
         void oldHeapCollect(VM& vm);
     };

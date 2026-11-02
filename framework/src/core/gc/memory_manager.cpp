@@ -77,6 +77,7 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateImmortalString(VM& vm, ULong lengthBytes) {
         oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + lengthBytes + 1));
         new(object) oop::StringObject();
+        object->asObject()->allocatedSize = sizeof(oop::StringObject) + lengthBytes + 1;
         object->asObject()->kind = oop::ObjectKind::String;
         object->asObject()->heapID = IMMORTAL_ID;
         object->lengthBytes = lengthBytes;
@@ -87,6 +88,7 @@ namespace bibblevm::gc {
     oop::Object* MemoryManager::allocateImmortalString(VM& vm, std::string_view copy) {
         oop::StringObject* object = static_cast<oop::StringObject*>(mImmortalAllocator.allocate(sizeof(oop::StringObject) + copy.size() + 1));
         new(object) oop::StringObject();
+        object->asObject()->allocatedSize = sizeof(oop::StringObject) + copy.size() + 1;
         object->asObject()->kind = oop::ObjectKind::String;
         object->asObject()->heapID = IMMORTAL_ID;
         object->lengthBytes = copy.size();
@@ -180,6 +182,8 @@ namespace bibblevm::gc {
 
         //TODO: add a finalizer thread and make the finalizer queue concurrency safe, then remove the below step
         for (oop::Object* deadObject : mFinalizerQueue) {
+            if (deadObject->finalizedBit == 1) [[unlikely]] continue;
+
             oop::Class* clas = deadObject->asInstance()->clas;
             executor::Function* function = clas->dispatchMethod(clas->getFinalizer());
             if (function != nullptr) {
@@ -187,6 +191,43 @@ namespace bibblevm::gc {
                 argument.isObject = true;
                 argument.obj = deadObject;
                 vm.scheduler().schedule(vm, *function, executor::MapPriorityToLevel(vm, executor::TaskPriority::System), &argument);
+                deadObject->finalizedBit = 1;
+            }
+        }
+    }
+
+    void MemoryManager::destroyAllObjects(VM& vm) {
+        for (oop::Object** reference : mStrongReferences) {
+            *reference = nullptr;
+        }
+
+        finalizeAllObjectsInNursery(vm);
+        mOldGenHeap.finalizeAllObjects(vm);
+
+        mImmortalAllocator.walkRegions([this](uint8_t* start, uint8_t* end) {
+            uint8_t* current = start;
+            while (current != end) {
+                oop::Object* object = reinterpret_cast<oop::Object*>(current);
+
+                if (object->kind == oop::ObjectKind::Instance) {
+                    mFinalizerQueue.push_back(object);
+                }
+
+                current += object->allocatedSize;
+            }
+        });
+
+        for (oop::Object* object : mFinalizerQueue) {
+            if (object->finalizedBit == 1) [[unlikely]] continue; // double-finalize protection
+
+            oop::Class* clas = object->asInstance()->clas;
+            executor::Function* function = clas->dispatchMethod(clas->getFinalizer());
+            if (function != nullptr) {
+                Value argument{};
+                argument.isObject = true;
+                argument.obj = object;
+                vm.scheduler().schedule(vm, *function, executor::MapPriorityToLevel(vm, executor::TaskPriority::System), &argument);
+                object->finalizedBit = 1;
             }
         }
     }
@@ -519,6 +560,24 @@ namespace bibblevm::gc {
                         "Finalizer queued | object={:016X}",
                         reinterpret_cast<uintptr_t>(object)
                     );
+                }
+            }
+
+            scan += object->allocatedSize;
+        }
+    }
+
+    void MemoryManager::finalizeAllObjectsInNursery(VM& vm) {
+        if (vm.config().gc.disableFinalizers) return;
+
+        uint8_t* scan = mNursery.fromStart;
+
+        while (scan < mNursery.fromAllocPointer) {
+            oop::Object* object = reinterpret_cast<oop::Object*>(scan);
+
+            if (object->kind == oop::ObjectKind::Instance) {
+                if (object->asInstance()->clas->hasFinalizer()) {
+                    mFinalizerQueue.push_back(object);
                 }
             }
 

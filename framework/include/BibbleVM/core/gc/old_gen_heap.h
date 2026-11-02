@@ -13,6 +13,7 @@
 #include <vector>
 
 namespace bibblevm::gc {
+    //TODO: add compaction step. why did i not add that from the beginning??
     class BIBBLEVM_EXPORT OldGenHeap {
     public:
         enum class Phase {
@@ -54,6 +55,8 @@ namespace bibblevm::gc {
         void stepCollection(VM& vm, std::optional<TimeManager<>::TimePoint> deadline);
 
         void markObject(oop::Object* object);
+
+        void finalizeAllObjects(VM& vm);
 
     private:
         struct Region {

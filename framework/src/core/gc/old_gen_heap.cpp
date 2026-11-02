@@ -48,7 +48,7 @@ namespace bibblevm::gc {
 
         auto createObject = [this, byteSize] {
             oop::Object* object = reinterpret_cast<oop::Object*>(mAllocRegion->allocPointer);
-            new(object) oop::Object(0, byteSize, oop::ObjectKind::Newborn, 0, 0, OLD_GEN_ID);
+            new(object) oop::Object(nullptr, byteSize, oop::ObjectKind::Newborn, 0, 0, OLD_GEN_ID);
             if (isCollecting()) object->markBit = mMarkEpoch; // It's fine to only set the mark bit since sweep will only check for that
             mAllocRegion->allocPointer += byteSize;
             mAllocRegion->liveBytes += byteSize;
@@ -87,6 +87,8 @@ namespace bibblevm::gc {
         region->liveBytes -= object->allocatedSize;
 
         mTotalUsed -= object->allocatedSize;
+
+        object->kind = oop::ObjectKind::Dead;
     }
 
     bool OldGenHeap::grow(VM& vm) {
@@ -97,7 +99,7 @@ namespace bibblevm::gc {
         return grow(vm.config().memory.oldGenHeapRegionSize, regionsNeeded);
     }
 
-    // This function explicitly destroys regions with 0 live bytes (including ones that were just created with grow()).
+    // This function destroys regions with 0 live bytes (including ones that were just created with grow()).
     // Only use when severely memory pressured.
     bool OldGenHeap::shrink(VM& vm) {
         // Don't use shrinkStep or mState.shrink because a GC cycle may be active
@@ -182,6 +184,22 @@ namespace bibblevm::gc {
 
         object->markBit = mMarkEpoch;
         mMarkQueue.push_back(object);
+    }
+
+    void OldGenHeap::finalizeAllObjects(VM& vm) {
+        Region* current = mHead;
+        while (current != nullptr) {
+            uint8_t* scan = current->start;
+            while (scan < current->allocPointer) {
+                oop::Object* object = reinterpret_cast<oop::Object*>(scan);
+                
+                vm.memoryManager().queueFinalizer(vm, object);
+
+                scan += object->allocatedSize;
+            }
+
+            current = current->next;
+        }
     }
 
     OldGenHeap::Region* OldGenHeap::Region::Create(size_t size, Region* next) {
