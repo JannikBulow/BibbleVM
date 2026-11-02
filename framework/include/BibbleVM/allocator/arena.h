@@ -6,6 +6,7 @@
 #include "BibbleVM/api.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <type_traits>
 
 //TODO: make the arena allocators nicer
@@ -70,6 +71,8 @@ namespace bibblevm {
             size_t& used() { return mUsed; }
 
             void clear(bool decommitMemory = false);
+
+            void* base() { return StaticArenaAllocator::base(); }
         };
     public:
         struct RestorePoint {
@@ -96,6 +99,17 @@ namespace bibblevm {
         }
 
         void clear(bool decommitMemory = false);
+
+        void walkRegions(auto cb) {
+            Region* current = mHead;
+
+            while (current != nullptr) {
+                uint8_t* start = reinterpret_cast<uint8_t*>(current->base());
+                uint8_t* end = start + current->used();
+                cb(start, end);
+                current = current->prev;
+            }
+        }
 
     private:
         size_t mMinRegionSize = 0;
