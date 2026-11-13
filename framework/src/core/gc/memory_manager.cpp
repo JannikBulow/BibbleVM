@@ -197,9 +197,11 @@ namespace bibblevm::gc {
     }
 
     void MemoryManager::destroyAllObjects(VM& vm) {
+        /*
         for (oop::Object** reference : mStrongReferences) {
             *reference = nullptr;
         }
+        */
 
         finalizeAllObjectsInNursery(vm);
         mOldGenHeap.finalizeAllObjects(vm);
