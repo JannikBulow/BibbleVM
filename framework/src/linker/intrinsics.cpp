@@ -66,9 +66,16 @@ namespace bibblevm::linker {
             return executor::SchedulerMessage::Returned(Value());
         };
 
-        static constexpr frozen::unordered_map<frozen::string, IntrinsicFunctionImpl, 2> functions = {
+        static constexpr IntrinsicFunctionImpl exit = +[](VM& vm, executor::Frame& frame, executor::Task* task) -> executor::SchedulerMessage {
+            Int status = frame[0].i;
+            vm.exit();
+            std::exit(status);
+        };
+
+        static constexpr frozen::unordered_map<frozen::string, IntrinsicFunctionImpl, 3> functions = {
             {"get_property", get_property},
             {"set_property", set_property},
+            {"exit", exit},
         };
 
     public:
