@@ -29,7 +29,7 @@ namespace bibblevm::executor {
         void run(VM& vm);
 
         // the finalizer may schedule new tasks which will run afterwards and right before returning from run()
-        void exit(VM& vm, std::function<void(VM&)> finalizer);
+        [[noreturn]] void exit(VM& vm, std::function<void(VM&)> finalizer);
 
     private:
         struct ExitRequest {
