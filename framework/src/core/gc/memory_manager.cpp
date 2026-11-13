@@ -208,7 +208,7 @@ namespace bibblevm::gc {
 
         mImmortalAllocator.walkRegions([this](uint8_t* start, uint8_t* end) {
             uint8_t* current = start;
-            while (current != end) {
+            while (current < end) {
                 oop::Object* object = reinterpret_cast<oop::Object*>(current);
 
                 if (object->kind == oop::ObjectKind::Instance) {
