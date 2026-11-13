@@ -40,6 +40,8 @@ namespace bibblevm {
         VM(VM&&) noexcept = default;
         VM& operator=(VM&&) noexcept = default;
 
+        ~VM();
+
         operator BibbleVM*() {
             return reinterpret_cast<BibbleVM*>(this);
         }
@@ -70,6 +72,8 @@ namespace bibblevm {
         String getProperty(std::string_view name) const;
         void setProperty(String name, String value);
 
+        void exit(); // not sure about this name
+
         void enqueueForJitCompile(executor::Function* function);
 
     private:
@@ -85,6 +89,8 @@ namespace bibblevm {
         CodeAllocator mCodeAllocator;
 
         std::unordered_map<String, oop::Object**, String::Hash, String::Eq> mProperties;
+
+        bool mExited = false;
 
         std::unique_ptr<jit::Compiler> mJitCompiler;
     };
