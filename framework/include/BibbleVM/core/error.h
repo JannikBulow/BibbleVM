@@ -8,9 +8,10 @@
 #include "BibbleVM/util/string_pool.h"
 
 namespace bibblevm {
-    struct Error {
+    struct BIBBLEVM_EXPORT Error {
         enum Type : uint8_t {
-            USERLAND,
+            RUNTIME_ERROR, // any error that isn't from the vm internals
+            EXITING, // not really an error, but futures still need a cancel reason so
             INTERNAL_ERROR, // unrecoverable and usually only caused by bugs
             NULL_REFERENCE,
             INVALID_STATE,

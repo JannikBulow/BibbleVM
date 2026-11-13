@@ -10,11 +10,15 @@ namespace bibblevm {
 
     std::string_view Error::TypeToString(Type type) {
         switch (type) {
-            case USERLAND: return "USERLAND"sv;
+            case RUNTIME_ERROR: return "RUNTIME_ERROR"sv;
+            case EXITING: return "EXITING"sv;
+            case INTERNAL_ERROR: return "INTERNAL_ERROR"sv;
             case NULL_REFERENCE: return "NULL_REFERENCE"sv;
             case INVALID_STATE: return "INVALID_STATE"sv;
             case INDEX_OUT_OF_BOUNDS: return "INDEX_OUT_OF_BOUNDS"sv;
             case INVALID_OBJECT_KIND: return "INVALID_OBJECT_KIND"sv;
+            case FIELD_RESOLUTION: return "FIELD_RESOLUTION"sv;
+            case METHOD_RESOLUTION: return "METHOD_RESOLUTION"sv;
         }
 
         BIBBLEVM_UNREACHABLE();
