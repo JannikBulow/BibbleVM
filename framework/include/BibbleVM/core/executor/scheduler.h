@@ -7,6 +7,7 @@
 #include "BibbleVM/core/executor/task.h"
 
 #include <deque>
+#include <functional>
 #include <vector>
 
 namespace bibblevm::executor {
@@ -27,7 +28,15 @@ namespace bibblevm::executor {
 
         void run(VM& vm);
 
+        // the finalizer may schedule new tasks which will run afterwards and right before returning from run()
+        void exit(VM& vm, std::function<void(VM&)> finalizer);
+
     private:
+        struct ExitRequest {
+            VM* vm;
+            std::function<void(VM&)> finalizer;
+        };
+
         std::vector<Task*> mAllTasks; // easier way to store all stacks for the MemoryManager to scan
         std::vector<Task*> mExpiredTasks; // allTasks is append-only during a GC cycle. even between. this is so we don't accidentally miss some objects because of the index
 
@@ -36,6 +45,8 @@ namespace bibblevm::executor {
         size_t mLevelCursor = 0;
 
         bool mGCRunning = false;
+
+        void executionLoop(VM& vm);
 
         void deleteTask(Task* task);
 

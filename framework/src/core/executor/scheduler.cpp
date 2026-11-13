@@ -2,6 +2,9 @@
 
 #include "BibbleVM/core/executor/scheduler.h"
 
+#include "BibbleVM/core/error.h"
+
+#include "BibbleVM/_debug.h"
 #include "BibbleVM/vm.h"
 
 #include <algorithm>
@@ -127,6 +130,32 @@ namespace bibblevm::executor {
     }
 
     void Scheduler::run(VM& vm) {
+        try {
+            executionLoop(vm);
+        } catch (ExitRequest& exit) {
+            BIBBLEVM_ASSERT(exit.vm == &vm);
+
+            for (Task* task : mAllTasks) {
+                task->completionFuture->cancel(vm, Error::Type::EXITING, nullptr);
+                delete task;
+            }
+            mAllTasks.clear();
+
+            exit.finalizer(vm);
+
+            try {
+                executionLoop(vm);
+            } catch (ExitRequest&) {
+                vm.debugLog("Scheduler", "Exit request during finalization. Ignoring");
+            }
+        }
+    }
+
+    void Scheduler::exit(VM& vm, std::function<void(VM&)> finalizer) {
+        throw ExitRequest(&vm, std::move(finalizer)); // i know this is control flow with an exception and i hate that, but it's the fastest solution in this one case
+    }
+
+    void Scheduler::executionLoop(VM& vm) {
         while (true) {
             Task* task = nextTask(vm);
             if (task == nullptr) {
@@ -136,6 +165,7 @@ namespace bibblevm::executor {
             SchedulerMessage message = RunTask(vm, *task);
             switch (message.type) {
                 case SchedulerMessageType::Errored:
+                    task->completionFuture->cancel(vm, message.error.type, message.error.message.get()->asObject());
                     deleteTask(task);
                     break; // TODO: handle it
                 case SchedulerMessageType::Called:
