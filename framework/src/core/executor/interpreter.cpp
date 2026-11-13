@@ -673,7 +673,7 @@ namespace bibblevm::executor {
         if (object->kind != oop::ObjectKind::Future) return InterpreterMessage::Errored(Error::INVALID_OBJECT_KIND);
         if (object->asFuture()->ready || object->asFuture()->cancelled) return InterpreterMessage::Errored(Error::INVALID_STATE);
 
-        object->asFuture()->cancel(vm, Error::USERLAND, frame[args.b].obj);
+        object->asFuture()->cancel(vm, Error::RUNTIME_ERROR, frame[args.b].obj);
 
         return InterpreterMessage::Continue();
     }
@@ -737,7 +737,7 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(TAIL_CALL) {
-        return InterpreterMessage::Errored(Error::USERLAND); // TODO: implement
+        return InterpreterMessage::Errored(Error::RUNTIME_ERROR); // TODO: implement
     }
 
     DEFINE_INTERPRETER(CALLA) {
@@ -766,7 +766,7 @@ namespace bibblevm::executor {
     }
 
     DEFINE_INTERPRETER(TAIL_CALL_DYN) {
-        return InterpreterMessage::Errored(Error::USERLAND); // TODO: implement
+        return InterpreterMessage::Errored(Error::RUNTIME_ERROR); // TODO: implement
     }
 
     DEFINE_INTERPRETER(CALLA_DYN) {

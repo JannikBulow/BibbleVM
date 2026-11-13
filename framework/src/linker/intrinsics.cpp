@@ -26,7 +26,7 @@ namespace bibblevm::linker {
     private:
         static constexpr IntrinsicFunctionImpl init = +[](VM& vm, executor::Frame& frame, executor::Task* task) -> executor::SchedulerMessage {
             if (!vm.pluginManager().load("/home/jannik/CLionProjects/bibble-stdlib/tests/libbibble_stdlib.so")) {
-                return executor::SchedulerMessage::Errored(Error::USERLAND, vm.memoryManager().allocateString(vm, "libbibble_stdlib.so failed to load")->asString());
+                return executor::SchedulerMessage::Errored(Error::RUNTIME_ERROR, vm.memoryManager().allocateString(vm, "libbibble_stdlib.so failed to load")->asString());
             }
             return executor::SchedulerMessage::Returned(Value());
         };
