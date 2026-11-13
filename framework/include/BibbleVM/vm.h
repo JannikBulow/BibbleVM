@@ -72,7 +72,26 @@ namespace bibblevm {
         String getProperty(std::string_view name) const;
         void setProperty(String name, String value);
 
-        void exit(); // not sure about this name
+        // stops the scheduler and kills all threads, ensuring only the caller thread remains to execute exit code, then runs all exit code ensuring everything is fully gone
+        // does not exit the process, so it's safe to use with an embedded vm.
+        // some memory may still be allocated with the vm after this function returns. this memory is held by the vm object itself and will be deallocated with the destructor
+        template<typename Finalizer = std::nullptr_t>
+        [[noreturn]] void exit(Finalizer finalizer = nullptr) {
+            if (mExited) return;
+            mExited = true;
+
+            mScheduler.exit(*this, [finalizer = std::move(finalizer)](VM& vm) {
+                vm.mMemoryManager.destroyAllObjects(vm);
+
+                if (vm.mJitCompiler) {
+                    vm.mJitCompiler.reset();
+                }
+
+                if constexpr (!std::is_same_v<Finalizer, std::nullptr_t>) {
+                    finalizer();
+                }
+            });
+        }
 
         void enqueueForJitCompile(executor::Function* function);
 

@@ -48,22 +48,6 @@ namespace bibblevm {
         }
     }
 
-    // stops the scheduler and kills all threads, ensuring only the caller thread remains to execute exit code, then runs all exit code ensuring everything is fully gone
-    // does not exit the process, so it's safe to use with an embedded vm.
-    // some memory may still be allocated with the vm after this function returns. this memory is held by the vm object itself and will be deallocated with the destructor
-    void VM::exit() {
-        if (mExited) return;
-        mExited = true;
-
-        mScheduler.exit(*this, [](VM& vm) {
-            vm.mMemoryManager.destroyAllObjects(vm);
-
-            if (vm.mJitCompiler) {
-                vm.mJitCompiler.reset();
-            }
-        });
-    }
-
     void VM::enqueueForJitCompile(executor::Function* function) {
         if (mJitCompiler) {
             mJitCompiler->enqueueForCompilation(function);

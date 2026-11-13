@@ -68,8 +68,9 @@ namespace bibblevm::linker {
 
         static constexpr IntrinsicFunctionImpl exit = +[](VM& vm, executor::Frame& frame, executor::Task* task) -> executor::SchedulerMessage {
             Int status = frame[0].i;
-            vm.exit();
-            std::exit(status);
+            vm.exit([status] {
+                std::exit(status);
+            });
         };
 
         static constexpr frozen::unordered_map<frozen::string, IntrinsicFunctionImpl, 3> functions = {
