@@ -2,6 +2,8 @@
 
 #include <BibbleVM/core/oop/array_view.h>
 
+#include <BibbleVM/core/error.h>
+
 #include <BibbleVM/linker/linker.h>
 
 #include <BibbleVM/init.h>
@@ -880,6 +882,19 @@ int main(int argc, char** argv) {
     oop::Object** mainFutureRef = vm.memoryManager().newGlobalStrongReference(task->completionFuture->asObject());
 
     vm.scheduler().run(vm);
+
+    oop::Future* mainFuture = (*mainFutureRef)->asFuture();
+    if (mainFuture->cancelled) {
+        Error error(static_cast<Error::Type>(mainFuture->error.type), mainFuture->error.message->asString());
+        std::cerr << "bibble: main function was cancelled. Reason:\n" << error.describe(vm);
+        return 1;
+    }
+    if (mainFuture->ready) {
+        return mainFuture->value.l;
+    }
+
+    std::cerr << "bibble: main function never completed\n";
+    return 1;
 
     if (!(*mainFutureRef)->asFuture()->ready) return 4;
     return (*mainFutureRef)->asFuture()->value.l;
