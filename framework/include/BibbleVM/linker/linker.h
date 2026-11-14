@@ -15,6 +15,10 @@
 namespace bibblevm::linker {
     class BIBBLEVM_EXPORT Linker {
     public:
+        Linker() = default;
+        Linker(const Linker&) = delete;
+        Linker(Linker&&) = delete;
+
         void addModulePath(std::string path);
         void addModulePath(std::vector<std::string> path);
 
