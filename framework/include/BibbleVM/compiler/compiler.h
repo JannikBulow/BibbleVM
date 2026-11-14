@@ -32,10 +32,10 @@ namespace bibblevm::compiler {
 
     class BIBBLEVM_EXPORT Compiler {
     public:
+        explicit Compiler(executor::Function* function);
+
         Compiler(const Compiler&) = delete;
         Compiler& operator=(const Compiler&) = delete;
-
-        explicit Compiler(executor::Function* function);
 
         Code* compile(VM& vm, CompileOptions options);
 
